@@ -7,7 +7,6 @@ use CodeIgniter\Router\RouteCollection;
  */
 // home
 $routes->get('/home', 'Home::index');
-$routes->get('/testdb', 'TestDb::index');
 $routes->get('/dashboard', 'Dashboard::index', ['filter' => 'manager']);
 $routes->get('/laporan', 'Laporan::index', ['filter' => 'manager']);
 
@@ -26,7 +25,6 @@ $routes->post('/laporan/tambahData', 'Laporan::tambahData');
 // delete laporan
 $routes->delete('/laporan/delete/(:num)', 'Laporan::delete/$1');
 
-// $routes->post('/laporan/ubahData/(:num)', 'Laporan::ubahData/$1');
 $routes->get('/laporan/edit/(:num)', 'Laporan::edit/$1');
 $routes->post('/laporan/update/(:num)', 'Laporan::update/$1');
 
@@ -156,11 +154,8 @@ $routes->delete('/ppic/delete/(:num)', 'Ppic::delete/$1');
 $routes->get('/ppic/edit/(:num)', 'Ppic::edit/$1');
 $routes->post('/ppic/update', 'Ppic::update');
 $routes->post('/ppic/update/(:num)', 'Ppic::update/$1');
-// $routes->get('/dashboard', 'Dashboard::index', ['filter' => 'manager']);
-
 // Export to Excel
 $routes->get('dashboard/export-excel', 'Dashboard::exportExcel');
-// $routes->get('test-excel', 'TestExcel::index');
 
 // Export berbagai data
 $routes->get('export/dashboard', 'Export::dashboard');

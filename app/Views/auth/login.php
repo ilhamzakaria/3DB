@@ -1,11 +1,3 @@
-<!-- <form method="post" action="<?= base_url('login') ?>">
-    <?= csrf_field() ?>
-
-    <input type="text" name="username" placeholder="Username" class="form-control mb-2">
-    <input type="password" name="password" placeholder="Password" class="form-control mb-2">
-
-    <button class="btn btn-primary w-100">Login</button>
-</form> -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -101,18 +93,15 @@
             <form method="post" action="<?= base_url('login') ?>">
                 <?= csrf_field() ?>
                 <div class="form-group">
-                    <input type="text" class="form-control" name="username" placeholder="Username">
+                    <input type="text" class="form-control" name="username" placeholder="Username" required>
                 </div>
 
                 <div class="form-group">
-                    <input type="password" class="form-control" name="password" placeholder="Password">
+                    <input type="password" class="form-control" name="password" placeholder="Password" required>
                 </div>
 
                 <button type="submit" class="btn-login">Login</button>
             </form>
-
-
-
         </div>
 
         <div class="login-footer">
@@ -144,11 +133,3 @@
 </body>
 
 </html>
-
-<!--  -->
-
-<script>
-    setTimeout(function() {
-        $('.alert').fadeOut('slow');
-    }, 3000);
-</script>

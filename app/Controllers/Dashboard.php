@@ -99,8 +99,4 @@ class Dashboard extends BaseController
         echo "</table>";
         exit;
     }
-    // public function exportExcel()
-    // {
-    //     dd('masuk export');
-    // }
 }
