@@ -154,6 +154,7 @@ $routes->delete('/ppic/delete/(:num)', 'Ppic::delete/$1');
 $routes->get('/ppic/edit/(:num)', 'Ppic::edit/$1');
 $routes->post('/ppic/update', 'Ppic::update');
 $routes->post('/ppic/update/(:num)', 'Ppic::update/$1');
+$routes->get('/ppic/exportExcel', 'Ppic::exportExcel');
 // Export to Excel
 $routes->get('dashboard/export-excel', 'Dashboard::exportExcel');
 
