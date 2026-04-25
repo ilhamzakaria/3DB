@@ -11,13 +11,20 @@ class MProd extends Model
 
     protected $allowedFields = [
         'id_user',
-        'jam',
-        'hasil_produksi',
-        'no_spk',
         'nama_mesin',
         'nama_produk',
+        'batch_number',
         'shif',
+        'grup',
+        'nomor_mesin',
+        'packing',
+        'isi',
+        'cycle_time',
+        'target',
+        'no_spk',
         'operator',
+        'jam',
+        'hasil_produksi',
         'tanggal',
 
     ];

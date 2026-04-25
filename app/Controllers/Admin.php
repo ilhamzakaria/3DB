@@ -23,7 +23,7 @@ class Admin extends BaseController
     public function index()
     {
         $data = $this->MPpic
-            ->select('ppic.*, prod.hasil_produksi, gudang.polycarbonate, gudang.sisa_po, gudang.hold, gudang.gumpalan')
+            ->select('ppic.*, prod.hasil_produksi, gudang.bahan_baku, gudang.box, gudang.karung')
             ->join(
                 'prod',
                 'TRIM(prod.no_spk) = TRIM(ppic.no_spk) AND TRIM(prod.jam) = TRIM(ppic.jam) AND prod.tanggal = ppic.tanggal',

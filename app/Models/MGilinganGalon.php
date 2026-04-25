@@ -1,0 +1,1 @@
+<?php namespace App\Models; use CodeIgniter\Model; class MGilinganGalon extends Model { protected $table = 'gilingan_galon'; protected $primaryKey = 'id'; protected $allowedFields = ['produk', 'nama_gilingan', 'sumber_gilingan', 'status', 'kode', 'jumlah', 'nomor_lot', 'no_spk', 'shif', 'tanggal', 'created_at', 'updated_at']; protected $useTimestamps = true; }

@@ -35,6 +35,16 @@
         </li>
     <?php endif; ?>
 
+    <!-- Plant Produksi -->
+    <?php if (in_array($role, ['manager', 'admin', 'produksi', 'ppic'])): ?>
+        <li class="nav-item <?= ($uri->getSegment(1) == 'plant_produksi') ? 'active' : '' ?>">
+            <a class="nav-link" href="<?= base_url('plant_produksi') ?>">
+                <i class="fas fa-fw fa-industry"></i>
+                <span>Plant Produksi</span>
+            </a>
+        </li>
+    <?php endif; ?>
+
     <!-- Operator (Semua Role) -->
     <!-- <?php if (in_array($role, ['manager', 'admin', 'operator'])): ?>
         <li class="nav-item <?= ($uri->getSegment(1) == 'operator') ? 'active' : '' ?>">

@@ -75,10 +75,9 @@
                             <th>Tanggal</th>
                             <!-- Gudang -->
                             <th>No SPK</th>
-                            <th>Polycarbonate</th>
-                            <th>Sisa PO</th>
-                            <th>Hold</th>
-                            <th>Gumpalan</th>
+                            <th>Bahan Baku</th>
+                            <th>Box</th>
+                            <th>Karung</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,10 +122,9 @@
                                 </td>
                                 <!-- Gudang -->
                                 <td><?= $p['no_spk'] ?? '-'; ?></td>
-                                <td><?= !empty($p['polycarbonate']) ? $p['polycarbonate'] : '-'; ?></td>
-                                <td><?= !empty($p['sisa_po']) ? $p['sisa_po'] : '-'; ?></td>
-                                <td><?= !empty($p['hold']) ? $p['hold'] : '-'; ?></td>
-                                <td><?= !empty($p['gumpalan']) ? $p['gumpalan'] : '-'; ?></td>
+                                <td><?= $p['bahan_baku'] ?? '-'; ?></td>
+                                <td><?= $p['box'] ?? '-'; ?></td>
+                                <td><?= $p['karung'] ?? '-'; ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

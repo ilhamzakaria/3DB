@@ -21,24 +21,62 @@ class Ppic extends BaseController
 
     public function index()
     {
-        $data['ppic'] = $this->MPpic
-            ->select('ppic.*, prod.hasil_produksi')
+        $q = trim((string) $this->request->getGet('q'));
+        $startDate = $this->request->getGet('start_date');
+        $endDate = $this->request->getGet('end_date');
+
+        if (!empty($startDate) && !empty($endDate) && $endDate < $startDate) {
+            // swap agar selalu start <= end
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        $builder = $this->MPpic
+            ->select('ppic.*, SUM(prod.hasil_produksi) as hasil_produksi')
             ->join(
                 'prod',
                 'TRIM(prod.no_spk) = TRIM(ppic.no_spk)
-                AND TRIM(prod.jam) = TRIM(ppic.jam)
-                AND prod.tanggal = ppic.tanggal',
+    AND prod.tanggal = ppic.tanggal',
                 'left'
-            )
+            );
+
+        if ($q !== '') {
+            $builder->groupStart()
+                ->like('ppic.no_spk', $q)
+                ->orLike('ppic.nama_mesin', $q)
+                ->orLike('ppic.nama_produk', $q)
+                ->orLike('ppic.grade', $q)
+                ->orLike('ppic.warna', $q)
+                ->orLike('ppic.nomor_mesin', $q)
+                ->orLike('ppic.operator', $q)
+                ->orLike('ppic.shif', $q)
+                ->groupEnd();
+        }
+
+        if (!empty($startDate)) {
+            $builder->where('ppic.tanggal >=', $startDate);
+        }
+
+        if (!empty($endDate)) {
+            $builder->where('ppic.tanggal <=', $endDate);
+        }
+
+        $data['ppic'] = $builder
+            ->groupBy('ppic.id')
             ->orderBy('ppic.tanggal', 'DESC')
             ->orderBy('ppic.shif', 'DESC')
             ->orderBy('ppic.jam', 'DESC')
+            ->orderBy('ppic.id', 'ASC')
             ->findAll();
+
         $data['ppic'] = $this->attachRevisiData($data['ppic']);
 
         return view('ppic', [
             'title' => 'Laporan PPIC Harian',
-            'produksi' => $data['ppic']
+            'produksi' => $data['ppic'],
+            'spk_master' => $this->getSpkMasterData(),
+            'q' => $q,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
         ]);
     }
     public function tambahData()
@@ -71,6 +109,19 @@ class Ppic extends BaseController
                 $latestRevisi = $nilaiRevisi;
             }
         }
+        $hasManualRevisi = implode('', $revisiInputs) !== '';
+        $noSpk = trim((string) $this->request->getPost('no_spk'));
+        $inheritedRevisi = [
+            'latest' => '',
+            'entries' => [],
+        ];
+
+        if (!$hasManualRevisi && $noSpk !== '') {
+            $inheritedRevisi = $this->getLatestRevisiSnapshotByNoSpk($noSpk);
+            if ($latestRevisi === '' && $inheritedRevisi['latest'] !== '') {
+                $latestRevisi = $inheritedRevisi['latest'];
+            }
+        }
 
         $jenis = $this->request->getPost('jenis');
         if (!is_array($jenis)) {
@@ -85,9 +136,12 @@ class Ppic extends BaseController
         $data = [
             // store selected jam intervals as comma-separated string
             'jam'         => implode(', ', $jamArray),
-            'no_spk'      => $this->request->getPost('no_spk'),
+            'no_spk'      => $noSpk,
             'nama_mesin'  => $this->request->getPost('nama_mesin'),
             'nama_produk' => $this->request->getPost('nama_produk'),
+            'grade'       => $this->request->getPost('grade'),
+            'warna'       => $this->request->getPost('warna'),
+            'nomor_mesin' => $this->request->getPost('nomor_mesin'),
             // compute shift automatically from jam
             'shif'        => $this->determineShift($jamArray),
             'operator'    => $this->request->getPost('operator'),
@@ -136,7 +190,11 @@ class Ppic extends BaseController
         $this->MPpic->save($data);
         $idPpic = (int) $this->MPpic->getInsertID();
         if ($idPpic > 0) {
-            $this->saveInitialRevisi($idPpic, $revisiInputs);
+            if ($hasManualRevisi) {
+                $this->saveInitialRevisi($idPpic, $revisiInputs);
+            } elseif (!empty($inheritedRevisi['entries'])) {
+                $this->copyRevisiToNewData($idPpic, $inheritedRevisi['entries']);
+            }
         }
 
         return redirect()->to('/ppic')->with('success', 'Data berhasil ditambahkan');
@@ -180,6 +238,9 @@ class Ppic extends BaseController
             'no_spk'      => $this->request->getPost('no_spk'),
             'nama_mesin'  => $this->request->getPost('nama_mesin'),
             'nama_produk' => $this->request->getPost('nama_produk'),
+            'grade'       => $this->request->getPost('grade'),
+            'warna'       => $this->request->getPost('warna'),
+            'nomor_mesin' => $this->request->getPost('nomor_mesin'),
             'shif'        => $this->request->getPost('shif'),
             'operator'    => $this->request->getPost('operator'),
             'targett'     => $this->request->getPost('targett'),
@@ -297,6 +358,97 @@ class Ppic extends BaseController
         ]);
     }
 
+    private function getLatestRevisiSnapshotByNoSpk(string $noSpk): array
+    {
+        $noSpk = trim($noSpk);
+        if ($noSpk === '') {
+            return [
+                'latest' => '',
+                'entries' => [],
+            ];
+        }
+
+        $source = $this->MPpic
+            ->where('no_spk', $noSpk)
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->first();
+
+        if (!is_array($source)) {
+            return [
+                'latest' => '',
+                'entries' => [],
+            ];
+        }
+
+        $entries = [];
+        $latest = trim((string) ($source['revisi'] ?? ''));
+
+        if ($this->isRevisiTableReady()) {
+            $entries = $this->MRevisi
+                ->where('id_produksi', (int) ($source['id'] ?? 0))
+                ->orderBy('revisi_ke', 'ASC')
+                ->orderBy('tanggal_revisi', 'ASC')
+                ->findAll();
+
+            $entries = array_values(array_filter($entries, static function ($item) {
+                $ke = (int) ($item['revisi_ke'] ?? 0);
+                $nilai = trim((string) ($item['nilai_revisi'] ?? ''));
+
+                return $ke >= 1 && $ke <= 3 && $nilai !== '';
+            }));
+
+            if (!empty($entries)) {
+                $lastEntry = end($entries);
+                $latest = trim((string) ($lastEntry['nilai_revisi'] ?? $latest));
+            }
+        }
+
+        if (empty($entries) && $latest !== '') {
+            $entries[] = [
+                'revisi_ke' => 1,
+                'nilai_revisi' => $latest,
+                'keterangan' => null,
+                'tanggal_revisi' => date('Y-m-d H:i:s'),
+            ];
+        }
+
+        return [
+            'latest' => $latest,
+            'entries' => $entries,
+        ];
+    }
+
+    private function copyRevisiToNewData(int $idPpic, array $entries): void
+    {
+        if (!$this->isRevisiTableReady() || $idPpic <= 0 || empty($entries)) {
+            return;
+        }
+
+        $payload = [];
+
+        foreach ($entries as $entry) {
+            $revisiKe = (int) ($entry['revisi_ke'] ?? 0);
+            $nilai = trim((string) ($entry['nilai_revisi'] ?? ''));
+
+            if ($revisiKe < 1 || $revisiKe > 3 || $nilai === '') {
+                continue;
+            }
+
+            $payload[] = [
+                'id_produksi' => $idPpic,
+                'revisi_ke' => $revisiKe,
+                'nilai_revisi' => $nilai,
+                'keterangan' => $entry['keterangan'] ?? null,
+                'tanggal_revisi' => $entry['tanggal_revisi'] ?? date('Y-m-d H:i:s'),
+            ];
+        }
+
+        if (!empty($payload)) {
+            $this->MRevisi->insertBatch($payload);
+        }
+    }
+
     private function attachRevisiData(array $rows): array
     {
         if (empty($rows) || !$this->isRevisiTableReady()) {
@@ -354,15 +506,20 @@ class Ppic extends BaseController
                 $tanggalRevisi = $detail['tanggal_revisi'] ?? '';
                 $timeLabel = '';
                 if (!empty($tanggalRevisi) && strtotime($tanggalRevisi) !== false) {
-                    $timeLabel = ' (' . date('d/m H:i:s', strtotime($tanggalRevisi)) . ')';
+                    $timeLabel = ' (' . date('H:i', strtotime($tanggalRevisi)) . ')';
                 }
 
+                // Sertakan jam revisi secara eksplisit di tampilan (menu PPIC)
                 $parts[] = 'R' . $ke . ': ' . $nilai . $timeLabel;
             }
 
             if ($lastNilai !== '') {
                 $row['revisi'] = $lastNilai;
             }
+
+            // nilai untuk kalkulasi jumlah (target/revisi dikurangi hasil produksi)
+            $nilaiRevisi = trim((string) ($row['revisi'] ?? $row['targett'] ?? ''));
+            $row['nilai'] = is_numeric($nilaiRevisi) ? (int) $nilaiRevisi : (int) preg_replace('/[^\d-]/', '', $nilaiRevisi);
 
             $row['revisi_display'] = implode(' | ', $parts);
         }
@@ -422,6 +579,43 @@ class Ppic extends BaseController
         return '3';
     }
 
+    private function getSpkMasterData(): array
+    {
+        $rows = $this->MPpic
+            ->select('no_spk, nama_mesin, nama_produk, grade, warna, nomor_mesin, operator, targett, tanggal, id')
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->findAll();
+
+        if (empty($rows)) {
+            return [];
+        }
+
+        $master = [];
+
+        foreach ($rows as $row) {
+            $noSpk = trim((string) ($row['no_spk'] ?? ''));
+            if ($noSpk === '' || isset($master[$noSpk])) {
+                continue;
+            }
+
+            $master[$noSpk] = [
+                'no_spk' => $noSpk,
+                'nama_mesin' => trim((string) ($row['nama_mesin'] ?? '')),
+                'nama_produk' => trim((string) ($row['nama_produk'] ?? '')),
+                'grade' => trim((string) ($row['grade'] ?? '')),
+                'warna' => trim((string) ($row['warna'] ?? '')),
+                'nomor_mesin' => trim((string) ($row['nomor_mesin'] ?? '')),
+                'operator' => trim((string) ($row['operator'] ?? '')),
+                'targett' => trim((string) ($row['targett'] ?? '')),
+            ];
+        }
+
+        ksort($master, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return array_values($master);
+    }
+
     public function exportExcel()
     {
         $data = $this->MPpic->findAll();
@@ -442,6 +636,9 @@ class Ppic extends BaseController
                 <th>Tanggal</th>
                 <th>Nama Mesin</th>
                 <th>Nama Produk</th>
+                <th>Grade</th>
+                <th>Warna</th>
+                <th>Nomor Mesin</th>
                 <th>Batch Number</th>
                 <th>Shift</th>
                 <th>Nomor Mesin</th>
@@ -457,6 +654,9 @@ class Ppic extends BaseController
                     <td>" . $d['tanggal'] . "</td>
                     <td>" . $d['nama_mesin'] . "</td>
                     <td>" . $d['nama_produk'] . "</td>
+                    <td>" . $d['grade'] . "</td>
+                    <td>" . $d['warna'] . "</td>
+                    <td>" . $d['nomor_mesin'] . "</td>
                     <td>" . $d['batch_number'] . "</td>
                     <td>" . $d['shift'] . "</td>
                     <td>" . $d['nomor_mesin'] . "</td>

@@ -6,33 +6,32 @@
         padding: 0 5px;
     }
 
-    .active {
-        /* background-color: #4e73df; */
-        color: white !important;
+    .topbar-menu-link {
+        display: flex;
+        align-items: center;
         border-radius: 5px;
-        padding: 5px 10px;
-        margin: 0 5px;
+        padding: 6px 10px !important;
+        margin: 0 4px;
         font-weight: bold;
         font-size: 14px;
-        text-decoration: none;
-        /* text-transform: uppercase; */
-        letter-spacing: 1px;
+        letter-spacing: 0.3px;
+        color: #5a5c69 !important;
+        text-decoration: none !important;
     }
 
-    .active a:hover {
-        color: black !important;
+    .topbar-menu-link:hover,
+    .topbar-menu-link:focus {
+        color: #2e3340 !important;
+        text-decoration: none !important;
     }
 
-    .active a:active {
-        color: black !important;
+    .topbar-menu-link.active {
+        color: #2f59d9 !important;
     }
 
-    .active a:focus {
-        color: black !important;
-    }
-
-    .active a:visited {
-        color: black !important;
+    .topbar-menu-link .badge {
+        top: 2px !important;
+        right: -8px !important;
     }
 </style>
 <div id="content-wrapper" class="d-flex flex-column">
@@ -43,56 +42,42 @@
             <!-- LEFT SIDE -->
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <span class="nav-link font-weight-bold text-dark ml-5 <?= uri_string() == 'home' ? 'active' : '' ?>">
-                        <a class="nav-link" href="<?= base_url('home') ?>">
-                            Home
-                        </a>
-                    </span>
+                    <a class="nav-link topbar-menu-link ml-5 <?= uri_string() == 'home' ? 'active' : '' ?>" href="<?= base_url('home') ?>">
+                        Home
+                    </a>
+                </li>
+                <!-- <li class="nav-item">
+                    <a class="nav-link topbar-menu-link <?= uri_string() == 'admin' ? 'active' : '' ?>" href="<?= base_url('admin') ?>">
+                        Admin
+                    </a>
+                </li> -->
+                <li class="nav-item">
+                    <a class="nav-link topbar-menu-link <?= uri_string() == 'ppic' ? 'active' : '' ?>" href="<?= base_url('ppic') ?>">
+                        PPIC
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <span class="nav-link font-weight-bold text-dark<?= uri_string() == 'admin' ? 'active' : '' ?>">
-                        <a class="nav-link" href="<?= base_url('admin') ?>">
-                            Admin
-                        </a>
-                    </span>
+                    <a class="nav-link topbar-menu-link <?= uri_string() == 'plant_produksi' ? 'active' : '' ?>" href="<?= base_url('plant_produksi') ?>">
+                        Produksi
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <span class="nav-link font-weight-bold text-primary <?= uri_string() == 'ppic' ? 'active' : '' ?>">
-                        <a class="nav-link" href="<?= base_url('ppic') ?>">
-                            PPIC
-                        </a>
-                    </span>
+                    <a class="nav-link topbar-menu-link <?= (uri_string() == 'gudang' || str_starts_with(uri_string(), 'gudang/')) ? 'active' : '' ?>" href="<?= base_url('gudang') ?>">
+                        Gudang
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <span class="nav-link font-weight-bold text-primary <?= uri_string() == 'produksi' ? 'active' : '' ?>">
-                        <a class="nav-link" href="<?= base_url('produksi') ?>">
-                            Produksi
-                        </a>
-                    </span>
-                </li>
-                <li class="nav-item">
-                    <span class="nav-link font-weight-bold text-primary <?= uri_string() == 'gudang' ? 'active' : '' ?>">
-                        <a class="nav-link" href="<?= base_url('gudang') ?>">
-                            Gudang
-                        </a>
-                    </span>
-                </li>
-                <li class="nav-item">
-                    <span class="nav-link font-weight-bold text-primary <?= uri_string() == 'chat' ? 'active' : '' ?>">
-                        <a class="nav-link position-relative" href="<?= base_url('chat') ?>">
-                            Pesan
-                            <span id="chatBadge" class="badge badge-danger badge-pill position-absolute" style="display:none; top:-mm; right:-13px; font-size:10px;">0</span>
-                        </a>
-                    </span>
+                    <a class="nav-link topbar-menu-link position-relative <?= uri_string() == 'chat' ? 'active' : '' ?>" href="<?= base_url('chat') ?>">
+                        Pesan
+                        <span id="chatBadge" class="badge badge-danger badge-pill position-absolute" style="display:none; font-size:10px;">0</span>
+                    </a>
                 </li>
                 <?php if (session('role') == 'produksi' || session('role') == 'gudang'): ?>
                     <li class="nav-item">
-                        <span class="nav-link font-weight-bold text-primary <?= uri_string() == 'notifikasi' ? 'active' : '' ?>">
-                            <a href="/notifikasi" class="nav-link position-relative" href="<?= base_url('notifikasi') ?>">
-                                Notifikasi
-                                <span id="notifBadge" class="badge badge-danger badge-pill position-absolute" style="display:none; top:-mm; right:-13px; font-size:10px;">0</span>
-                            </a>
-                        </span>
+                        <a class="nav-link topbar-menu-link position-relative <?= uri_string() == 'notifikasi' ? 'active' : '' ?>" href="<?= base_url('notifikasi') ?>">
+                            Notifikasi
+                            <span id="notifBadge" class="badge badge-danger badge-pill position-absolute" style="display:none; font-size:10px;">0</span>
+                        </a>
                     </li>
                 <?php endif; ?>
             </ul>

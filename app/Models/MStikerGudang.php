@@ -1,0 +1,1 @@
+<?php namespace App\Models; use CodeIgniter\Model; class MStikerGudang extends Model { protected $table = 'stiker_gudang'; protected $primaryKey = 'id'; protected $allowedFields = ['produk', 'nama_stiker', 'status', 'kode', 'jumlah', 'nomor_lot', 'no_spk', 'shif', 'tanggal', 'created_at', 'updated_at']; protected $useTimestamps = true; }

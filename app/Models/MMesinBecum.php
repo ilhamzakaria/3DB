@@ -1,0 +1,1 @@
+<?php namespace App\Models; use CodeIgniter\Model; class MMesinBecum extends Model { protected $table = 'mesin_becum'; protected $primaryKey = 'id'; protected $allowedFields = ['produk_galon', 'brand', 'grade', 'berat', 'stock', 'no_spk', 'shif', 'tanggal', 'created_at', 'updated_at']; protected $useTimestamps = true; }

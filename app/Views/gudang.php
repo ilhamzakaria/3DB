@@ -1,494 +1,537 @@
+<?= $this->extend('layout/main') ?>
+<?= $this->section('content') ?>
+
+<?php
+$dashboardMetrics = $dashboard_metrics ?? [];
+$materialModules = $material_modules ?? [];
+$machineModules = $machine_modules ?? [];
+$recentActivities = $recent_activities ?? [];
+
+$formatNumber = static function ($value): string {
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    $numeric = (float) $value;
+    $isInteger = abs($numeric - round($numeric)) < 0.00001;
+
+    return number_format($numeric, $isInteger ? 0 : 2, ',', '.');
+};
+
+$formatTimestamp = static function ($timestamp): string {
+    $timestamp = (int) $timestamp;
+    return $timestamp > 0 ? date('d M Y H:i', $timestamp) : '-';
+};
+
+$summaryCards = [
+    [
+        'label' => 'Total Modul',
+        'value' => ($dashboardMetrics['modules_with_data'] ?? 0) . ' / ' . ($dashboardMetrics['module_total'] ?? 0),
+        'note' => 'Modul yang sudah memiliki data',
+        'icon' => 'fas fa-layer-group',
+        'accent' => 'primary',
+    ],
+    [
+        'label' => 'Total Record',
+        'value' => $formatNumber($dashboardMetrics['total_records'] ?? 0),
+        'note' => 'Akumulasi seluruh tabel gudang',
+        'icon' => 'fas fa-database',
+        'accent' => 'success',
+    ],
+    [
+        'label' => 'Total Qty / Stock',
+        'value' => $formatNumber($dashboardMetrics['total_quantity'] ?? 0),
+        'note' => 'Penjumlahan jumlah dan stock yang tersedia',
+        'icon' => 'fas fa-box-open',
+        'accent' => 'warning',
+    ],
+    [
+        'label' => 'Update Terakhir',
+        'value' => $formatTimestamp($dashboardMetrics['latest_timestamp'] ?? 0),
+        'note' => 'Sumber terbaru: ' . ($dashboardMetrics['latest_module'] ?? '-'),
+        'icon' => 'fas fa-clock',
+        'accent' => 'info',
+    ],
+];
+
+$quickLinks = array_merge($materialModules, $machineModules);
+?>
+
 <style>
-    .btn-delete {
+    .gudang-dashboard {
+        --gudang-surface: linear-gradient(180deg, #f7f9ff 0%, #eef4ff 100%);
+        --gudang-ink: #183153;
+        --gudang-muted: #6c7a92;
+        --gudang-border: rgba(24, 49, 83, 0.1);
+        --gudang-shadow: 0 18px 40px rgba(31, 45, 76, 0.08);
+    }
+
+    .gudang-dashboard .hero-card,
+    .gudang-dashboard .summary-card,
+    .gudang-dashboard .module-card,
+    .gudang-dashboard .activity-card {
+        border: 1px solid var(--gudang-border);
+        border-radius: 20px;
+        box-shadow: var(--gudang-shadow);
+        background: #fff;
+    }
+
+    .gudang-dashboard .hero-card {
+        padding: 28px;
+        background: linear-gradient(135deg, #173b72 0%, #2957a4 48%, #3c78cf 100%);
+        color: #fff;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .gudang-dashboard .hero-card::after {
+        content: "";
         position: absolute;
-        right: 10px;
-        bottom: 10px;
+        inset: auto -60px -80px auto;
+        width: 220px;
+        height: 220px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.09);
+    }
+
+    .gudang-dashboard .hero-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+    }
+
+    .gudang-dashboard .hero-text {
+        max-width: 700px;
+        color: rgba(255, 255, 255, 0.84);
+        margin-bottom: 0;
+    }
+
+    .gudang-dashboard .quick-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .gudang-dashboard .quick-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .gudang-dashboard .quick-link:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.18);
+        text-decoration: none;
+    }
+
+    .gudang-dashboard .summary-card {
+        height: 100%;
+        padding: 18px 20px;
+    }
+
+    .gudang-dashboard .summary-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--gudang-muted);
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .gudang-dashboard .summary-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+    }
+
+    .gudang-dashboard .summary-value {
+        margin-top: 16px;
+        font-size: 1.8rem;
+        line-height: 1.1;
+        font-weight: 700;
+        color: var(--gudang-ink);
+    }
+
+    .gudang-dashboard .summary-note {
+        margin-top: 8px;
+        margin-bottom: 0;
+        color: var(--gudang-muted);
+        font-size: 0.92rem;
+    }
+
+    .gudang-dashboard .section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .gudang-dashboard .section-title {
+        margin-bottom: 0;
+        color: var(--gudang-ink);
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .gudang-dashboard .section-subtitle {
+        margin-bottom: 0;
+        color: var(--gudang-muted);
+    }
+
+    .gudang-dashboard .module-card {
+        height: 100%;
+        padding: 20px;
+        background: var(--gudang-surface);
+    }
+
+    .gudang-dashboard .module-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .gudang-dashboard .module-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1rem;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .gudang-dashboard .module-title {
+        margin-bottom: 4px;
+        color: var(--gudang-ink);
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    .gudang-dashboard .module-meta {
+        color: var(--gudang-muted);
+        font-size: 0.9rem;
+    }
+
+    .gudang-dashboard .module-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .gudang-dashboard .metric-box {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(24, 49, 83, 0.08);
+    }
+
+    .gudang-dashboard .metric-box small {
+        display: block;
+        color: var(--gudang-muted);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 6px;
+    }
+
+    .gudang-dashboard .metric-box strong {
+        display: block;
+        color: var(--gudang-ink);
+        font-size: 1.05rem;
+    }
+
+    .gudang-dashboard .module-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: auto;
+    }
+
+    .gudang-dashboard .module-link {
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .gudang-dashboard .module-empty {
+        color: var(--gudang-muted);
+        font-size: 0.92rem;
+        margin-bottom: 0;
+    }
+
+    .gudang-dashboard .activity-card {
+        padding: 22px;
+    }
+
+    .gudang-dashboard .activity-table {
+        margin-bottom: 0;
+    }
+
+    .gudang-dashboard .activity-table thead th {
+        border-top: 0;
+        color: var(--gudang-muted);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .gudang-dashboard .activity-table td {
+        vertical-align: middle;
+    }
+
+    .gudang-dashboard .badge-soft {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: #edf3ff;
+        color: #2756a7;
+    }
+
+    @media (max-width: 767.98px) {
+        .gudang-dashboard .hero-card {
+            padding: 22px;
+        }
+
+        .gudang-dashboard .hero-title {
+            font-size: 1.6rem;
+        }
+
+        .gudang-dashboard .module-metrics {
+            grid-template-columns: 1fr;
+        }
+
+        .gudang-dashboard .module-footer {
+            align-items: flex-start;
+            flex-direction: column;
+        }
     }
 </style>
 
-<?= $this->extend('layout/main') ?>
+<div class="container-fluid gudang-dashboard">
+    <div class="hero-card mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start">
+            <div class="pr-lg-4">
+                <div class="hero-title">Dashboard Gudang</div>
+                <!-- <p class="hero-text mt-2">
+                    Halaman ini merangkum seluruh data gudang dan monitoring mesin dalam satu tempat:
+                    total record, total quantity atau stock, update terbaru, dan akses cepat ke setiap modul detail.
+                </p> -->
+            </div>
+        </div>
 
-<?= $this->section('content') ?>
+        <?php if (!empty($quickLinks)) : ?>
+            <div class="quick-links">
+                <?php foreach ($quickLinks as $module) : ?>
+                    <a class="quick-link" href="<?= base_url($module['route']) ?>">
+                        <i class="<?= esc($module['icon']) ?>"></i>
+                        <span><?= esc($module['label']) ?></span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-
-<!-- Page Wrapper -->
-<div id="wrapper">
-
-    <!-- Content Wrapper -->
-    <div id="content-wrapper" class="d-flex flex-column">
-
-        <!-- Main Content -->
-        <div id="content">
-
-            </nav>
-            <!-- End of Topbar -->
-
-            <!-- Begin Page Content -->
-            <div class="container-fluid">
-                <?php if (session()->getFlashdata('success')): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <?= session()->getFlashdata('success') ?>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+    <div class="row">
+        <?php foreach ($summaryCards as $card) : ?>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="summary-card">
+                    <div class="summary-label">
+                        <span><?= esc($card['label']) ?></span>
+                        <span class="summary-icon bg-<?= esc($card['accent']) ?>">
+                            <i class="<?= esc($card['icon']) ?>"></i>
+                        </span>
                     </div>
-                <?php endif; ?>
-                <?php if (session()->getFlashdata('error')): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <?= session()->getFlashdata('error') ?>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                <?php endif; ?>
-
-                <!-- DataTales Example -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <?php if (session()->get('role') == 'gudang') { ?>
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <a href="#" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addDataModal">
-                                    <i class="fas fa-plus"></i> Tambah Data
-                                </a>
-                                <a href="<?= base_url('export/dashboard') ?>" class="btn btn-success btn-sm">
-                                    <i class="fas fa-file-excel"></i> Export
-                                </a>
-
-                            </h6>
-                        <?php } else { ?>
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <a href="<?= base_url('export/dashboard') ?>" class="btn btn-success btn-sm">
-                                    <i class="fas fa-file-excel"></i> Export
-                                </a>
-                            </h6>
-                        <?php } ?>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <h6 class="m-0 font-weight-bold text-primary text-center mb-3">Laporan Stok Harian</h6>
-
-                            <table class="table table-sm table-bordered text-center">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th class="small">No SPK</th>
-                                        <th class="small">Polycarbonate</th>
-                                        <th class="small">Sisa PO</th>
-                                        <th class="small">Hold</th>
-                                        <th class="small">Gumpalan</th>
-                                        <th class="small">Tanggal</th>
-                                        <th class="small">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (!empty($gudang)) : ?>
-                                        <?php foreach ($gudang as $p): ?>
-                                            <tr>
-                                                <td><?= !empty($p['no_spk']) ? esc($p['no_spk']) : '-' ?></td>
-                                                <td><?= !empty($p['polycarbonate']) ? esc($p['polycarbonate']) : '-' ?></td>
-                                                <td><?= !empty($p['sisa_po']) ? esc($p['sisa_po']) : '-' ?></td>
-                                                <td><?= !empty($p['hold']) ? esc($p['hold']) : '-' ?></td>
-                                                <td><?= !empty($p['gumpalan']) ? esc($p['gumpalan']) : '-' ?></td>
-                                                <td width="9%">
-                                                    <span>
-                                                        <?php
-                                                        if (!empty($p['tanggal'])) {
-                                                            $date = new DateTime($p['tanggal']);
-                                                            $formatter = new IntlDateFormatter(
-                                                                'id_ID',
-                                                                IntlDateFormatter::LONG, // Format: 16 Maret 2026
-                                                                IntlDateFormatter::NONE  // Tanpa waktu (Jam)
-                                                            );
-                                                            echo esc($formatter->format($date));
-                                                        } else {
-                                                            echo '-';
-                                                        }
-                                                        ?>
-                                                    </span>
-                                                </td>
-
-
-                                                <td class="text-center small" width="7%">
-                                                    <?php if (session()->get('role') == 'gudang') { ?>
-                                                        <div class="d-flex gap-1 justify-content-center">
-
-                                                            <a href="#"
-                                                                class="btn btn-warning btn-sm btnEdit"
-                                                                data-id="<?= $p['id'] ?>"
-                                                                data-no_spk="<?= $p['no_spk'] ?>"
-                                                                data-polycarbonate="<?= $p['polycarbonate'] ?>"
-                                                                data-sisa_po="<?= $p['sisa_po'] ?>"
-                                                                data-hold="<?= $p['hold'] ?>"
-                                                                data-gumpalan="<?= $p['gumpalan'] ?? '' ?>"
-                                                                data-tanggal="<?= $p['tanggal'] ?? '' ?>"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#modalEdit">
-                                                                <i class="fas fa-edit small"></i>
-                                                            </a>
-
-                                                            <a href="#"
-                                                                class="btn btn-danger btn-sm"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#modalDelete"
-                                                                data-id="<?= $p['id'] ?>">
-                                                                <i class="fas fa-trash"></i>
-                                                            </a>
-
-                                                        </div>
-                                                    <?php } else { ?> - <?php } ?>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-
-                                    <?php else : ?>
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted">
-                                                Data gudang kosong
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="summary-value"><?= esc($card['value']) ?></div>
+                    <p class="summary-note"><?= esc($card['note']) ?></p>
                 </div>
             </div>
-            <!-- /.container-fluid -->
+        <?php endforeach; ?>
+    </div>
 
+    <div class="section-head mt-2">
+        <div>
+            <h2 class="section-title">Ringkasan Material Gudang</h2>
+            <p class="section-subtitle">Bahan baku, packaging, masterbatch, reject, stiker, dan item gudang lainnya.</p>
         </div>
-        <!-- End of Main Content -->
+    </div>
 
-        <!-- Modal Tambah Data -->
-        <div class="modal fade" id="addDataModal" tabindex="-1" role="dialog" aria-labelledby="addDataModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-primary acordion-header" id="addDataModalLabel">Tambah Data Gudang</h5>
-                        <button class="close acordion-button" type="button" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-
-                    <form method="POST" action="<?= base_url('gudang/tambahData') ?>">
-                        <?= csrf_field() ?>
-
-                        <div class="modal-body">
-
-                            <div class="accordion" id="accordionGudang">
-
-
-
-                                <!-- ================= TAMBAH MATERIAL ================= -->
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#material">
-                                            Stok Gudang
-                                        </button>
-                                    </h2>
-
-                                    <div id="material" class="accordion-collapse collapse" data-bs-parent="#accordionGudang">
-                                        <div class="accordion-body">
-
-                                            <div class="form-row">
-                                                <div class="form-group col-md-4">
-                                                    <label>No SPK</label>
-                                                    <input type="text" class="form-control" name="no_spk">
-                                                </div>
-
-                                                <div class="form-group col-md-4">
-                                                    <label>Polycarbonate</label>
-                                                    <div class="input-group">
-                                                        <input type="number" class="form-control" name="polycarbonate">
-                                                        <span class="input-group-text">kg</span>
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-group col-md-4">
-                                                    <label>Tanggal</label>
-                                                    <input type="date" class="form-control" name="tanggal">
-                                                </div>
-
-                                                <div class="form-group col-md-4">
-                                                    <label>Sisa PO</label>
-                                                    <input type="text" class="form-control" name="sisa_po">
-                                                </div>
-                                                <div class="form-group col-md-4">
-                                                    <label>Hold</label>
-                                                    <input type="text" class="form-control" name="hold">
-                                                </div>
-                                                <div class="form-group col-md-4">
-                                                    <label>Gumpalan</label>
-                                                    <input type="text" class="form-control" name="gumpalan">
-                                                </div>
-
-
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                </div>
+    <div class="row">
+        <?php foreach ($materialModules as $module) : ?>
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="module-card d-flex flex-column">
+                    <div class="module-top">
+                        <div>
+                            <div class="module-title"><?= esc($module['label']) ?></div>
+                            <div class="module-meta">
+                                <?= !empty($module['available']) ? 'Tabel aktif' : 'Tabel belum tersedia' ?>
                             </div>
-
                         </div>
-
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" type="button" data-dismiss="modal">Batal</button>
-                            <button class="btn btn-primary" type="submit">Simpan</button>
+                        <div class="module-icon bg-<?= esc($module['accent']) ?>">
+                            <i class="<?= esc($module['icon']) ?>"></i>
                         </div>
+                    </div>
 
-                    </form>
+                    <div class="module-metrics">
+                        <div class="metric-box">
+                            <small>Total Record</small>
+                            <strong><?= esc($formatNumber($module['record_count'] ?? 0)) ?></strong>
+                        </div>
+                        <div class="metric-box">
+                            <small>Total Qty</small>
+                            <strong>
+                                <?= !empty($module['has_quantity']) ? esc($formatNumber($module['quantity_total'] ?? 0)) : '-' ?>
+                            </strong>
+                        </div>
+                        <div class="metric-box">
+                            <small>Item Terakhir</small>
+                            <strong><?= esc($module['latest_item'] ?? '-') ?></strong>
+                        </div>
+                        <div class="metric-box">
+                            <small>Update Terakhir</small>
+                            <strong><?= esc($formatTimestamp($module['latest_timestamp'] ?? 0)) ?></strong>
+                        </div>
+                    </div>
 
+                    <div class="module-footer">
+                        <p class="module-empty mb-0">
+                            SPK: <?= esc($module['latest_spk'] ?? '-') ?> | Shift: <?= esc($module['latest_shift'] ?? '-') ?>
+                        </p>
+                        <a class="module-link text-<?= esc($module['accent']) ?>" href="<?= base_url($module['route']) ?>">
+                            Buka detail <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-
+        <?php endforeach; ?>
     </div>
-    <!-- End of Content Wrapper -->
 
-</div>
-<!-- End of Page Wrapper -->
-
-<!-- modal edit -->
-<div class="modal fade" id="modalEdit" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="formEdit" action="<?= base_url('gudang/update') ?>" method="post">
-                <?= csrf_field() ?>
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Data Gudang</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="id" id="edit_id">
-
-                    <div class="mb-3">
-                        <label>No. SPK</label>
-                        <input type="text" name="no_spk" id="edit_no_spk" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label>Polycarbonate</label>
-                        <input type="text" name="polycarbonate" id="edit_polycarbonate" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label>Sisa PO</label>
-                        <input type="text" name="sisa_po" id="edit_sisa_po" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label>hold</label>
-                        <input type="text" name="hold" id="edit_hold" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label>gumpalan</label>
-                        <input type="text" name="gumpalan" id="edit_gumpalan" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label>Tanggal</label>
-                        <input type="date" name="tanggal" id="edit_tanggal" class="form-control">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Update</button>
-                </div>
-            </form>
+    <div class="section-head mt-2">
+        <div>
+            <h2 class="section-title">Monitoring Mesin</h2>
+            <p class="section-subtitle">Pantauan stok hasil mesin Becum, Powerjet, CCM, dan IPS.</p>
         </div>
     </div>
-</div>
-<!-- end modal edit -->
 
-<!-- Scroll to Top Button-->
-<a class="scroll-to-top rounded" href="#page-top">
-    <i class="fas fa-angle-up"></i>
-</a>
+    <div class="row">
+        <?php foreach ($machineModules as $module) : ?>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="module-card d-flex flex-column">
+                    <div class="module-top">
+                        <div>
+                            <div class="module-title"><?= esc($module['label']) ?></div>
+                            <div class="module-meta">
+                                <?= !empty($module['available']) ? 'Monitoring aktif' : 'Tabel belum tersedia' ?>
+                            </div>
+                        </div>
+                        <div class="module-icon bg-<?= esc($module['accent']) ?>">
+                            <i class="<?= esc($module['icon']) ?>"></i>
+                        </div>
+                    </div>
 
-<!-- modal delete -->
-<div class="modal fade" id="modalDelete" tabindex="-1">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Konfirmasi Hapus</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="module-metrics">
+                        <div class="metric-box">
+                            <small>Total Record</small>
+                            <strong><?= esc($formatNumber($module['record_count'] ?? 0)) ?></strong>
+                        </div>
+                        <div class="metric-box">
+                            <small>Total Stock</small>
+                            <strong>
+                                <?= !empty($module['has_quantity']) ? esc($formatNumber($module['quantity_total'] ?? 0)) : '-' ?>
+                            </strong>
+                        </div>
+                        <div class="metric-box">
+                            <small>Produk Terakhir</small>
+                            <strong><?= esc($module['latest_item'] ?? '-') ?></strong>
+                        </div>
+                        <div class="metric-box">
+                            <small>Update Terakhir</small>
+                            <strong><?= esc($formatTimestamp($module['latest_timestamp'] ?? 0)) ?></strong>
+                        </div>
+                    </div>
+
+                    <div class="module-footer">
+                        <p class="module-empty mb-0">
+                            SPK: <?= esc($module['latest_spk'] ?? '-') ?> | Shift: <?= esc($module['latest_shift'] ?? '-') ?>
+                        </p>
+                        <a class="module-link text-<?= esc($module['accent']) ?>" href="<?= base_url($module['route']) ?>">
+                            Buka detail <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
+        <?php endforeach; ?>
+    </div>
 
-            <form id="formDelete" method="post">
-                <?= csrf_field() ?>
-                <input type="hidden" name="_method" value="DELETE">
-
-                <div class="modal-body">
-                    <p>Yakin ingin menghapus data ini?</p>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                </div>
-            </form>
+    <div class="section-head mt-2">
+        <div>
+            <h2 class="section-title">Aktivitas Terbaru</h2>
+            <p class="section-subtitle">Snapshot update terbaru dari seluruh modul gudang.</p>
         </div>
     </div>
+
+    <div class="activity-card mb-4">
+        <?php if (!empty($recentActivities)) : ?>
+            <div class="table-responsive">
+                <table class="table activity-table">
+                    <thead>
+                        <tr>
+                            <th>Modul</th>
+                            <th>Item</th>
+                            <th>Qty / Stock</th>
+                            <th>SPK</th>
+                            <th>Shift</th>
+                            <th>Waktu</th>
+                            <th class="text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($recentActivities as $activity) : ?>
+                            <tr>
+                                <td><span class="badge-soft"><?= esc($activity['module_label']) ?></span></td>
+                                <td><?= esc($activity['item_label'] ?? '-') ?></td>
+                                <td><?= $activity['quantity'] !== null && $activity['quantity'] !== '' ? esc($formatNumber($activity['quantity'])) : '-' ?></td>
+                                <td><?= esc($activity['spk'] ?? '-') ?></td>
+                                <td><?= esc($activity['shift'] ?? '-') ?></td>
+                                <td><?= esc($formatTimestamp($activity['timestamp'] ?? 0)) ?></td>
+                                <td class="text-right">
+                                    <a href="<?= base_url($activity['route']) ?>" class="btn btn-sm btn-outline-primary">
+                                        Lihat
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else : ?>
+            <div class="text-center py-4 text-muted">
+                Belum ada aktivitas yang bisa ditampilkan dari modul gudang.
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
-<!-- end modal delete -->
-
-
-<!-- js modal delete -->
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const modalDelete = document.getElementById('modalDelete');
-
-        modalDelete.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const id = button.getAttribute('data-id');
-
-            const form = document.getElementById('formDelete');
-            form.action = "<?= base_url('gudang/delete/') ?>" + id;
-        });
-    });
-</script>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Bootstrap core JavaScript-->
-<script src="vendor/jquery/jquery.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-<!-- Core plugin JavaScript-->
-<script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-
-<!-- Custom scripts for all pages-->
-<script src="js/sb-admin-2.min.js"></script>
-
-<!-- Page level plugins -->
-<script src="vendor/datatables/jquery.dataTables.min.js"></script>
-<script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
-<!-- Page level custom scripts -->
-<script src="js/demo/datatables-demo.js"></script>
-
-<!-- edit table -->
-<script>
-    window.addEventListener('load', function() {
-        if (!window.jQuery) return;
-
-        $('#modalDelete').on('show.bs.modal', function(event) {
-            const button = $(event.relatedTarget);
-            const id = button.data('id');
-            $('#formDelete').attr('action', "<?= base_url('gudang/delete/') ?>" + id);
-        });
-
-        $('.btnEdit').on('click', function() {
-            const id = $(this).data('id');
-            $('#edit_id').val(id);
-            $('#edit_no_spk').val($(this).data('no_spk'));
-            $('#edit_polycarbonate').val($(this).data('polycarbonate'));
-            $('#edit_sisa_po').val($(this).data('sisa_po'));
-            $('#edit_hold').val($(this).data('hold'));
-            $('#edit_gumpalan').val($(this).data('gumpalan'));
-            $('#edit_tanggal').val($(this).data('tanggal'));
-
-            $('#formEdit').attr('action', "<?= base_url('gudang/update/') ?>" + id);
-        });
-    });
-
-    // paksa close 
-    document.querySelectorAll('.btn-close, .btn-batal').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-
-            document.querySelectorAll('.modal-backdrop').forEach(function(el) {
-                el.remove();
-            });
-
-            document.body.classList.remove('modal-open');
-            document.body.style = "";
-
-        });
-    });
-</script>
-
-<!-- js detail rijek -->
-<script>
-    let daftarReject = [
-        'start_up', 'karantina', 'trial', 'camera', 'button_putih',
-        'oval', 'flashing', 'short_shoot', 'kotor', 'beda_warna',
-        'sampling_qc', 'kontaminasi', 'black_spot', 'gosong',
-        'struktur_tdk_std', 'inject_poin_tdk_std',
-        'bolong', 'bubble', 'berair', 'neck_panjang'
-    ];
-
-    function tambahBaris() {
-
-        let html = `
-        <div class="row mb-2 align-items-center" id="row_${Date.now()}">
-            <div class="col-md-5">
-                <select class="form-select" name="jenis_reject[]">
-                    <option value="">-- Pilih Reject --</option>
-                    ${daftarReject.map(r => 
-                        `<option value="${r}">${r.replaceAll('_',' ').toUpperCase()}</option>`
-                    ).join('')}
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <input type="number" class="form-control" name="jumlah_reject[]" placeholder="Jumlah">
-            </div>
-
-            <div class="col-md-2">
-                <button type="button" class="btn btn-danger w-100" onclick="this.closest('.row').remove()">
-                    Hapus
-                </button>
-            </div>
-        </div>
-    `;
-
-        document.getElementById("containerReject")
-            .insertAdjacentHTML("beforeend", html);
-    }
-
-    // otomatis tambah 1 baris saat pertama buka
-    tambahBaris();
-</script>
-
-<!-- js detail jam produksi -->
-<!-- <script>
-    let daftarJam = [
-        "06-07", "07-08", "08-09", "09-10",
-        "10-11", "11-12", "12-13", "13-14"
-    ];
-
-    function tambahJam() {
-
-        let html = `
-        <div class="row mb-2 align-items-center">
-            <div class="col-md-4">
-                <select class="form-select" name="jam[]">
-                    <option value="">-- Pilih Jam --</option>
-                    ${daftarJam.map(j => `<option value="${j}">${j}</option>`).join('')}
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <input type="number" class="form-control" name="hasil_produksi[]" placeholder="Hasil Produksi">
-            </div>
-
-            <div class="col-md-2">
-                <button type="button" class="btn btn-danger w-100" onclick="this.closest('.row').remove()">
-                    Hapus
-                </button>
-            </div>
-        </div>
-    `;
-
-        document.getElementById("containerJam")
-            .insertAdjacentHTML("beforeend", html);
-    }
-
-    // otomatis tampil 1 baris saat buka
-    tambahJam();
-</script> -->
-
-<!-- form submits normally (CSRF handled by <?= "csrf_field()" ?>) -->
-
-
 
 <?= $this->endSection() ?>

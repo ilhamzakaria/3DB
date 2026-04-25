@@ -1,0 +1,1 @@
+<?php namespace App\Models; use CodeIgniter\Model; class MRejectProduksi extends Model { protected $table = 'reject_produksi'; protected $primaryKey = 'id'; protected $allowedFields = ['produk', 'nama_limbah', 'jenis_limbah', 'status', 'kode', 'jumlah', 'nomor_lot', 'no_spk', 'shif', 'tanggal', 'created_at', 'updated_at']; protected $useTimestamps = true; }

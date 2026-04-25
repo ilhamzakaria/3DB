@@ -18,9 +18,16 @@ class Produksi extends BaseController
     {
         $id_user = session()->get('id_user');
         $role = session()->get('role');
+        $q = trim((string) $this->request->getGet('q'));
+        $startDate = $this->request->getGet('start_date');
+        $endDate = $this->request->getGet('end_date');
 
         if (!$id_user) {
             return redirect()->to('/login');
+        }
+
+        if (!empty($startDate) && !empty($endDate) && $endDate < $startDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
         }
 
         $query = $this->MProd;
@@ -30,13 +37,46 @@ class Produksi extends BaseController
             $query = $query->where('id_user', $id_user);
         }
 
+        if ($q !== '') {
+            $query = $query->groupStart()
+                ->like('jam', $q)
+                ->orLike('hasil_produksi', $q)
+                ->orLike('no_spk', $q)
+                ->orLike('nama_mesin', $q)
+                ->orLike('nama_produk', $q)
+                ->orLike('batch_number', $q)
+                ->orLike('shif', $q)
+                ->orLike('grup', $q)
+                ->orLike('nomor_mesin', $q)
+                ->orLike('packing', $q)
+                ->orLike('isi', $q)
+                ->orLike('cycle_time', $q)
+                ->orLike('target', $q)
+                ->orLike('operator', $q)
+                ->groupEnd();
+        }
+
+        if (!empty($startDate)) {
+            $query = $query->where('tanggal >=', $startDate);
+        }
+
+        if (!empty($endDate)) {
+            $query = $query->where('tanggal <=', $endDate);
+        }
+
         $produksi = $query
-            ->orderBy('tanggal', 'DESC')->orderBy('shif', 'DESC')
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('shif', 'DESC')
+            ->orderBy('id', 'DESC')
             ->findAll();
 
         return view('produksi', [
             'title' => 'produksi',
-            'produksi' => $produksi
+            'produksi' => $produksi,
+            'spk_master' => $this->getSpkMasterData(),
+            'q' => $q,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
         ]);
     }
 
@@ -54,19 +94,9 @@ class Produksi extends BaseController
         $jenis  = $this->request->getPost('jenis_reject');
         $jumlah = $this->request->getPost('jumlah_reject');
 
-        // Data utama
-        $data = [
-            'id_user'      => $id_user,
-            'jam'          => $this->request->getPost('jam'),
-            'hasil_produksi' => $this->request->getPost('hasil_produksi'),
-            'no_spk'       => $this->request->getPost('no_spk'),
-            'nama_mesin'   => $this->request->getPost('nama_mesin'),
-            'nama_produk'  => $this->request->getPost('nama_produk'),
-            'shif'         => $this->request->getPost('shif'),
-            'operator'     => $this->request->getPost('operator'),
-            'target'       => $this->request->getPost('target'),
-            'tanggal'      => $this->request->getPost('tanggal'),
-        ];
+        $data = array_merge([
+            'id_user' => $id_user,
+        ], $this->collectProduksiPayload());
 
         // Mapping reject dinamis ke kolom database
         if (!empty($jenis)) {
@@ -134,18 +164,7 @@ class Produksi extends BaseController
 
     public function update($id)
     {
-        $data = [
-            'jam'          => $this->request->getPost('jam'),
-            'hasil_produksi' => $this->request->getPost('hasil_produksi'),
-            'no_spk'       => $this->request->getPost('no_spk'),
-            'nama_mesin'   => $this->request->getPost('nama_mesin'),
-            'nama_produk'  => $this->request->getPost('nama_produk'),
-            'shif'         => $this->request->getPost('shif'),
-            'operator'     => $this->request->getPost('operator'),
-            'target'       => $this->request->getPost('target'),
-            // 'revisi'       => $this->request->getPost('revisi'),
-            'tanggal'      => $this->request->getPost('tanggal'),
-        ];
+        $data = $this->collectProduksiPayload();
 
         $this->MProd->update($id, $data);
         return redirect()->to('/produksi')->with('success', 'Data berhasil diubah');
@@ -198,5 +217,121 @@ class Produksi extends BaseController
 
         echo "</table>";
         exit;
+    }
+
+    private function getSpkMasterData(): array
+    {
+        $master = [];
+
+        try {
+            $ppicRows = db_connect()
+                ->table('ppic')
+                ->select('no_spk, nama_mesin, nama_produk, shif, operator, targett, tanggal, id')
+                ->orderBy('tanggal', 'DESC')
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->getResultArray();
+        } catch (\Throwable $e) {
+            $ppicRows = [];
+        }
+
+        $prodRows = $this->MProd
+            ->select('no_spk, nama_mesin, nama_produk, batch_number, shif, grup, nomor_mesin, packing, isi, cycle_time, target, operator, tanggal, id')
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->findAll();
+
+        $latestProdBySpk = [];
+        foreach ($prodRows as $row) {
+            $noSpk = trim((string) ($row['no_spk'] ?? ''));
+            if ($noSpk === '' || isset($latestProdBySpk[$noSpk])) {
+                continue;
+            }
+
+            $latestProdBySpk[$noSpk] = [
+                'nama_mesin' => trim((string) ($row['nama_mesin'] ?? '')),
+                'nama_produk' => trim((string) ($row['nama_produk'] ?? '')),
+                'batch_number' => trim((string) ($row['batch_number'] ?? '')),
+                'shif' => trim((string) ($row['shif'] ?? '')),
+                'grup' => trim((string) ($row['grup'] ?? '')),
+                'nomor_mesin' => trim((string) ($row['nomor_mesin'] ?? '')),
+                'packing' => trim((string) ($row['packing'] ?? '')),
+                'isi' => trim((string) ($row['isi'] ?? '')),
+                'cycle_time' => trim((string) ($row['cycle_time'] ?? '')),
+                'target' => trim((string) ($row['target'] ?? '')),
+                'operator' => trim((string) ($row['operator'] ?? '')),
+                'tanggal' => trim((string) ($row['tanggal'] ?? '')),
+            ];
+        }
+
+        foreach ($ppicRows as $row) {
+            $noSpk = trim((string) ($row['no_spk'] ?? ''));
+            if ($noSpk === '' || isset($master[$noSpk])) {
+                continue;
+            }
+
+            $master[$noSpk] = array_merge([
+                'no_spk' => $noSpk,
+                'nama_mesin' => trim((string) ($row['nama_mesin'] ?? '')),
+                'nama_produk' => trim((string) ($row['nama_produk'] ?? '')),
+                'shif' => trim((string) ($row['shif'] ?? '')),
+                'batch_number' => '',
+                'grup' => '',
+                'nomor_mesin' => '',
+                'packing' => '',
+                'isi' => '',
+                'cycle_time' => '',
+                'target' => trim((string) ($row['targett'] ?? '')),
+                'tanggal' => trim((string) ($row['tanggal'] ?? '')),
+                'operator' => trim((string) ($row['operator'] ?? '')),
+            ], $latestProdBySpk[$noSpk] ?? []);
+        }
+
+        foreach ($latestProdBySpk as $noSpk => $values) {
+            if (isset($master[$noSpk])) {
+                continue;
+            }
+
+            $master[$noSpk] = array_merge([
+                'no_spk' => $noSpk,
+                'nama_mesin' => '',
+                'nama_produk' => '',
+                'batch_number' => '',
+                'shif' => '',
+                'grup' => '',
+                'nomor_mesin' => '',
+                'packing' => '',
+                'isi' => '',
+                'cycle_time' => '',
+                'target' => '',
+                'tanggal' => '',
+                'operator' => '',
+            ], $values);
+        }
+
+        ksort($master, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return array_values($master);
+    }
+
+    private function collectProduksiPayload(): array
+    {
+        return [
+            'nama_mesin' => $this->request->getPost('nama_mesin'),
+            'nama_produk' => $this->request->getPost('nama_produk'),
+            'batch_number' => $this->request->getPost('batch_number'),
+            'shif' => $this->request->getPost('shif'),
+            'grup' => $this->request->getPost('grup'),
+            'nomor_mesin' => $this->request->getPost('nomor_mesin'),
+            'packing' => $this->request->getPost('packing'),
+            'isi' => $this->request->getPost('isi'),
+            'cycle_time' => $this->request->getPost('cycle_time'),
+            'target' => $this->request->getPost('target'),
+            'no_spk' => $this->request->getPost('no_spk'),
+            'operator' => $this->request->getPost('operator'),
+            'jam' => $this->request->getPost('jam'),
+            'hasil_produksi' => $this->request->getPost('hasil_produksi'),
+            'tanggal' => $this->request->getPost('tanggal'),
+        ];
     }
 }

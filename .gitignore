@@ -1,0 +1,8 @@
+/vendor/
+/writable/
+/.env
+/env
+/public/uploads/
+/scratch/
+*.log
+/tests/_support/_generated/

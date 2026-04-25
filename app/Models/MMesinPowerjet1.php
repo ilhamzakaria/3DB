@@ -1,0 +1,1 @@
+<?php namespace App\Models; use CodeIgniter\Model; class MMesinPowerjet1 extends Model { protected $table = 'mesin_powerjet1'; protected $primaryKey = 'id'; protected $allowedFields = ['produk_cap_galon', 'brand', 'warna', 'packaging', 'stock', 'no_spk', 'shif', 'tanggal', 'created_at', 'updated_at']; protected $useTimestamps = true; }

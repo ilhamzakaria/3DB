@@ -2,22 +2,39 @@
 
 namespace App\Controllers;
 
-use App\Models\MProd;
+use App\Models\MProduksiHeader;
 use App\Models\MGudang;
 use App\Models\MPpic;
 use App\Models\MRevisi;
 
 class Home extends BaseController
 {
-    protected $MProd;
+    protected $MProduksiHeader;
     protected $MGudang;
     protected $MPpic;
     protected $MRevisi;
     protected ?bool $hasRevisiTable = null;
 
+    private const KOMPONEN_FIELDS = [
+        'bahan_baku',
+        'box',
+        'karung',
+        'plastik',
+        'masterbatch',
+        'galon_reject_supplier',
+        'galon_reject_produksi',
+        'gilingan_reject_supplier',
+        'gilingan_reject_produksi',
+        'stiker',
+        'reject_preform',
+        'bekuat_pet',
+        'bekuan_capgalon',
+        'gilingan_screwcap',
+    ];
+
     public function __construct()
     {
-        $this->MProd = new MProd();
+        $this->MProduksiHeader = new MProduksiHeader();
         $this->MGudang = new MGudang();
         $this->MPpic = new MPpic();
         $this->MRevisi = new MRevisi();
@@ -26,86 +43,242 @@ class Home extends BaseController
 
     public function index()
     {
-        return $this->renderHome();
-    }
+        $filters = $this->collectHomeFilters();
+        [$ppic, $produksi, $gudang] = $this->getHomeData($filters);
 
-    public function mesin1()
-    {
-        return $this->renderHome('mesin1');
-    }
-
-    public function mesin2()
-    {
-        return $this->renderHome('mesin2');
-    }
-
-    private function renderHome(?string $mesin = null)
-    {
-        [$ppic, $produksi, $gudang] = $this->getHomeData($mesin);
+        // Extract unique values for column filters from the FULL dataset (before view-level pagination if any)
+        $uniqueValues = $this->extractUniqueValuesForFilters($ppic, $produksi, $gudang);
 
         return view('home', [
             'title' => 'Data PPIC, Produksi & Gudang',
             'ppic' => $ppic,
             'produksi' => $produksi,
             'gudang' => $gudang,
-            'active_mesin' => $mesin,
+            'q' => $filters['q'],
+            'periode' => $filters['periode'],
+            'tanggal' => $filters['tanggal'],
+            'start_date' => $filters['start_date'],
+            'end_date' => $filters['end_date'],
+            'col_filter' => $filters['col_filter'],
+            'unique_values' => $uniqueValues,
         ]);
     }
 
-    private function getHomeData(?string $mesin = null): array
+    private function collectHomeFilters(): array
     {
-        // Data berdasarkan inputan masing-masing departemen (tidak di-join)
-        $ppic = $this->MPpic->orderBy('tanggal', 'DESC')->orderBy('shif', 'ASC')->findAll();
-        $produksi = $this->MProd->orderBy('tanggal', 'DESC')->orderBy('shif', 'DESC')->findAll();
-        $gudang = $this->MGudang->orderBy('tanggal', 'DESC')->findAll();
-        $ppic = $this->attachRevisiData($ppic);
+        $q = trim((string) $this->request->getGet('q'));
+        $periode = trim((string) $this->request->getGet('periode'));
+        $tanggal = trim((string) $this->request->getGet('tanggal'));
+        $startDate = trim((string) $this->request->getGet('start_date'));
+        $endDate = trim((string) $this->request->getGet('end_date'));
+        $colFilter = $this->request->getGet('col_filter') ?? [];
 
-        if (empty($mesin)) {
-            return [$ppic, $produksi, $gudang];
+        if ($startDate !== '' && $endDate !== '' && $endDate < $startDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
         }
 
-        $normalizedTarget = $this->normalizeMesinValue($mesin);
+        return [
+            'q' => $q,
+            'periode' => $periode,
+            'tanggal' => $tanggal,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'col_filter' => $colFilter,
+        ];
+    }
 
-        $ppic = array_values(array_filter($ppic, function ($row) use ($normalizedTarget) {
-            return $this->isMesinMatch($row['nama_mesin'] ?? '', $normalizedTarget);
-        }));
+    private function getHomeData(array $filters = []): array
+    {
+        $q = trim((string) ($filters['q'] ?? ''));
+        $periode = trim((string) ($filters['periode'] ?? ''));
+        $tanggal = trim((string) ($filters['tanggal'] ?? ''));
+        $startDate = trim((string) ($filters['start_date'] ?? ''));
+        $endDate = trim((string) ($filters['end_date'] ?? ''));
 
-        $produksi = array_values(array_filter($produksi, function ($row) use ($normalizedTarget) {
-            return $this->isMesinMatch($row['nama_mesin'] ?? '', $normalizedTarget);
-        }));
+        $builderPpic = $this->MPpic;
+        $builderProd = $this->MProduksiHeader;
+        $builderGudang = $this->MGudang;
 
-        // Gudang tidak menyimpan nama_mesin, jadi dipetakan lewat no_spk yang terkait mesin terpilih.
-        $spkList = array_unique(array_filter(array_merge(
-            array_column($ppic, 'no_spk'),
-            array_column($produksi, 'no_spk')
-        )));
+        if ($q !== '') {
+            $builderPpic->groupStart()
+                ->like('no_spk', $q)
+                ->orLike('nama_mesin', $q)
+                ->orLike('nama_produk', $q)
+                ->orLike('operator', $q)
+                ->orLike('shif', $q)
+                ->groupEnd();
 
-        if (!empty($spkList)) {
-            $gudang = array_values(array_filter($gudang, function ($row) use ($spkList) {
-                return in_array($row['no_spk'] ?? null, $spkList, true);
-            }));
-        } else {
-            $gudang = [];
+            $builderProd->groupStart()
+                ->like('nomor_spk', $q)
+                ->orLike('nama_mesin', $q)
+                ->orLike('nama_produksi', $q)
+                ->orLike('operator', $q)
+                ->orLike('shift', $q)
+                ->groupEnd();
+
+            $builderGudang->groupStart()
+                ->like('no_spk', $q)
+                ->orLike('bahan_baku', $q)
+                ->orLike('box', $q)
+                ->orLike('karung', $q)
+                ->orLike('shif', $q)
+                ->groupEnd();
         }
 
-        return [$ppic, $produksi, $gudang];
-    }
+        if ($periode !== '' && $tanggal !== '') {
+            if ($periode === 'hari') {
+                $builderPpic->where('tanggal', $tanggal);
+                $builderProd->where('tanggal', $tanggal);
+                $builderGudang->where('tanggal', $tanggal);
+            }
 
-    private function isMesinMatch(string $namaMesin, string $normalizedTarget): bool
-    {
-        if ($normalizedTarget === '') {
-            return false;
+            if ($periode === 'minggu') {
+                $start = date('Y-m-d', strtotime('monday this week', strtotime($tanggal)));
+                $end = date('Y-m-d', strtotime('sunday this week', strtotime($tanggal)));
+                $builderPpic->where('tanggal >=', $start)->where('tanggal <=', $end);
+                $builderProd->where('tanggal >=', $start)->where('tanggal <=', $end);
+                $builderGudang->where('tanggal >=', $start)->where('tanggal <=', $end);
+            }
+
+            if ($periode === 'bulan') {
+                $month = date('m', strtotime($tanggal));
+                $year = date('Y', strtotime($tanggal));
+
+                $builderPpic->where('MONTH(tanggal)', $month)->where('YEAR(tanggal)', $year);
+                $builderProd->where('MONTH(tanggal)', $month)->where('YEAR(tanggal)', $year);
+                $builderGudang->where('MONTH(tanggal)', $month)->where('YEAR(tanggal)', $year);
+            }
         }
 
-        $normalizedMesin = $this->normalizeMesinValue($namaMesin);
-        return $normalizedMesin !== '' && str_contains($normalizedMesin, $normalizedTarget);
+        if ($startDate !== '') {
+            $builderPpic->where('tanggal >=', $startDate);
+            $builderProd->where('tanggal >=', $startDate);
+            $builderGudang->where('tanggal >=', $startDate);
+        }
+
+        if ($endDate !== '') {
+            $builderPpic->where('tanggal <=', $endDate);
+            $builderProd->where('tanggal <=', $endDate);
+            $builderGudang->where('tanggal <=', $endDate);
+        }
+
+        // Apply column-level filters
+        $colFilters = $filters['col_filter'] ?? [];
+        foreach ($colFilters as $col => $values) {
+            if (empty($values)) continue;
+
+            // PPIC filters
+            if (in_array($col, ['nama_mesin', 'nama_produk', 'operator', 'shif'])) {
+                $builderPpic->whereIn($col, $values);
+            }
+
+            // Production filters
+            if (in_array($col, ['nama_mesin', 'nama_produksi', 'operator', 'shift'])) {
+                $builderProd->whereIn($col, $values);
+            }
+
+            // Gudang filters
+            if (in_array($col, ['shif', 'bahan_baku'])) {
+                $builderGudang->whereIn($col, $values);
+            }
+        }
+
+        // Fetch all data
+        $ppicData = $builderPpic->orderBy('tanggal', 'DESC')->orderBy('shif', 'DESC')->findAll();
+        $prodData = $builderProd->orderBy('tanggal', 'DESC')->orderBy('shift', 'DESC')->findAll();
+        
+        // Fetch Gudang details from individual module tables
+        $gudangData = $this->fetchGudangFromModules($filters);
+
+        // Correlation Logic: Merge data by SPK, Date, and Shift
+        $merged = [];
+        
+        // Use PPIC as the base
+        foreach ($ppicData as $p) {
+            $key = $p['no_spk'] . '_' . $p['tanggal'] . '_' . $p['shif'];
+            $merged[$key] = [
+                'ppic' => $p,
+                'produksi' => null,
+                'gudang' => null
+            ];
+        }
+
+        // Add Production data
+        foreach ($prodData as $pr) {
+            $key = $pr['nomor_spk'] . '_' . $pr['tanggal'] . '_' . $pr['shift'];
+            if (!isset($merged[$key])) {
+                $merged[$key] = ['ppic' => null, 'produksi' => $pr, 'gudang' => null];
+            } else {
+                $merged[$key]['produksi'] = $pr;
+            }
+        }
+
+        // Add Gudang data
+        foreach ($gudangData as $g) {
+            $key = $g['no_spk'] . '_' . $g['tanggal'] . '_' . $g['shif'];
+            if (!isset($merged[$key])) {
+                $merged[$key] = ['ppic' => null, 'produksi' => null, 'gudang' => $g];
+            } else {
+                $merged[$key]['gudang'] = $g;
+            }
+        }
+
+
+
+        // Attach revisi to PPIC parts
+        $ppicList = array_filter(array_column($merged, 'ppic'));
+        $ppicList = $this->attachRevisiData($ppicList);
+        
+        // Put back the revisi data
+        foreach ($ppicList as $p) {
+            $key = $p['no_spk'] . '_' . $p['tanggal'] . '_' . $p['shif'];
+            if (isset($merged[$key])) {
+                $merged[$key]['ppic'] = $p;
+            }
+        }
+
+        // Convert merged map back to arrays for the view
+        $finalPpic = [];
+        $finalProd = [];
+        $finalGudang = [];
+
+        foreach ($merged as $item) {
+            $finalPpic[] = $item['ppic'];
+            $finalProd[] = $item['produksi'];
+            $finalGudang[] = $item['gudang'];
+        }
+
+        return [$finalPpic, $finalProd, $finalGudang];
+    }
+    private function extractUniqueValuesForFilters($ppic, $produksi, $gudang): array
+    {
+        $unique = [];
+
+        // Helper to extract unique values from a specific field in a dataset
+        $extract = function($data, $field) {
+            if (empty($data)) return [];
+            return array_values(array_unique(array_filter(array_column($data, $field))));
+        };
+
+        // PPIC unique values
+        $unique['ppic_nama_mesin'] = $extract($ppic, 'nama_mesin');
+        $unique['ppic_nama_produk'] = $extract($ppic, 'nama_produk');
+        $unique['ppic_operator'] = $extract($ppic, 'operator');
+        $unique['ppic_shif'] = $extract($ppic, 'shif');
+
+        // Production unique values
+        $unique['prod_nama_mesin'] = $extract($produksi, 'nama_mesin');
+        $unique['prod_nama_produksi'] = $extract($produksi, 'nama_produksi');
+        $unique['prod_operator'] = $extract($produksi, 'operator');
+        $unique['prod_shift'] = $extract($produksi, 'shift');
+
+        // Gudang unique values
+        $unique['gudang_shif'] = $extract($gudang, 'shif');
+        $unique['gudang_bahan_baku'] = $extract($gudang, 'bahan_baku');
+
+        return $unique;
     }
 
-    private function normalizeMesinValue(string $value): string
-    {
-        $normalized = preg_replace('/[^a-z0-9]/i', '', strtolower(trim($value)));
-        return $normalized ?? '';
-    }
 
     private function attachRevisiData(array $rows): array
     {
@@ -144,6 +317,7 @@ class Home extends BaseController
         foreach ($rows as &$row) {
             $idPpic = (int) ($row['id'] ?? 0);
             $riwayat = $revisiMap[$idPpic] ?? [];
+            $row['revisi_items'] = [];
 
             if (empty($riwayat)) {
                 $row['revisi_display'] = trim((string) ($row['revisi'] ?? ''));
@@ -168,6 +342,17 @@ class Home extends BaseController
                 }
 
                 $parts[] = 'R' . $ke . ': ' . $nilai . $timeLabel;
+                $row['revisi_items'][$ke] = [
+                    'revisi_ke' => $ke,
+                    'nilai' => $nilai,
+                    'tanggal_revisi' => $tanggalRevisi,
+                    'tanggal_label' => !empty($tanggalRevisi) && strtotime($tanggalRevisi) !== false
+                        ? date('d M Y', strtotime($tanggalRevisi))
+                        : '-',
+                    'jam_label' => !empty($tanggalRevisi) && strtotime($tanggalRevisi) !== false
+                        ? date('H:i:s', strtotime($tanggalRevisi))
+                        : '-',
+                ];
             }
 
             if ($lastNilai !== '') {
@@ -245,4 +430,138 @@ class Home extends BaseController
         echo "</table>";
         exit;
     }
+    private function fetchGudangFromModules(array $filters): array
+    {
+        $db = db_connect();
+        $gudangMap = [];
+
+        $addData = function($table, $fieldToUpdate, $filters, $conditionField = null, $conditionValue = null, $dateField = 'created_at') use ($db, &$gudangMap) {
+            if (!$this->tableExists($table)) return;
+
+            $builder = $db->table($table);
+            
+            // Apply dates
+            $tanggal = trim((string) ($filters['tanggal'] ?? ''));
+            $periode = trim((string) ($filters['periode'] ?? ''));
+            $startDate = trim((string) ($filters['start_date'] ?? ''));
+            $endDate = trim((string) ($filters['end_date'] ?? ''));
+
+            if ($periode !== '' && $tanggal !== '') {
+                if ($periode === 'hari') {
+                    $builder->where("DATE($dateField)", $tanggal);
+                }
+                if ($periode === 'minggu') {
+                    $start = date('Y-m-d', strtotime('monday this week', strtotime($tanggal)));
+                    $end = date('Y-m-d', strtotime('sunday this week', strtotime($tanggal)));
+                    $builder->where("DATE($dateField) >=", $start)->where("DATE($dateField) <=", $end);
+                }
+                if ($periode === 'bulan') {
+                    $month = date('m', strtotime($tanggal));
+                    $year = date('Y', strtotime($tanggal));
+                    $builder->where("MONTH($dateField)", $month)->where("YEAR($dateField)", $year);
+                }
+            }
+            if ($startDate !== '') {
+                $builder->where("DATE($dateField) >=", $startDate);
+            }
+            if ($endDate !== '') {
+                $builder->where("DATE($dateField) <=", $endDate);
+            }
+
+            $q = trim((string) ($filters['q'] ?? ''));
+            if ($q !== '') {
+                $builder->groupStart()
+                        ->like('no_spk', $q)
+                        ->orLike('shif', $q)
+                        ->groupEnd();
+            }
+
+            // Apply column-level filters (only shif is safe here as other columns might not exist)
+            $colFilters = $filters['col_filter'] ?? [];
+            if (!empty($colFilters['shif'])) {
+                $builder->whereIn('shif', $colFilters['shif']);
+            }
+
+            if ($conditionField && $conditionValue) {
+                $builder->where($conditionField, $conditionValue);
+            }
+
+            $rows = $builder->get()->getResultArray();
+
+            foreach ($rows as $r) {
+                $spk = trim((string) ($r['no_spk'] ?? ''));
+                $shif = trim((string) ($r['shif'] ?? ''));
+                $date = '';
+                if ($dateField === 'created_at') {
+                    $date = isset($r['created_at']) ? date('Y-m-d', strtotime($r['created_at'])) : '';
+                } else {
+                    $date = isset($r['tanggal']) ? date('Y-m-d', strtotime($r['tanggal'])) : '';
+                }
+                
+                if ($spk === '' || $date === '') continue;
+
+                $key = $spk . '_' . $date . '_' . $shif;
+                
+                if (!isset($gudangMap[$key])) {
+                    $gudangMap[$key] = [
+                        'no_spk' => $spk,
+                        'shif' => $shif,
+                        'tanggal' => $date,
+                        'bahan_baku' => '-',
+                        'box' => '-',
+                        'karung' => '-',
+                        'plastik' => '-',
+                        'masterbatch' => '-',
+                        'galon_reject_supplier' => '-',
+                        'galon_reject_produksi' => '-',
+                        'gilingan_reject_supplier' => '-',
+                        'gilingan_reject_produksi' => '-',
+                        'stiker' => '-',
+                        'reject_preform' => '-',
+                        'bekuat_pet' => '-',
+                        'bekuan_capgalon' => '-',
+                        'gilingan_screwcap' => '-'
+                    ];
+                }
+
+                $val = trim((string) ($r['jumlah'] ?? ''));
+                if ($val !== '') {
+                    if ($gudangMap[$key][$fieldToUpdate] === '-') {
+                        $gudangMap[$key][$fieldToUpdate] = $val;
+                    } else if (is_numeric($gudangMap[$key][$fieldToUpdate]) && is_numeric($val)) {
+                        $gudangMap[$key][$fieldToUpdate] = (string)((float)$gudangMap[$key][$fieldToUpdate] + (float)$val);
+                    } else {
+                        $gudangMap[$key][$fieldToUpdate] = $val;
+                    }
+                }
+            }
+        };
+
+        $addData('bahan_baku', 'bahan_baku', $filters);
+        $addData('packaging', 'box', $filters, 'jenis_packaging', 'box');
+        $addData('packaging', 'karung', $filters, 'jenis_packaging', 'karung');
+        $addData('packaging', 'plastik', $filters, 'jenis_packaging', 'plastik');
+        $addData('masterbatch', 'masterbatch', $filters);
+        $addData('galon_reject', 'galon_reject_supplier', $filters, 'sumber_reject', 'supplier');
+        $addData('galon_reject', 'galon_reject_produksi', $filters, 'sumber_reject', 'produksi');
+        $addData('gilingan_galon', 'gilingan_reject_supplier', $filters, 'sumber_gilingan', 'supplier', 'tanggal');
+        $addData('gilingan_galon', 'gilingan_reject_produksi', $filters, 'sumber_gilingan', 'produksi', 'tanggal');
+        $addData('stiker_gudang', 'stiker', $filters, null, null, 'tanggal');
+        $addData('reject_produksi', 'reject_preform', $filters, 'jenis_limbah', 'reject_preform', 'tanggal');
+        $addData('reject_produksi', 'bekuat_pet', $filters, 'jenis_limbah', 'bekuan_pet', 'tanggal');
+        $addData('reject_produksi', 'bekuan_capgalon', $filters, 'jenis_limbah', 'bekuan_cap_galon', 'tanggal');
+        $addData('reject_produksi', 'gilingan_screwcap', $filters, 'jenis_limbah', 'gilingan_screwcap', 'tanggal');
+
+        return array_values($gudangMap);
+    }
+
+    private function tableExists(string $table): bool
+    {
+        try {
+            return db_connect()->tableExists($table);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
 }
+

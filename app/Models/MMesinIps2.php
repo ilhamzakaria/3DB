@@ -1,0 +1,1 @@
+<?php namespace App\Models; use CodeIgniter\Model; class MMesinIps2 extends Model { protected $table = 'mesin_ips2'; protected $primaryKey = 'id'; protected $allowedFields = ['produk_preform', 'brand', 'warna', 'stock', 'no_spk', 'shif', 'tanggal', 'created_at', 'updated_at']; protected $useTimestamps = true; }

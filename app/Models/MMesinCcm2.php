@@ -1,0 +1,1 @@
+<?php namespace App\Models; use CodeIgniter\Model; class MMesinCcm2 extends Model { protected $table = 'mesin_ccm2'; protected $primaryKey = 'id'; protected $allowedFields = ['produk_cap_galon', 'brand', 'warna', 'packaging', 'stock', 'no_spk', 'shif', 'tanggal', 'created_at', 'updated_at']; protected $useTimestamps = true; }
