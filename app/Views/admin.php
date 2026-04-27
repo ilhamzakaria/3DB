@@ -42,7 +42,7 @@
 <div class="container-fluid">
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Tabel PPIC, Produksi & Gudang</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Tabel PPIC & Gudang</h6>
         </div>
         <div class="card-body">
             <div class="admin-table-wrap">
@@ -50,8 +50,7 @@
                     <thead>
                         <tr>
                             <th colspan="9" class="section-header text-center">PPIC</th>
-                            <th colspan="8" class="section-header text-center">Produksi</th>
-                            <th colspan="5" class="section-header text-center">Gudang</th>
+                            <th colspan="4" class="section-header text-center">Gudang</th>
                         </tr>
                         <tr class="table-light">
                             <!-- PPIC -->
@@ -63,15 +62,6 @@
                             <th>Operator</th>
                             <th>Target</th>
                             <th>Revisi</th>
-                            <th>Tanggal</th>
-                            <!-- Produksi -->
-                            <th>Jam</th>
-                            <th>No SPK</th>
-                            <th>Hasil Produksi</th>
-                            <th>Nama Mesin</th>
-                            <th>Nama Produk</th>
-                            <th>Shift</th>
-                            <th>Operator</th>
                             <th>Tanggal</th>
                             <!-- Gudang -->
                             <th>No SPK</th>
@@ -102,14 +92,6 @@
                                     }
                                     ?>
                                 </td>
-                                <!-- Produksi -->
-                                <td><?= $p['jam'] ?? '-'; ?></td>
-                                <td><?= $p['no_spk'] ?? '-'; ?></td>
-                                <td><?= $p['hasil_produksi'] ?? '-'; ?></td>
-                                <td><?= $p['nama_mesin'] ?? '-'; ?></td>
-                                <td><?= $p['nama_produk'] ?? '-'; ?></td>
-                                <td><?= $p['shif'] ?? $p['shift'] ?? '-'; ?></td>
-                                <td><?= $p['operator'] ?? '-'; ?></td>
                                 <td>
                                     <?php
                                     if (!empty($p['tanggal'])) {

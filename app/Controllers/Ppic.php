@@ -24,20 +24,26 @@ class Ppic extends BaseController
         $q = trim((string) $this->request->getGet('q'));
         $startDate = $this->request->getGet('start_date');
         $endDate = $this->request->getGet('end_date');
+        $filter = $this->request->getGet('filter');
 
-        if (!empty($startDate) && !empty($endDate) && $endDate < $startDate) {
-            // swap agar selalu start <= end
-            [$startDate, $endDate] = [$endDate, $startDate];
+        $builder = $this->MPpic;
+
+        // Time-based filtering
+        if ($filter === 'day') {
+            $builder->where('ppic.tanggal', date('Y-m-d'));
+        } elseif ($filter === 'week') {
+            $builder->where('ppic.tanggal >=', date('Y-m-d', strtotime('-7 days')));
+        } elseif ($filter === 'month') {
+            $builder->where('ppic.tanggal >=', date('Y-m-d', strtotime('-30 days')));
         }
 
-        $builder = $this->MPpic
-            ->select('ppic.*, SUM(prod.hasil_produksi) as hasil_produksi')
-            ->join(
-                'prod',
-                'TRIM(prod.no_spk) = TRIM(ppic.no_spk)
-    AND prod.tanggal = ppic.tanggal',
-                'left'
-            );
+        if (!empty($startDate) && !empty($endDate)) {
+            if ($endDate < $startDate) {
+                [$startDate, $endDate] = [$endDate, $startDate];
+            }
+            $builder->where('ppic.tanggal >=', $startDate);
+            $builder->where('ppic.tanggal <=', $endDate);
+        }
 
         if ($q !== '') {
             $builder->groupStart()
@@ -52,31 +58,25 @@ class Ppic extends BaseController
                 ->groupEnd();
         }
 
-        if (!empty($startDate)) {
-            $builder->where('ppic.tanggal >=', $startDate);
-        }
+        $produksiData = $builder
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('shif', 'DESC')
+            ->orderBy('jam', 'DESC')
+            ->orderBy('id', 'ASC')
+            ->paginate(15, 'ppic');
 
-        if (!empty($endDate)) {
-            $builder->where('ppic.tanggal <=', $endDate);
-        }
-
-        $data['ppic'] = $builder
-            ->groupBy('ppic.id')
-            ->orderBy('ppic.tanggal', 'DESC')
-            ->orderBy('ppic.shif', 'DESC')
-            ->orderBy('ppic.jam', 'DESC')
-            ->orderBy('ppic.id', 'ASC')
-            ->findAll();
-
-        $data['ppic'] = $this->attachRevisiData($data['ppic']);
+        $produksiData = $this->attachProduksiSummary($produksiData);
+        $produksiData = $this->attachRevisiData($produksiData);
 
         return view('ppic', [
-            'title' => 'Laporan PPIC Harian',
-            'produksi' => $data['ppic'],
+            'title'      => 'Laporan PPIC Harian',
+            'produksi'   => $produksiData,
+            'pager'      => $this->MPpic->pager,
             'spk_master' => $this->getSpkMasterData(),
-            'q' => $q,
+            'q'          => $q,
             'start_date' => $startDate,
-            'end_date' => $endDate,
+            'end_date'   => $endDate,
+            'filter'     => $filter,
         ]);
     }
     public function tambahData()
@@ -95,6 +95,8 @@ class Ppic extends BaseController
             1 => trim((string) $this->request->getPost('revisi_1')),
             2 => trim((string) $this->request->getPost('revisi_2')),
             3 => trim((string) $this->request->getPost('revisi_3')),
+            4 => trim((string) $this->request->getPost('revisi_4')),
+            5 => trim((string) $this->request->getPost('revisi_5')),
         ];
 
         // fallback untuk kompatibilitas field revisi lama
@@ -186,7 +188,6 @@ class Ppic extends BaseController
                 }
             }
         }
-
         $this->MPpic->save($data);
         $idPpic = (int) $this->MPpic->getInsertID();
         if ($idPpic > 0) {
@@ -203,7 +204,27 @@ class Ppic extends BaseController
     public function delete($id)
     {
         $this->MPpic->delete($id);
-        return redirect()->to('/ppic')->with('success', 'Data berhasil dihapus');
+        return redirect()->to('/ppic')->with('success', 'Data dipindahkan ke tempat sampah.');
+    }
+
+    public function restore($id)
+    {
+        $db = \Config\Database::connect('ppic');
+        $db->table('ppic')->where('id', $id)->update(['deleted_at' => null]);
+        
+        return redirect()->to('/ppic')->with('success', 'Data berhasil dipulihkan.');
+    }
+
+    public function deletePermanent($id)
+    {
+        $this->MPpic->delete($id, true);
+        return redirect()->to('/ppic')->with('success', 'Data berhasil dihapus permanen.');
+    }
+
+    public function get_trash()
+    {
+        $trash = $this->MPpic->onlyDeleted()->orderBy('deleted_at', 'DESC')->findAll();
+        return $this->response->setJSON($trash);
     }
 
     public function edit($id)
@@ -329,7 +350,7 @@ class Ppic extends BaseController
 
         foreach ($existing as $item) {
             $ke = (int) ($item['revisi_ke'] ?? 0);
-            if ($ke < 1 || $ke > 3) {
+            if ($ke < 1 || $ke > 5) {
                 continue;
             }
             $existingByKe[$ke] = $item;
@@ -338,7 +359,7 @@ class Ppic extends BaseController
             }
         }
 
-        $targetKe = $maxKe > 0 ? min($maxKe + 1, 3) : 1;
+        $targetKe = $maxKe > 0 ? min($maxKe + 1, 5) : 1;
         $now = date('Y-m-d H:i:s');
 
         if (isset($existingByKe[$targetKe])) {
@@ -395,7 +416,7 @@ class Ppic extends BaseController
                 $ke = (int) ($item['revisi_ke'] ?? 0);
                 $nilai = trim((string) ($item['nilai_revisi'] ?? ''));
 
-                return $ke >= 1 && $ke <= 3 && $nilai !== '';
+                return $ke >= 1 && $ke <= 5 && $nilai !== '';
             }));
 
             if (!empty($entries)) {
@@ -431,7 +452,7 @@ class Ppic extends BaseController
             $revisiKe = (int) ($entry['revisi_ke'] ?? 0);
             $nilai = trim((string) ($entry['nilai_revisi'] ?? ''));
 
-            if ($revisiKe < 1 || $revisiKe > 3 || $nilai === '') {
+            if ($revisiKe < 1 || $revisiKe > 5 || $nilai === '') {
                 continue;
             }
 
@@ -476,7 +497,7 @@ class Ppic extends BaseController
             $revisiKe = (int) ($revisi['revisi_ke'] ?? 0);
             $nilai = trim((string) ($revisi['nilai_revisi'] ?? ''));
 
-            if ($idPpic <= 0 || $revisiKe < 1 || $revisiKe > 3 || $nilai === '') {
+            if ($idPpic <= 0 || $revisiKe < 1 || $revisiKe > 5 || $nilai === '') {
                 continue;
             }
 
@@ -528,6 +549,49 @@ class Ppic extends BaseController
         return $rows;
     }
 
+    private function attachProduksiSummary(array $rows): array
+    {
+        if (empty($rows)) {
+            return $rows;
+        }
+
+        $spks = array_unique(array_column($rows, 'no_spk'));
+        $dates = array_unique(array_column($rows, 'tanggal'));
+
+        if (empty($spks) || empty($dates)) {
+            return $rows;
+        }
+
+        $totals = [];
+
+        try {
+            $prodRows = $this->dbProduksi()
+                ->table('prod')
+                ->select('no_spk, tanggal, hasil_produksi')
+                ->whereIn('no_spk', $spks)
+                ->whereIn('tanggal', $dates)
+                ->get()
+                ->getResultArray();
+        } catch (\Throwable $e) {
+            $prodRows = [];
+        }
+
+        foreach ($prodRows as $prodRow) {
+            $noSpk = trim((string) ($prodRow['no_spk'] ?? ''));
+            $tanggal = trim((string) ($prodRow['tanggal'] ?? ''));
+            $key = $noSpk . '|' . $tanggal;
+            $totals[$key] = ($totals[$key] ?? 0) + (int) ($prodRow['hasil_produksi'] ?? 0);
+        }
+
+        foreach ($rows as &$row) {
+            $key = trim((string) ($row['no_spk'] ?? '')) . '|' . trim((string) ($row['tanggal'] ?? ''));
+            $row['hasil_produksi'] = $totals[$key] ?? 0;
+        }
+        unset($row);
+
+        return $rows;
+    }
+
     private function isRevisiTableReady(): bool
     {
         if ($this->hasRevisiTable !== null) {
@@ -535,7 +599,7 @@ class Ppic extends BaseController
         }
 
         try {
-            $this->hasRevisiTable = db_connect()->tableExists('revisi_produksi');
+            $this->hasRevisiTable = $this->dbProduksi()->tableExists('revisi_produksi');
         } catch (\Throwable $e) {
             $this->hasRevisiTable = false;
         }
@@ -585,6 +649,7 @@ class Ppic extends BaseController
             ->select('no_spk, nama_mesin, nama_produk, grade, warna, nomor_mesin, operator, targett, tanggal, id')
             ->orderBy('tanggal', 'DESC')
             ->orderBy('id', 'DESC')
+            ->limit(100)
             ->findAll();
 
         if (empty($rows)) {

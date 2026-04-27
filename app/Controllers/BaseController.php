@@ -42,4 +42,24 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
     }
+
+    protected function dbMaster()
+    {
+        return db_connect('master');
+    }
+
+    protected function dbGudang()
+    {
+        return db_connect('gudang');
+    }
+
+    protected function dbPpic()
+    {
+        return db_connect('ppic');
+    }
+
+    protected function dbProduksi()
+    {
+        return db_connect('produksi');
+    }
 }

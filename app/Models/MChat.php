@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MChat extends Model
+class MChat extends BaseMasterModel
 {
     protected $table = 'chat_messages';
     protected $allowedFields = [

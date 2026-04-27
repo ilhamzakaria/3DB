@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MPackaging extends Model
+class MPackaging extends BaseGudangModel
 {
     protected $table = 'packaging';
     protected $primaryKey = 'id';

@@ -108,7 +108,7 @@ class Gudang extends BaseController
             return $summary;
         }
 
-        $db = db_connect();
+        $db = $this->dbGudang();
         $summary['record_count'] = (int) $db->table($table)->countAllResults();
 
         $quantityField = $config['quantity_field'] ?? null;
@@ -220,7 +220,7 @@ class Gudang extends BaseController
             return [];
         }
 
-        $builder = db_connect()->table($table)->select(implode(', ', $selectColumns));
+        $builder = $this->dbGudang()->table($table)->select(implode(', ', $selectColumns));
 
         foreach (['updated_at', 'created_at', 'tanggal', 'id'] as $orderField) {
             if (in_array($orderField, $columns, true)) {
@@ -267,7 +267,7 @@ class Gudang extends BaseController
         }
 
         try {
-            return db_connect()->getFieldNames($table);
+            return $this->dbGudang()->getFieldNames($table);
         } catch (\Throwable $e) {
             return [];
         }
@@ -387,11 +387,12 @@ class Gudang extends BaseController
         $master = [];
 
         try {
-            $ppicRows = db_connect()
+            $ppicRows = $this->dbPpic()
                 ->table('ppic')
                 ->select('no_spk, tanggal, id')
                 ->orderBy('tanggal', 'DESC')
                 ->orderBy('id', 'DESC')
+                ->limit(100)
                 ->get()
                 ->getResultArray();
         } catch (\Throwable $e) {
@@ -402,6 +403,7 @@ class Gudang extends BaseController
             ->select('no_spk, shif, tanggal, id, bahan_baku, box, karung, plastik, masterbatch, galon_reject_supplier, galon_reject_produksi, gilingan_reject_supplier, gilingan_reject_produksi, stiker, reject_preform, bekuat_pet, bekuan_capgalon, gilingan_screwcap')
             ->orderBy('tanggal', 'DESC')
             ->orderBy('id', 'DESC')
+            ->limit(100)
             ->findAll();
         $gudangRows = $this->hydrateGudangDetails($gudangRows);
 
@@ -609,7 +611,7 @@ class Gudang extends BaseController
     private function tableExists(string $table): bool
     {
         try {
-            return db_connect()->tableExists($table);
+            return $this->dbGudang()->tableExists($table);
         } catch (\Throwable $e) {
             return false;
         }

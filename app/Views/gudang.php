@@ -133,7 +133,7 @@ $quickLinks = array_merge($materialModules, $machineModules);
 
     .gudang-dashboard .summary-card {
         height: 100%;
-        padding: 18px 20px;
+        padding: 14px 16px;
     }
 
     .gudang-dashboard .summary-label {
@@ -141,35 +141,37 @@ $quickLinks = array_merge($materialModules, $machineModules);
         align-items: center;
         justify-content: space-between;
         color: var(--gudang-muted);
-        font-size: 0.88rem;
+        font-size: 0.78rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.05em;
     }
 
     .gudang-dashboard .summary-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         color: #fff;
+        font-size: 0.82rem;
     }
 
     .gudang-dashboard .summary-value {
-        margin-top: 16px;
-        font-size: 1.8rem;
+        margin-top: 12px;
+        font-size: 1.3rem;
         line-height: 1.1;
         font-weight: 700;
         color: var(--gudang-ink);
     }
 
     .gudang-dashboard .summary-note {
-        margin-top: 8px;
+        margin-top: 6px;
         margin-bottom: 0;
         color: var(--gudang-muted);
-        font-size: 0.92rem;
+        font-size: 0.82rem;
+        line-height: 1.35;
     }
 
     .gudang-dashboard .section-head {
@@ -317,6 +319,14 @@ $quickLinks = array_merge($materialModules, $machineModules);
 
         .gudang-dashboard .hero-title {
             font-size: 1.6rem;
+        }
+
+        .gudang-dashboard .summary-card {
+            padding: 14px;
+        }
+
+        .gudang-dashboard .summary-value {
+            font-size: 1.2rem;
         }
 
         .gudang-dashboard .module-metrics {

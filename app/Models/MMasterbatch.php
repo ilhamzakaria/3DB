@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MMasterbatch extends Model
+class MMasterbatch extends BaseGudangModel
 {
     protected $table = 'masterbatch';
     protected $primaryKey = 'id';

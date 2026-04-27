@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MAdmin extends Model
+class MAdmin extends BasePpicModel
 {
     protected $table = 'ppic';
     protected $primaryKey = 'id';

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MBahanBaku extends Model
+class MBahanBaku extends BaseGudangModel
 {
     protected $table = 'bahan_baku';
     protected $primaryKey = 'id';

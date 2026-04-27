@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MProduksiColorant extends Model
+class MProduksiColorant extends BaseProduksiModel
 {
     protected $table            = 'produksi_colorants';
     protected $primaryKey       = 'id';

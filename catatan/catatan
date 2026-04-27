@@ -1,0 +1,13 @@
+http://localhost:8080/ppic
+-pas klik hapus, tombol close dan cancel(batalkan) error
+- pas klik edit data, tampilan nya masih acak acakan.
+- menu export data, isi nya belum lengkap, tolong lengkapi
+
+http://localhost:8080/produksi
+-bagian shif gak keliatan atau warna nya pudar.
+- tambahkan menu detail (semua data)
+- tamda tangan kasih tulisan aja "upload ttd"
+
+http://localhost:8080/produksi
+- tombol view dan edit belum berfungsi
+- icon hapus pakai tempat sampah

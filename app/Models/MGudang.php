@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MGudang extends Model
+class MGudang extends BaseGudangModel
 {
     protected $table = 'gudang';
     protected $primaryKey = 'id';

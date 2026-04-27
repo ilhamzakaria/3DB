@@ -43,20 +43,54 @@ class Export extends BaseController
     // =========================
     public function dashboard()
     {
-        $data = $this->produkModel->findAll();
+        $data = $this->produkModel->orderBy('tanggal', 'DESC')->orderBy('shif', 'ASC')->orderBy('jam', 'ASC')->findAll();
 
         return $this->exportExcel(
-            'data_dashboard.xls',
-            ['No SPK', 'Nama Mesin', 'Nama Produk', 'operator', 'target', 'revisi'],
+            'Laporan_PPIC_Harian.xls',
+            ['Tanggal', 'Shift', 'Jam', 'No SPK', 'Mesin', 'Produk', 'Grade', 'Warna', 'No Mesin', 'Operator', 'Target', 'Revisi'],
             $data,
             function ($d) {
                 return [
+                    $d['tanggal'] ?? '',
+                    $d['shif'] ?? '',
+                    $d['jam'] ?? '',
                     $d['no_spk'] ?? '',
-                    $d['nama_mesin'] ?? '',
+                    ($d['nama_mesin'] ?? '') . ' (No Mesin' . ($d['nomor_mesin'] ?? '') . ')',
                     $d['nama_produk'] ?? '',
+                    $d['grade'] ?? '',
+                    $d['warna'] ?? '',
+                    $d['nomor_mesin'] ?? '',
                     $d['operator'] ?? '',
                     $d['targett'] ?? '',
                     $d['revisi'] ?? '',
+                ];
+            }
+        );
+    }
+
+    public function produksi()
+    {
+        $model = new \App\Models\MProduksiHeader();
+        $data = $model->orderBy('tanggal', 'DESC')->findAll();
+
+        return $this->exportExcel(
+            'Laporan_Produksi.xls',
+            ['Tanggal', 'Shift', 'Grup', 'No SPK', 'Mesin', 'Produk', 'Batch', 'Operator', 'Hasil Bagus', 'Reject', 'Downtime (Mnt)', 'Catatan'],
+            $data,
+            function ($d) {
+                return [
+                    $d['tanggal'] ?? '',
+                    $d['shift'] ?? '',
+                    $d['grup'] ?? '',
+                    $d['nomor_spk'] ?? '',
+                    $d['nama_mesin'] ?? '',
+                    $d['nama_produksi'] ?? '',
+                    $d['batch_number'] ?? '',
+                    $d['operator'] ?? '',
+                    $d['grand_total_bagus'] ?? 0,
+                    $d['grand_total_reject'] ?? 0,
+                    $d['total_downtime'] ?? 0,
+                    $d['catatan'] ?? '',
                 ];
             }
         );

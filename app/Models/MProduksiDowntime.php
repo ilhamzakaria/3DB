@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MProduksiDowntime extends Model
+class MProduksiDowntime extends BaseProduksiModel
 {
     protected $table            = 'produksi_downtimes';
     protected $primaryKey       = 'id';

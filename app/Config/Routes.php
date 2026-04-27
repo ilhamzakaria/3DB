@@ -7,7 +7,6 @@ use CodeIgniter\Router\RouteCollection;
  */
 // home
 $routes->get('/home', 'Home::index');
-$routes->get('/dashboard', 'Dashboard::index', ['filter' => 'manager']);
 $routes->get('/laporan', 'Laporan::index', ['filter' => 'manager']);
 
 
@@ -121,12 +120,6 @@ $routes->get('/bahan_baku/edit/(:num)', 'BahanBaku::edit/$1');
 $routes->post('/bahan_baku/update', 'BahanBaku::update');
 $routes->post('/bahan_baku/update/(:num)', 'BahanBaku::update/$1');
 
-// produksi
-$routes->get('/produksi', 'Produksi::index');
-$routes->post('/produksi/tambahData', 'Produksi::tambahData');
-$routes->delete('/produksi/delete/(:num)', 'Produksi::delete/$1');
-$routes->get('/produksi/edit/(:num)', 'Produksi::edit/$1');
-$routes->post('/produksi/update/(:num)', 'Produksi::update/$1');
 
 // admin
 $routes->get('/admin', 'Admin::index', ['filter' => 'admin']);
@@ -154,6 +147,9 @@ $routes->delete('/ppic/delete/(:num)', 'Ppic::delete/$1');
 $routes->get('/ppic/edit/(:num)', 'Ppic::edit/$1');
 $routes->post('/ppic/update', 'Ppic::update');
 $routes->post('/ppic/update/(:num)', 'Ppic::update/$1');
+$routes->get('/ppic/restore/(:num)', 'Ppic::restore/$1');
+$routes->get('/ppic/delete_permanent/(:num)', 'Ppic::deletePermanent/$1');
+$routes->get('/ppic/get_trash', 'Ppic::get_trash');
 $routes->get('/ppic/exportExcel', 'Ppic::exportExcel');
 // Export to Excel
 $routes->get('dashboard/export-excel', 'Dashboard::exportExcel');
@@ -178,19 +174,21 @@ $routes->get('export/mesin_ips1', 'Export::mesinIps1');
 $routes->get('export/mesin_ips2', 'Export::mesinIps2');
 $routes->get('export/mesin_ips3', 'Export::mesinIps3');
 $routes->get('export/mesin_ips4', 'Export::mesinIps4');
+$routes->get('export/produksi', 'Export::produksi');
 
 
 
-// Plant Produksi (New Module)
-$routes->get('/plant_produksi', 'PlantProduksi::index');
-$routes->get('/plant_produksi/tambah', 'PlantProduksi::tambah');
-$routes->post('/plant_produksi/simpan', 'PlantProduksi::simpan');
-$routes->get('/plant_produksi/edit/(:num)', 'PlantProduksi::edit/$1');
-$routes->post('/plant_produksi/update/(:num)', 'PlantProduksi::update/$1');
-$routes->get('/plant_produksi/delete/(:num)', 'PlantProduksi::delete/$1');
-$routes->get('/plant_produksi/trash', 'PlantProduksi::trash');
-$routes->get('/plant_produksi/restore/(:num)', 'PlantProduksi::restore/$1');
-$routes->get('/plant_produksi/delete_permanent/(:num)', 'PlantProduksi::deletePermanent/$1');
-$routes->get('/plant_produksi/get_last_data/(:any)', 'PlantProduksi::get_last_data/$1');
-$routes->get('/plant_produksi/detail/(:num)', 'PlantProduksi::detail/$1');
+// Produksi (New Module)
+$routes->get('/produksi', 'Produksi::index');
+$routes->get('/produksi/tambah', 'Produksi::tambah');
+$routes->post('/produksi/simpan', 'Produksi::simpan');
+$routes->get('/produksi/edit/(:num)', 'Produksi::edit/$1');
+$routes->post('/produksi/update/(:num)', 'Produksi::update/$1');
+$routes->get('/produksi/delete/(:num)', 'Produksi::delete/$1');
+$routes->get('/produksi/trash', 'Produksi::trash');
+$routes->get('/produksi/restore/(:num)', 'Produksi::restore/$1');
+$routes->get('/produksi/delete_permanent/(:num)', 'Produksi::deletePermanent/$1');
+$routes->get('/produksi/get_last_data/(:any)', 'Produksi::get_last_data/$1');
+$routes->get('/produksi/detail/(:num)', 'Produksi::detail/$1');
+$routes->get('/produksi/get_trash', 'Produksi::get_trash');
 

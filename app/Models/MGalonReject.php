@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MGalonReject extends Model
+class MGalonReject extends BaseGudangModel
 {
     protected $table = 'galon_reject';
     protected $primaryKey = 'id';

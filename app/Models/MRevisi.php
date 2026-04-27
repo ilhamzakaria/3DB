@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MRevisi extends Model
+class MRevisi extends BaseProduksiModel
 {
     protected $table            = 'revisi_produksi';
     protected $primaryKey       = 'id_revisi';

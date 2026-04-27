@@ -13,8 +13,12 @@
 
 <!-- Bootstrap JS & jQuery -->
 <script src="<?= base_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
-<script src="<?= base_url('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
-<script src="<?= base_url('assets/js/sb-admin-2.min.js') ?>"></script>
+<?php if (isset($modern_layout) && $modern_layout): ?>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<?php else: ?>
+    <script src="<?= base_url('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+    <script src="<?= base_url('assets/js/sb-admin-2.min.js') ?>"></script>
+<?php endif; ?>
 
 <?php if (session('logged_in') && in_array(session('role'), ['ppic','produksi','gudang','admin','manager'])): ?>
 <script>
@@ -110,7 +114,7 @@
     setInterval(function() {
         pollUnread();
         pollNotifUnread();
-    }, 12000);
+    }, 60000);
 })();
 </script>
 <?php endif; ?>

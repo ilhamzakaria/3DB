@@ -4,16 +4,21 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class MPpic extends Model
+class MPpic extends BasePpicModel
 {
     protected $table = 'ppic';
     protected $primaryKey = 'id';
+
+    protected $useSoftDeletes   = true;
+    protected $useTimestamps    = true;
+    protected $createdField     = 'created_at';
+    protected $updatedField     = 'updated_at';
+    protected $deletedField     = 'deleted_at';
 
     protected $allowedFields = [
         'id_user',
         'no_spk',
         'jam',
-        'no_spk',
         'nama_mesin',
         'nama_produk',
         'grade',

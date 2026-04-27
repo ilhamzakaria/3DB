@@ -17,14 +17,6 @@
     $role = session()->get('role');
     ?>
 
-    <!-- Dashboard (Manager Only) -->
-    <?php if ($role == 'manager'): ?>
-        <li class="nav-item <?= ($uri->getSegment(1) == 'dashboard') ? 'active' : '' ?>">
-            <a class="nav-link" href="<?= base_url('dashboard') ?>">
-                <span>Dashboard</span>
-            </a>
-        </li>
-    <?php endif; ?>
 
     <!-- Admin (Manager & Admin) -->
     <?php if (in_array($role, ['manager', 'admin'])): ?>
@@ -35,12 +27,12 @@
         </li>
     <?php endif; ?>
 
-    <!-- Plant Produksi -->
+    <!-- Produksi -->
     <?php if (in_array($role, ['manager', 'admin', 'produksi', 'ppic'])): ?>
-        <li class="nav-item <?= ($uri->getSegment(1) == 'plant_produksi') ? 'active' : '' ?>">
-            <a class="nav-link" href="<?= base_url('plant_produksi') ?>">
+        <li class="nav-item <?= ($uri->getSegment(1) == 'produksi') ? 'active' : '' ?>">
+            <a class="nav-link" href="<?= base_url('produksi') ?>">
                 <i class="fas fa-fw fa-industry"></i>
-                <span>Plant Produksi</span>
+                <span>Produksi</span>
             </a>
         </li>
     <?php endif; ?>

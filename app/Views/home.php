@@ -209,6 +209,27 @@
 
 
                 <div class="ms-auto d-flex align-items-center gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary btn-sm dropdown-toggle shadow-sm" type="button" id="periodFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-calendar-alt"></i>
+                            <?php
+                            if ($filter === 'day') echo 'Hari Ini';
+                            elseif ($filter === 'week') echo 'Minggu';
+                            elseif ($filter === 'month') echo 'Bulan';
+                            else echo 'Periode';
+                            ?>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" aria-labelledby="periodFilterDropdown" style="border-radius: 12px;">
+                            <li><a class="dropdown-item py-2 <?= ($filter === 'day') ? 'active bg-primary text-white' : '' ?>" href="<?= base_url('home?filter=day') ?>"><i class="fas fa-calendar-day mr-2 opacity-50"></i> Hari Ini</a></li>
+                            <li><a class="dropdown-item py-2 <?= ($filter === 'week') ? 'active bg-primary text-white' : '' ?>" href="<?= base_url('home?filter=week') ?>"><i class="fas fa-calendar-week mr-2 opacity-50"></i> Minggu</a></li>
+                            <li><a class="dropdown-item py-2 <?= ($filter === 'month') ? 'active bg-primary text-white' : '' ?>" href="<?= base_url('home?filter=month') ?>"><i class="fas fa-calendar-alt mr-2 opacity-50"></i> Bulan</a></li>
+                            <?php if ($filter): ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 text-danger" href="<?= base_url('home') ?>"><i class="fas fa-sync-alt mr-2 opacity-50"></i> Reset Filter</a></li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+
                     <form method="get" action="<?= esc($homeBaseUrl) ?>" class="d-flex align-items-center gap-2 mb-0" id="mainSearchForm">
                         <!-- Keep existing filters -->
                         <input type="hidden" name="periode" value="<?= esc($filterPeriode) ?>">
@@ -415,7 +436,7 @@
                             ?>
                                 <tr class="align-middle">
                                     <td><?= !empty($p['tanggal']) ? date('d M Y', strtotime($p['tanggal'])) : '-' ?></td>
-                                    <td><?= esc($p['no_spk'] ?? '-') ?></td>
+                                    <td><span class="badge badge-modern badge-spk" style="background: rgba(67, 97, 238, 0.1) !important; color: #4361ee !important; border: 1px solid rgba(67, 97, 238, 0.3) !important; font-weight: 700 !important; padding: 0.35em 0.8em; border-radius: 6px; font-size: 0.8rem;"><?= esc($p['no_spk'] ?? '-') ?></span></td>
                                     <td><?= esc($p['nama_mesin'] ?? '-') ?></td>
                                     <td><?= esc($p['nama_produk'] ?? '-') ?></td>
                                     <td><?= esc($p['shif'] ?? $p['shif'] ?? '-') ?></td>
@@ -426,7 +447,7 @@
                                     <?php
                                     $revisiItems = $p['revisi_items'] ?? [];
                                     $hasAnyRevisi = false;
-                                    for ($ke = 1; $ke <= 3; $ke++) {
+                                    for ($ke = 1; $ke <= 5; $ke++) {
                                         $nilai = trim((string) ($revisiItems[$ke]['nilai'] ?? ''));
                                         if ($nilai !== '') {
                                             $hasAnyRevisi = true;
@@ -435,7 +456,7 @@
                                     }
                                     ?>
                                     <td class="<?= $hasAnyRevisi ? 'text-danger' : '' ?>">
-                                        <?php for ($ke = 1; $ke <= 3; $ke++): ?>
+                                        <?php for ($ke = 1; $ke <= 5; $ke++): ?>
                                             <?php
                                             $item = $revisiItems[$ke] ?? [];
                                             $nilai = trim((string) ($item['nilai'] ?? ''));
@@ -458,12 +479,11 @@
                                                 data-tanggal="<?= esc($item['tanggal_revisi'] ?? '-') ?>"
                                                 data-jam="<?= esc((string) $jamLabel) ?>">
                                                 <?= $nilai ?? $item['nilai'] ?>
-                                                <!-- <?= (int) $ke ?> -->
                                             </a>
 
-                                            <?php if ($ke < 3): ?>
+                                            <?php if ($ke < 5): ?>
                                                 <span class="<?= $hasAnyRevisi ? 'text-danger' : 'text-muted' ?>">
-                                                    <?php if (!empty($value) && $ke < 2): ?>
+                                                    <?php if (!empty($nilai) && $ke < 5): ?>
                                                         |
                                                     <?php endif; ?>
                                                 </span>
@@ -471,7 +491,7 @@
                                         <?php endfor; ?>
                                     </td>
                                     <!-- Produksi Section -->
-                                    <td><?= esc($prod['nomor_spk'] ?? '-') ?></td>
+                                    <td><span class="badge badge-modern badge-spk" style="background: rgba(67, 97, 238, 0.1) !important; color: #4361ee !important; border: 1px solid rgba(67, 97, 238, 0.3) !important; font-weight: 700 !important; padding: 0.35em 0.8em; border-radius: 6px; font-size: 0.8rem;"><?= esc($prod['nomor_spk'] ?? '-') ?></span></td>
                                     <td><?= esc($prod['nama_mesin'] ?? '-') ?></td>
                                     <td><?= esc($prod['nama_produksi'] ?? '-') ?></td>
                                     <td class="text-center"><?= esc($prod['shift'] ?? '-') ?></td>
@@ -489,7 +509,7 @@
                                     <td><?= !empty($prod['tanggal']) ? date('d M Y', strtotime($prod['tanggal'])) : '-' ?></td>
 
                                     <!-- Gudang -->
-                                    <td class="text-center font-weight-bold text-primary"><?= esc($g['no_spk'] ?? '-') ?></td>
+                                    <td class="text-center"><span class="badge badge-modern badge-spk" style="background: rgba(67, 97, 238, 0.1) !important; color: #4361ee !important; border: 1px solid rgba(67, 97, 238, 0.3) !important; font-weight: 700 !important; padding: 0.35em 0.8em; border-radius: 6px; font-size: 0.8rem;"><?= esc($g['no_spk'] ?? '-') ?></span></td>
                                     <td class="text-center"><?= esc($g['shif'] ?? '-') ?></td>
                                     <td><?= esc($g['bahan_baku'] ?? '-') ?></td>
                                     <td class="text-right"><?= ($v = $g['box'] ?? '-') !== '-' && $v != 0 ? '<span class="fw-bold">' . esc($v) . '</span>' : esc($v) ?></td>
@@ -538,6 +558,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="px-3 py-2 border-top d-flex justify-content-between align-items-center bg-white">
+                    <div class="small text-muted">
+                        Menampilkan <?= ($current_page - 1) * $per_page + 1 ?> - <?= min($current_page * $per_page, $total_rows) ?> dari <?= $total_rows ?> data
+                    </div>
+                    <div>
+                        <?= $pager ?>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -555,7 +583,6 @@
                 const nilai = this.getAttribute("data-nilai") || "-";
                 const tanggal = this.getAttribute("data-tanggal") || "-";
 
-                console.log("DEBUG tanggal:", tanggal);
 
                 let tanggalFormat = "-";
                 let jamFormat = "-";
