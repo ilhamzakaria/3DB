@@ -11,4 +11,5 @@
 </div>
 
 <?= $this->include('partial/footer') ?>
-<?= $this->renderSection('scripts') ?>
+<?= $this->renderSection('vendor_scripts') ?>
+<?= $this->renderSection('scripts') ?>
