@@ -68,15 +68,16 @@ class Ppic extends BaseController
         $produksiData = $this->attachProduksiSummary($produksiData);
         $produksiData = $this->attachRevisiData($produksiData);
 
-        return view('ppic', [
-            'title'      => 'Laporan PPIC Harian',
-            'produksi'   => $produksiData,
-            'pager'      => $this->MPpic->pager,
-            'spk_master' => $this->getSpkMasterData(),
-            'q'          => $q,
-            'start_date' => $startDate,
-            'end_date'   => $endDate,
-            'filter'     => $filter,
+        return view('ppic/index', [
+            'title'          => 'Laporan PPIC Harian',
+            'produksi'       => $produksiData,
+            'pager'          => $this->MPpic->pager,
+            'spk_master'     => $this->getSpkMasterData(),
+            'q'              => $q,
+            'start_date'     => $startDate,
+            'end_date'       => $endDate,
+            'filter'         => $filter,
+            'modern_layout'  => true
         ]);
     }
     public function tambahData()

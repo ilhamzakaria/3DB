@@ -69,15 +69,47 @@ class Produksi extends BaseController
 
         $data = [
             'title' => 'Produksi',
-            'produksi' => $query->orderBy('tanggal', 'DESC')->orderBy('shift', 'DESC')->paginate(15, 'produksi'),
+            'produksi' => $query->orderBy('tanggal', 'DESC')->orderBy('shift', 'DESC')->orderBy('id', 'DESC')->paginate(15, 'produksi'),
             'pager' => $this->headerModel->pager,
             'spk_list' => $this->getSpkList(),
             'q' => $q,
             'filter_shift' => $shift,
             'filter_tanggal' => $tanggal,
-            'filter' => $filter
+            'filter' => $filter,
+            'modern_layout' => true
         ];
-        return view('produksi', $data);
+        return view('produksi/index', $data);
+    }
+
+    public function get_edit_form($id)
+    {
+        $data['header'] = $this->headerModel->find($id);
+        if (!$data['header']) return "Data tidak ditemukan.";
+        
+        $data['jams'] = $this->jamModel->where('produksi_header_id', $id)->findAll();
+        $data['rejects'] = $this->rejectModel->where('produksi_header_id', $id)->findAll();
+        $data['materials'] = $this->materialModel->where('produksi_header_id', $id)->findAll();
+        $data['colorants'] = $this->colorantModel->where('produksi_header_id', $id)->findAll();
+        $data['packaging'] = $this->packagingModel->where('produksi_header_id', $id)->first();
+        $data['downtimes'] = $this->downtimeModel->where('produksi_header_id', $id)->findAll();
+        $data['spk_list'] = $this->getSpkList();
+        
+        return view('produksi/modals/edit', $data);
+    }
+
+    public function get_detail_modal($id)
+    {
+        $data['header'] = $this->headerModel->find($id);
+        if (!$data['header']) return "Data tidak ditemukan.";
+        
+        $data['jams'] = $this->jamModel->where('produksi_header_id', $id)->findAll();
+        $data['rejects'] = $this->rejectModel->where('produksi_header_id', $id)->findAll();
+        $data['materials'] = $this->materialModel->where('produksi_header_id', $id)->findAll();
+        $data['colorants'] = $this->colorantModel->where('produksi_header_id', $id)->findAll();
+        $data['packaging'] = $this->packagingModel->where('produksi_header_id', $id)->first();
+        $data['downtimes'] = $this->downtimeModel->where('produksi_header_id', $id)->findAll();
+        
+        return view('produksi/modals/detail', $data);
     }
 
 
@@ -180,8 +212,13 @@ class Produksi extends BaseController
         // 5. Save Packaging
         $this->packagingModel->insert([
             'produksi_header_id'    => $headerId,
-            'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
+            'box'                   => $this->request->getPost('box'),
+            'box_ukuran'            => $this->request->getPost('box_ukuran'),
             'plastik'               => $this->request->getPost('plastik'),
+            'plastik_ukuran'        => $this->request->getPost('plastik_ukuran'),
+            'karung'                => $this->request->getPost('karung'),
+            'karung_ukuran'         => $this->request->getPost('karung_ukuran'),
+            'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
         ]);
 
         // 6. Save Downtimes
@@ -326,8 +363,13 @@ class Produksi extends BaseController
         $this->packagingModel->where('produksi_header_id', $id)->delete();
         $this->packagingModel->insert([
             'produksi_header_id'    => $id,
-            'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
+            'box'                   => $this->request->getPost('box'),
+            'box_ukuran'            => $this->request->getPost('box_ukuran'),
             'plastik'               => $this->request->getPost('plastik'),
+            'plastik_ukuran'        => $this->request->getPost('plastik_ukuran'),
+            'karung'                => $this->request->getPost('karung'),
+            'karung_ukuran'         => $this->request->getPost('karung_ukuran'),
+            'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
         ]);
 
         // 7. Refresh Downtimes

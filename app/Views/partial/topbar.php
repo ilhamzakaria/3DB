@@ -90,7 +90,7 @@
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown no-arrow">
                         <a class="nav-link dropdown-toggle profile-pill" href="#" id="userDropdown" role="button"
-                            data-toggle="dropdown">
+                            data-toggle="dropdown" data-bs-toggle="dropdown">
                             <img class="img-profile rounded-circle"
                                 src="<?= base_url('assets/img/profile.svg') ?>" 
                                 style="width: 36px; height: 36px; object-fit: cover; border: 2px solid #f8f9fc; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-right: 12px;">
@@ -100,7 +100,7 @@
                             <i class="fas fa-chevron-down text-gray-400" style="font-size: 0.7rem;"></i>
                         </a>
 
-                        <div class="dropdown-menu dropdown-menu-right shadow border-0 animated--grow-in" style="border-radius: 15px; margin-top: 10px;">
+                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-end shadow border-0 animated--grow-in" style="border-radius: 15px; margin-top: 10px;">
                             <div class="dropdown-header text-xs text-uppercase font-weight-bold text-muted">User Menu</div>
                             <a class="dropdown-item py-2" href="#">
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -115,6 +115,4 @@
                     </li>
                 </ul>
             </div>
-        </nav>
-
         </nav>

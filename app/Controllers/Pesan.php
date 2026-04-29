@@ -57,7 +57,7 @@ class Pesan extends BaseController
             session()->set('last_chat_read_id', (int) $last['id']);
         }
 
-        return view('pesan', [
+        return view('pesan/index', [
             'title' => 'Chat - Komunikasi Departemen',
         ]);
     }

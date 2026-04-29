@@ -1,172 +1,3 @@
-<?= $this->extend('layout/main') ?>
-
-<?= $this->section('content') ?>
-
-<style>
-    .chat-container {
-        max-width: 900px;
-        margin: 0 auto;
-        height: calc(100vh - 180px);
-        display: flex;
-        flex-direction: column;
-    }
-
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 15px;
-        background: #f8f9fc;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        min-height: 300px;
-    }
-
-    .chat-msg {
-        padding: 10px 14px;
-        margin-bottom: 10px;
-        border-radius: 10px;
-        max-width: 55%;
-        clear: both;
-    }
-
-    .chat-msg.mine {
-        background: #144d37;
-        color: white;
-        margin-left: auto;
-    }
-
-    .chat-msg.other {
-        background: white;
-        border: 1 #144d37;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-
-    .chat-msg .msg-meta {
-        font-size: 16px;
-        opacity: 0.9;
-        margin-bottom: 10px;
-    }
-
-    .chat-msg.other .msg-meta {
-        color: blue;
-    }
-
-    .chat-msg.mine .msg-meta {
-        color: yellow;
-    }
-
-    .chat-msg .msg-text {
-        word-wrap: break-word;
-    }
-
-    .msg-attachment {
-        margin-top: 8px;
-        font-size: 14px;
-    }
-
-    .msg-attachment a {
-        color: inherit;
-        text-decoration: underline;
-    }
-
-    .msg-attachment .file-size {
-        opacity: 0.8;
-    }
-
-    .chat-form {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .chat-form input[type="text"] {
-        flex: 1;
-        padding: 12px 16px;
-        border-radius: 8px;
-        border: 1px solid #d1d3e2;
-        min-width: 220px;
-    }
-
-    .file-input {
-        display: none;
-    }
-
-    .file-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        border: 1px solid #d1d3e2;
-        background: white;
-        cursor: pointer;
-    }
-
-    .file-label:hover {
-        border-color: #144d37;
-    }
-
-    .file-name {
-        font-size: 12px;
-        color: #6c757d;
-        max-width: 280px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .chat-form button {
-        padding: 12px 24px;
-        border-radius: 8px;
-        background: #144d37;
-        color: white;
-        border: none;
-        cursor: pointer;
-    }
-
-    .chat-form button:hover {
-        background: rgb(57, 199, 116);
-    }
-</style>
-
-<div class="container-fluid">
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= session()->getFlashdata('error') ?>
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span>&times;</span></button>
-        </div>
-    <?php endif; ?>
-
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-comments"></i> Chat - PPIC, Produksi, Gudang, Admin, Manager
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="chat-container">
-                <div class="chat-messages" id="chatBox">
-                    <div class="text-muted text-center py-4" id="loadingMsg">Memuat pesan...</div>
-                </div>
-                <form class="chat-form" id="chatForm" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="<?= csrf_hash() ?>">
-                    <label class="file-label" for="fileInput">
-                        <i class="fas fa-paperclip fw-bold"></i> File
-                    </label>
-                    <input type="file" id="fileInput" class="file-input" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
-                    <span class="file-name" id="fileName"></span>
-                    <input type="text" id="msgInput" placeholder="Ketik pesan..." autocomplete="off" maxlength="500">
-                    <button type="submit" id="btnSend">
-                        <i class="fas fa-paper-plane"></i> Kirim
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 <script>
     (function() {
         var baseUrl = '<?= base_url() ?>';
@@ -186,6 +17,7 @@
         }
 
         function formatTime(d) {
+            if (!d) return '--:--';
             var d2 = new Date(d);
             var h = d2.getHours();
             var m = d2.getMinutes();
@@ -296,19 +128,21 @@
             xhr.send(fd);
         }
 
-        fileInput.addEventListener('change', function() {
-            var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-            fileName.textContent = file ? file.name : '';
-        });
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+                fileName.textContent = file ? file.name : '';
+            });
+        }
 
-        chatForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            sendMessage();
-        });
+        if (chatForm) {
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                sendMessage();
+            });
+        }
 
         loadMessages();
         setInterval(loadMessages, 2500);
     })();
 </script>
-
-<?= $this->endSection() ?>

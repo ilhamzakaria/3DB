@@ -80,7 +80,8 @@ class Home extends BaseController
             'pager' => $pagerLinks,
             'total_rows' => $total,
             'current_page' => $page,
-            'per_page' => $perPage
+            'per_page' => $perPage,
+            'modern_layout' => true
         ]);
     }
 

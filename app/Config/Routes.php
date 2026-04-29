@@ -191,4 +191,6 @@ $routes->get('/produksi/delete_permanent/(:num)', 'Produksi::deletePermanent/$1'
 $routes->get('/produksi/get_last_data/(:any)', 'Produksi::get_last_data/$1');
 $routes->get('/produksi/detail/(:num)', 'Produksi::detail/$1');
 $routes->get('/produksi/get_trash', 'Produksi::get_trash');
+$routes->get('/produksi/get_edit_form/(:num)', 'Produksi::get_edit_form/$1');
+$routes->get('/produksi/get_detail_modal/(:num)', 'Produksi::get_detail_modal/$1');
 

@@ -11,3 +11,37 @@ http://localhost:8080/produksi
 http://localhost:8080/produksi
 - tombol view dan edit belum berfungsi
 - icon hapus pakai tempat sampah
+
+http://localhost:8080/produksi
+http://localhost:8080/ppic
+http://localhost:8080/produksi
+http://localhost:8080/gudang
+http://localhost:8080/pesan
+http://localhost:8080/notifikasi
+
+- tolong ubah semua kode javascript saya ke php mvc atau ci4
+- jangan rubah tampilannya terlalu drastis
+- jangan rubah fungsi nya
+- jangan rubah alur nya
+
+dan jadikan clean code dan terstruktur dengan baik
+
+
+http://localhost:8080/ppic
+semua tombol gak bisa di klik
+
+http://localhost:8080/produksi
+semua tombol gak bisa di klik
+
+http://localhost:8080/produksi
+- Packing (box) Ukuran :
+- Packing (plastik) ukuran:
+
+tambahkan inputan ada bagian bawahnya buat ukuran 
+
+tambahkan juga buat karung + ukuran 
+
+jadi packaging ada 3 bagian
+1. plastik
+2. box
+3. karung

@@ -70,6 +70,7 @@ class Gudang extends BaseController
             'material_modules' => array_values(array_filter($dashboardModules, static fn(array $module): bool => $module['group'] === 'material')),
             'machine_modules' => array_values(array_filter($dashboardModules, static fn(array $module): bool => $module['group'] === 'mesin')),
             'recent_activities' => $this->buildGudangRecentActivities(self::DASHBOARD_MODULES, 12),
+            'modern_layout' => true
         ]);
     }
 
