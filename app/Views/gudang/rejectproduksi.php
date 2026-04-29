@@ -17,6 +17,17 @@ $formatDate = static function ($value): string {
 };
 ?>
 
+<style>
+    .filter-sidebar { position: fixed; top: 0; right: -350px; width: 350px; height: 100vh; background: #fff; z-index: 1100; box-shadow: -5px 0 15px rgba(0,0,0,0.1); transition: all 0.3s ease; display: flex; flex-direction: column; }
+    .filter-sidebar.active { right: 0; }
+    .filter-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1090; display: none; backdrop-filter: blur(2px); }
+    .filter-overlay.active { display: block; }
+    .filter-header { padding: 1.25rem; border-bottom: 1px solid #e3e6f0; display: flex; justify-content: space-between; align-items: center; background: #f8f9fc; }
+    .filter-body { padding: 1.5rem; flex-grow: 1; overflow-y: auto; }
+    .filter-footer { padding: 1.25rem; border-top: 1px solid #e3e6f0; background: #f8f9fc; display: flex; gap: 10px; }
+    .filter-chip { display: inline-flex; align-items: center; background: #eaecf4; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; margin-right: 0.5rem; margin-bottom: 0.5rem; }
+</style>
+
 <div class="card shadow mb-4">
     <div class="card-header py-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between">

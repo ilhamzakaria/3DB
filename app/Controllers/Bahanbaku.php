@@ -21,6 +21,8 @@ class BahanBaku extends BaseController
     public function index()
     {
         $q = trim((string) $this->request->getGet('q'));
+        $startDate = $this->request->getGet('start_date');
+        $endDate = $this->request->getGet('end_date');
 
         $query = $this->MBahanBaku;
 
@@ -37,6 +39,14 @@ class BahanBaku extends BaseController
                 ->groupEnd();
         }
 
+        if (!empty($startDate)) {
+            $query = $query->where('DATE(created_at) >=', $startDate);
+        }
+
+        if (!empty($endDate)) {
+            $query = $query->where('DATE(created_at) <=', $endDate);
+        }
+
         $bahanBaku = $query
             ->orderBy('created_at', 'DESC')
             ->findAll();
@@ -45,6 +55,8 @@ class BahanBaku extends BaseController
             'title' => 'Bahan Baku',
             'bahan_baku' => $bahanBaku,
             'q' => $q,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
             'status_options' => self::STATUS_OPTIONS,
         ]);
     }

@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Models\MChat;
 use CodeIgniter\Exceptions\PageNotFoundException;
 
-class Chat extends BaseController
+class Pesan extends BaseController
 {
     protected $MChat;
 
@@ -57,7 +57,7 @@ class Chat extends BaseController
             session()->set('last_chat_read_id', (int) $last['id']);
         }
 
-        return view('chat', [
+        return view('pesan', [
             'title' => 'Chat - Komunikasi Departemen',
         ]);
     }

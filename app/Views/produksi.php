@@ -419,16 +419,31 @@
         overflow-y: auto;
     }
 
+    .alert-dismissible {
+        position: relative;
+        padding-right: 3rem;
+    }
+
     .btn-close {
+        position: absolute;
+        top: 50%;
+        right: 1.25rem;
+        transform: translateY(-50%);
         box-sizing: content-box;
-        width: 1em;
-        height: 1em;
+        width: 0.8em;
+        height: 0.8em;
         padding: .25em;
         color: #000;
         background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293A1 1 0 0 1 .293 14.293L6.586 8 .293 1.707A1 1 0 0 1 .293.293z'/%3e%3c/svg%3e") center / 1em auto no-repeat;
         border: 0;
         border-radius: .25rem;
         opacity: .5;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .btn-close:hover {
+        opacity: 0.8;
     }
 </style>
 
@@ -641,12 +656,13 @@
                     
                     <div class="section-title"><i class="fas fa-info-circle"></i> Informasi Utama</div>
                     <div class="row g-3 mb-4">
+                        <!-- Row 1 -->
                         <div class="col-md-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label class="form-label mb-0">Nomor SPK</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input check_spk_baru" type="checkbox" id="check_spk_baru_add">
-                                    <label class="form-check-label text-xs" for="check_spk_baru_add">Baru</label>
+                                <div class="form-check form-switch ms-2">
+                                    <input class="form-check-input check_spk_baru" type="checkbox" id="check_spk_baru_add" style="cursor: pointer;">
+                                    <label class="form-check-label text-xs fw-bold text-muted" for="check_spk_baru_add" style="cursor: pointer;">BARU</label>
                                 </div>
                             </div>
                             <div class="spk_select_wrapper">
@@ -665,53 +681,64 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Nama Mesin</label>
-                            <input type="text" name="nama_mesin" class="form-control nama_mesin">
+                            <input type="text" name="nama_mesin" class="form-control nama_mesin" placeholder="Auto-filled">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Nama Produksi</label>
-                            <input type="text" name="nama_produksi" class="form-control nama_produksi">
+                            <input type="text" name="nama_produksi" class="form-control nama_produksi" placeholder="Auto-filled">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Batch Number</label>
-                            <input type="text" name="batch_number" class="form-control batch_number">
+                            <input type="text" name="batch_number" class="form-control batch_number" placeholder="No. Batch">
                         </div>
                         
+                        <!-- Row 2 -->
                         <div class="col-md-2">
                             <label class="form-label">Shift</label>
-                            <select name="shift" class="form-select shift">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                            </select>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fas fa-clock text-muted"></i></span>
+                                <select name="shift" class="form-select shift border-start-0">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Grup</label>
-                            <input type="text" name="grup" class="form-control grup">
+                            <input type="text" name="grup" class="form-control grup" placeholder="Grup">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">No. Mesin</label>
-                            <input type="text" name="nomor_mesin" class="form-control nomor_mesin">
+                            <input type="text" name="nomor_mesin" class="form-control nomor_mesin" placeholder="M#">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Packing</label>
-                            <input type="text" name="packing" class="form-control packing">
+                            <input type="text" name="packing" class="form-control packing" placeholder="Tipe Packing">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Tanggal</label>
                             <input type="date" name="tanggal" class="form-control" value="<?= date('Y-m-d') ?>">
                         </div>
                         
-                        <div class="col-md-2">
-                            <label class="form-label">Cycle Time</label>
-                            <input type="text" name="cycle_time" class="form-control cycle_time">
+                        <!-- Row 3 -->
+                        <div class="col-md-3">
+                            <label class="form-label">Cycle Time (sec)</label>
+                            <div class="input-group">
+                                <input type="text" name="cycle_time" class="form-control cycle_time" placeholder="0.00">
+                                <span class="input-group-text bg-light small">s</span>
+                            </div>
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Target</label>
-                            <input type="number" name="target" class="form-control target">
+                        <div class="col-md-3">
+                            <label class="form-label">Target (pcs)</label>
+                            <input type="number" name="target" class="form-control target" placeholder="0">
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label class="form-label">Operator</label>
-                            <input type="text" name="operator" class="form-control operator">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fas fa-user text-muted"></i></span>
+                                <input type="text" name="operator" class="form-control operator border-start-0" placeholder="Nama Operator">
+                            </div>
                         </div>
                     </div>
 
@@ -719,8 +746,8 @@
                         <div class="col-md-7">
                             <div class="section-title d-flex justify-content-between align-items-center">
                                 <span><i class="fas fa-clock"></i> Data Produksi Per Jam</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <select class="form-select form-select-sm select_jam" style="width: 120px;">
+                                <div class="input-group input-group-sm" style="width: auto;">
+                                    <select class="form-select select_jam" style="width: 110px; border-radius: 8px 0 0 8px !important;">
                                         <option value="">-- Jam --</option>
                                         <?php 
                                         $hours = ['06-07','07-08','08-09','09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20','20-21','21-22','22-23','23-00','00-01','01-02','02-03','03-04','04-05','05-06'];
@@ -728,23 +755,25 @@
                                             <option value="<?= $h ?>"><?= $h ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button type="button" class="btn btn-primary btn-sm btn_add_jam_row"><i class="fas fa-plus"></i></button>
+                                    <button type="button" class="btn btn-primary btn_add_jam_row" style="border-radius: 0 8px 8px 0 !important;">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <div class="table-responsive border rounded-lg bg-light" style="max-height: 300px; overflow-y: auto;">
+                            <div class="table-responsive border rounded-lg bg-light shadow-sm" style="max-height: 300px; overflow-y: auto; border-radius: 12px !important;">
                                 <table class="table table-sm table_jam_form mb-0">
-                                    <thead class="bg-white">
-                                        <tr>
-                                            <th class="px-3" width="100">Jam</th>
-                                            <th>Hasil (pcs)</th>
-                                            <th class="text-center" width="50">#</th>
+                                    <thead class="bg-white sticky-top">
+                                        <tr class="text-xs text-muted text-uppercase">
+                                            <th class="px-3 py-2" width="120">Rentang Jam</th>
+                                            <th class="py-2">Hasil Produksi (pcs)</th>
+                                            <th class="text-center py-2" width="60">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
-                                    <tfoot class="bg-white sticky-bottom">
+                                    <tfoot class="bg-white sticky-bottom border-top">
                                         <tr class="font-weight-bold">
-                                            <td class="px-3">Total:</td>
-                                            <td class="grand_total_hasil_display">0</td>
+                                            <td class="px-3 py-2 text-primary">TOTAL HASIL</td>
+                                            <td class="py-2 text-primary grand_total_hasil_display">0</td>
                                             <td></td>
                                         </tr>
                                     </tfoot>
@@ -754,36 +783,42 @@
                         <div class="col-md-5">
                             <div class="section-title d-flex justify-content-between align-items-center">
                                 <span><i class="fas fa-exclamation-triangle"></i> Kualitas & Reject</span>
-                                <button type="button" class="btn btn-danger btn-sm btn_open_reject_modal" data-bs-toggle="modal" data-bs-target="#modalReject" data-target-storage="reject_storage_add">
-                                    <i class="fas fa-plus mr-1"></i> Reject
+                                <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn_open_reject_modal" data-bs-toggle="modal" data-bs-target="#modalReject" data-target-storage="reject_storage_add">
+                                    <i class="fas fa-plus me-1"></i> Input Reject
                                 </button>
                             </div>
-                            <div class="p-3 border rounded-lg bg-light">
+                            <div class="p-4 border rounded-lg bg-light shadow-sm" style="border-radius: 12px !important;">
                                 <div class="row g-3">
                                     <div class="col-6">
-                                        <label class="form-label text-xs">Total Bagus</label>
-                                        <input type="number" name="grand_total_bagus" class="form-control grand_total_bagus bg-white font-weight-bold text-primary" readonly>
+                                        <label class="form-label text-xs fw-bold text-success mb-1 uppercase">HASIL BAGUS</label>
+                                        <div class="input-group">
+                                            <input type="number" name="grand_total_bagus" class="form-control grand_total_bagus bg-white font-weight-bold text-success border-success" readonly style="font-size: 1.1rem;">
+                                            <span class="input-group-text bg-success text-white small">pcs</span>
+                                        </div>
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label text-xs">Total Reject</label>
-                                        <input type="number" name="grand_total_reject" class="form-control grand_total_reject bg-white font-weight-bold text-danger" readonly>
+                                        <label class="form-label text-xs fw-bold text-danger mb-1 uppercase">TOTAL REJECT</label>
+                                        <div class="input-group">
+                                            <input type="number" name="grand_total_reject" class="form-control grand_total_reject bg-white font-weight-bold text-danger border-danger" readonly style="font-size: 1.1rem;">
+                                            <span class="input-group-text bg-danger text-white small">pcs</span>
+                                        </div>
                                         <div class="reject_storage" id="reject_storage_add"></div>
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label text-xs">Sisa PO</label>
-                                        <input type="number" name="sisa_po" class="form-control sisa_po">
+                                        <label class="form-label text-xs fw-bold text-muted mb-1 uppercase">SISA PO</label>
+                                        <input type="number" name="sisa_po" class="form-control sisa_po shadow-sm" placeholder="0">
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label text-xs">Hold</label>
-                                        <input type="number" name="hold" class="form-control hold">
+                                        <label class="form-label text-xs fw-bold text-muted mb-1 uppercase">HOLD</label>
+                                        <input type="number" name="hold" class="form-control hold shadow-sm" placeholder="0">
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label text-xs">Gumpalan</label>
-                                        <input type="number" name="gumpalan" class="form-control gumpalan">
+                                        <label class="form-label text-xs fw-bold text-muted mb-1 uppercase">GUMPALAN</label>
+                                        <input type="number" name="gumpalan" class="form-control gumpalan shadow-sm" placeholder="0">
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label text-xs">Isi</label>
-                                        <input type="number" name="isi" class="form-control isi">
+                                        <label class="form-label text-xs fw-bold text-muted mb-1 uppercase">ISI</label>
+                                        <input type="number" name="isi" class="form-control isi shadow-sm" placeholder="0">
                                     </div>
                                 </div>
                             </div>
@@ -791,34 +826,58 @@
                     </div>
 
                     <div class="section-title"><i class="fas fa-boxes"></i> Material, Colorant & Packaging</div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-5 border-right">
-                            <label class="form-label text-primary text-xs">Primary Material</label>
-                            <div class="row g-2">
-                                <div class="col-7">
-                                    <input type="text" name="materials[0][merek_kode]" placeholder="Merek Kode" class="form-control form-control-sm merek_kode">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-5">
+                            <div class="p-3 border rounded-lg bg-light h-100">
+                                <label class="form-label text-primary text-xs fw-bold mb-3 d-block"><i class="fas fa-cube me-1"></i> Primary Material</label>
+                                <div class="row g-2">
+                                    <div class="col-8">
+                                        <input type="text" name="materials[0][merek_kode]" placeholder="Merek Kode" class="form-control form-control-sm merek_kode">
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" step="0.01" name="materials[0][pemakaian]" placeholder="Kg" class="form-control m_pemakaian">
+                                            <span class="input-group-text bg-white small">kg</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-3"><input type="text" name="materials[0][lot_a]" placeholder="Lot A" class="form-control form-control-xs lot_a"></div>
+                                    <div class="col-3"><input type="text" name="materials[0][lot_b]" placeholder="Lot B" class="form-control form-control-xs lot_b"></div>
+                                    <div class="col-3"><input type="text" name="materials[0][lot_c]" placeholder="Lot C" class="form-control form-control-xs lot_c"></div>
+                                    <div class="col-3"><input type="text" name="materials[0][lot_d]" placeholder="Lot D" class="form-control form-control-xs lot_d"></div>
                                 </div>
-                                <div class="col-5">
-                                    <input type="number" step="0.01" name="materials[0][pemakaian]" placeholder="Kg" class="form-control form-control-sm m_pemakaian">
-                                </div>
-                                <div class="col-3"><input type="text" name="materials[0][lot_a]" placeholder="Lot A" class="form-control form-control-xs"></div>
-                                <div class="col-3"><input type="text" name="materials[0][lot_b]" placeholder="Lot B" class="form-control form-control-xs"></div>
-                                <div class="col-3"><input type="text" name="materials[0][lot_c]" placeholder="Lot C" class="form-control form-control-xs"></div>
-                                <div class="col-3"><input type="text" name="materials[0][lot_d]" placeholder="Lot D" class="form-control form-control-xs"></div>
                             </div>
                         </div>
-                        <div class="col-md-4 border-right">
-                            <label class="form-label text-info text-xs">Colorant</label>
-                            <div class="row g-2">
-                                <div class="col-12"><input type="text" name="colorants[0][code]" placeholder="Color Code" class="form-control form-control-sm"></div>
-                                <div class="col-7"><input type="text" name="colorants[0][nomor_lot]" placeholder="Lot No" class="form-control form-control-sm"></div>
-                                <div class="col-5"><input type="number" step="0.01" name="colorants[0][pemakaian]" placeholder="Kg" class="form-control form-control-sm"></div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-lg bg-light h-100">
+                                <label class="form-label text-info text-xs fw-bold mb-3 d-block"><i class="fas fa-tint me-1"></i> Colorant</label>
+                                <div class="row g-2">
+                                    <div class="col-12"><input type="text" name="colorants[0][code]" placeholder="Color Code" class="form-control form-control-sm c_code"></div>
+                                    <div class="col-7"><input type="text" name="colorants[0][nomor_lot]" placeholder="Lot No" class="form-control form-control-sm c_lot"></div>
+                                    <div class="col-5">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" step="0.01" name="colorants[0][pemakaian]" placeholder="Kg" class="form-control c_pemakaian">
+                                            <span class="input-group-text bg-white small">kg</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label text-warning text-xs">Packaging</label>
-                            <div class="mb-2"><input type="number" name="box_karung_nicktainer" placeholder="Box (pcs)" class="form-control form-control-sm"></div>
-                            <div><input type="number" name="plastik" placeholder="Plastik (pcs)" class="form-control form-control-sm"></div>
+                            <div class="p-3 border rounded-lg bg-light h-100">
+                                <label class="form-label text-warning text-xs fw-bold mb-3 d-block"><i class="fas fa-box me-1"></i> Packaging</label>
+                                <div class="mb-3">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-box text-warning small"></i></span>
+                                        <input type="number" name="box_karung_nicktainer" placeholder="Box (pcs)" class="form-control border-start-0 box_karung_nicktainer">
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-vial text-info small"></i></span>
+                                        <input type="number" name="plastik" placeholder="Plastik (pcs)" class="form-control border-start-0 plastik">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -844,9 +903,11 @@
                     <div class="section-title"><i class="fas fa-comment-alt"></i> Catatan & Tanda Tangan</div>
                     <div class="row g-4 mb-4">
                         <div class="col-md-5">
-                            <textarea name="catatan" class="form-control h-100" rows="5" placeholder="Catatan produksi..."></textarea>
+                            <label class="form-label text-xs fw-bold text-muted mb-2 uppercase">Catatan Produksi</label>
+                            <textarea name="catatan" class="form-control shadow-sm" rows="6" placeholder="Masukkan catatan atau kendala produksi di sini..." style="border-radius: 12px;"></textarea>
                         </div>
                         <div class="col-md-7">
+                            <label class="form-label text-xs fw-bold text-muted mb-2 uppercase">Verifikasi Tanda Tangan</label>
                             <div class="row g-2">
                                 <?php 
                                 $labels = ['Shift 1', 'Shift 2', 'Shift 3', 'Supervisor'];
@@ -854,11 +915,12 @@
                                 foreach ($fields as $idx => $f): 
                                 ?>
                                 <div class="col-3 text-center">
-                                    <div class="signature-box" onclick="this.querySelector('input').click()">
-                                        <img class="signature-preview img-fluid" src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Crect width='100' height='50' fill='%23f0f2f5'/%3E%3Ctext x='50' y='25' font-family='sans-serif' font-size='12' fill='%23a3aed1' text-anchor='middle' dominant-baseline='middle'%3EPreview%3C/text%3E%3C/svg%3E">
-                                        <span class="upload-text">upload ttd</span>
+                                    <div class="signature-box shadow-sm bg-white border" style="border-radius: 15px; padding: 12px;" onclick="this.querySelector('input').click()">
+                                        <div class="mb-2" style="height: 60px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 10px;">
+                                            <img class="signature-preview img-fluid" style="max-height: 50px;" src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Ctext x='50' y='25' font-family='sans-serif' font-size='8' fill='%23a3aed1' text-anchor='middle' dominant-baseline='middle'%3EKLIK UNTUK UPLOAD%3C/text%3E%3C/svg%3E">
+                                        </div>
                                         <input type="file" name="<?= $f ?>" class="d-none sig-input" onchange="previewSig(this)">
-                                        <div class="text-xs font-weight-bold"><?= $labels[$idx] ?></div>
+                                        <div class="text-xs font-weight-bold text-uppercase mt-1"><?= $labels[$idx] ?></div>
                                     </div>
                                 </div>
                                 <?php endforeach; ?>
@@ -866,6 +928,10 @@
                         </div>
                     </div>
                 </form>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" form="formAddLaporan" class="btn btn-primary px-5 shadow-sm">Simpan Laporan</button>
             </div>
         </div>
     </div>
@@ -1223,7 +1289,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addForm && editContainer) {
         const formContent = addForm.innerHTML;
         editContainer.innerHTML = formContent;
-        editContainer.querySelectorAll('[id]').forEach(el => { el.id = 'edit_' + el.id; });
+        
+        // Update IDs to avoid duplicates
+        editContainer.querySelectorAll('[id]').forEach(el => { 
+            const oldId = el.id;
+            const newId = 'edit_' + oldId;
+            el.id = newId;
+            
+            // Also update labels that point to these IDs
+            editContainer.querySelectorAll(`label[for="${oldId}"]`).forEach(label => {
+                label.setAttribute('for', newId);
+            });
+        });
+
+        // CRITICAL FIX: Update data-target-storage for reject buttons in edit modal
+        editContainer.querySelectorAll('.btn_open_reject_modal').forEach(btn => {
+            if (btn.dataset.targetStorage) {
+                btn.dataset.targetStorage = 'edit_' + btn.dataset.targetStorage;
+            }
+        });
     }
 
     // Recycle Bin Loading
@@ -1373,16 +1457,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(r => r.json())
                 .then(data => {
                     const h = data.header; if (!h) return;
-                    const set = (cls, val) => { const el = container.querySelector('.' + cls); if (el) el.value = val || ''; };
-                    set('nomor_spk', h.nomor_spk); set('nama_mesin', h.nama_mesin); set('nama_produksi', h.nama_produksi);
+                    const set = (cls, val) => { const el = container.querySelector('.' + cls); if (el) { el.value = val || ''; el.dispatchEvent(new Event('change')); } };
+                    
+                    // Handle nomor_spk specifically (select vs input)
+                    const spkSelect = container.querySelector('.nomor_spk');
+                    const spkInput = container.querySelector('.nomor_spk_baru');
+                    const spkCheck = container.querySelector('.check_spk_baru');
+                    if (spkSelect && spkInput && spkCheck) {
+                        let exists = false;
+                        for (let i = 0; i < spkSelect.options.length; i++) {
+                            if (spkSelect.options[i].value === h.nomor_spk) {
+                                exists = true; break;
+                            }
+                        }
+                        if (exists) {
+                            spkSelect.value = h.nomor_spk;
+                            spkCheck.checked = false;
+                        } else {
+                            spkInput.value = h.nomor_spk;
+                            spkCheck.checked = true;
+                        }
+                        spkCheck.dispatchEvent(new Event('change'));
+                    }
+
+                    set('nama_mesin', h.nama_mesin); set('nama_produksi', h.nama_produksi);
                     set('batch_number', h.batch_number); set('shift', h.shift); set('grup', h.grup);
                     set('nomor_mesin', h.nomor_mesin); set('packing', h.packing); set('tanggal', h.tanggal);
                     set('cycle_time', h.cycle_time); set('target', h.target); set('operator', h.operator);
                     set('grand_total_reject', h.grand_total_reject); set('sisa_po', h.sisa_po);
                     set('hold', h.hold); set('gumpalan', h.gumpalan); set('isi', h.isi);
                     const txt = container.querySelector('textarea'); if (txt) txt.value = h.catatan || '';
-                    if (data.materials && data.materials[0]) { set('merek_kode', data.materials[0].merek_kode); set('m_pemakaian', data.materials[0].pemakaian); }
-                    const imgs = container.querySelectorAll('img[src*="upload_placeholder"]');
+                    if (data.materials && data.materials[0]) { 
+                        set('merek_kode', data.materials[0].merek_kode); 
+                        set('m_pemakaian', data.materials[0].pemakaian); 
+                        set('lot_a', data.materials[0].lot_a);
+                        set('lot_b', data.materials[0].lot_b);
+                        set('lot_c', data.materials[0].lot_c);
+                        set('lot_d', data.materials[0].lot_d);
+                    }
+                    if (data.colorants && data.colorants[0]) {
+                        set('c_code', data.colorants[0].code);
+                        set('c_lot', data.colorants[0].nomor_lot);
+                        set('c_pemakaian', data.colorants[0].pemakaian);
+                    }
+                    if (data.packaging) {
+                        set('box_karung_nicktainer', data.packaging.box_karung_nicktainer);
+                        set('plastik', data.packaging.plastik);
+                    }
+                    const imgs = container.querySelectorAll('.signature-box img');
                     if (h.ttd_shift_1 && imgs[0]) imgs[0].src = '<?= base_url('uploads/ttd') ?>/' + h.ttd_shift_1;
                     if (h.ttd_shift_2 && imgs[1]) imgs[1].src = '<?= base_url('uploads/ttd') ?>/' + h.ttd_shift_2;
                     if (h.ttd_shift_3 && imgs[2]) imgs[2].src = '<?= base_url('uploads/ttd') ?>/' + h.ttd_shift_3;
@@ -1404,7 +1526,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(r => r.json())
                 .then(data => {
                     const h = data.header; if (!h) return;
-                    let html = `<div class="row g-4"><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2 text-primary"></i>Informasi Umum</h6><table class="table table-sm table-borderless"><tr><td width="150" class="text-muted">No. SPK</td><td class="fw-bold">${h.nomor_spk}</td></tr><tr><td class="text-muted">Mesin</td><td>${h.nama_mesin} (M#${h.nomor_mesin})</td></tr><tr><td class="text-muted">Produk</td><td>${h.nama_produksi}</td></tr><tr><td class="text-muted">Batch</td><td>${h.batch_number || '-'}</td></tr><tr><td class="text-muted">Tanggal</td><td>${h.tanggal}</td></tr><tr><td class="text-muted">Shift / Grup</td><td>Shift ${h.shift} / ${h.grup || '-'}</td></tr><tr><td class="text-muted">Operator</td><td>${h.operator}</td></tr></table></div><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-chart-line me-2 text-success"></i>Kinerja Produksi</h6><table class="table table-sm table-borderless"><tr><td width="150" class="text-muted">Target</td><td>${h.target} pcs</td></tr><tr><td class="text-muted">Hasil Bagus</td><td class="text-success fw-bold">${(parseInt(h.grand_total_bagus)||0).toLocaleString()} pcs</td></tr><tr><td class="text-muted">Total Reject</td><td class="text-danger fw-bold">${(parseInt(h.grand_total_reject)||0).toLocaleString()} pcs</td></tr><tr><td class="text-muted">Downtime</td><td>${h.total_downtime} menit</td></tr><tr><td class="text-muted">Cycle Time</td><td>${h.cycle_time || '-'}</td></tr></table></div><div class="col-md-12"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-history me-2 text-info"></i>Hasil Produksi Per Jam</h6><table class="table table-sm table-bordered"><thead class="bg-light"><tr><th class="text-center">Jam</th><th class="text-center">Hasil (pcs)</th></tr></thead><tbody>${data.jams.map(j => `<tr><td class="text-center">${j.rentang_jam}</td><td class="text-center">${(parseInt(j.hasil_produksi)||0).toLocaleString()}</td></tr>`).join('')}</tbody></table></div><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Rincian Reject</h6><table class="table table-sm table-bordered"><thead class="bg-light"><tr><th>Jenis Reject</th><th class="text-center">Jumlah</th></tr></thead><tbody>${data.rejects.length ? data.rejects.map(r => `<tr><td>${r.jenis_reject}</td><td class="text-center text-danger fw-bold">${(parseInt(r.jumlah)||0).toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="2" class="text-center text-muted">Tidak ada reject</td></tr>'}</tbody></table></div><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-boxes me-2 text-warning"></i>Material & Packaging</h6><div class="p-3 bg-light rounded"><p class="mb-1 small"><strong>Material:</strong> ${data.materials[0] ? data.materials[0].merek_kode + ' (' + data.materials[0].pemakaian + ' kg)' : '-'}</p><p class="mb-1 small"><strong>Lot:</strong> ${data.materials[0] ? [data.materials[0].lot_a, data.materials[0].lot_b, data.materials[0].lot_c, data.materials[0].lot_d].filter(x => x).join(', ') : '-'}</p><hr class="my-2"><p class="mb-1 small"><strong>Colorant:</strong> ${data.colorants[0] ? data.colorants[0].code + ' (' + data.colorants[0].pemakaian + ' kg)' : '-'}</p><p class="mb-1 small"><strong>Packaging:</strong> ${data.packaging ? 'Box: ' + data.packaging.box_karung_nicktainer + ' pcs, Plastik: ' + data.packaging.plastik + ' pcs' : '-'}</p></div></div><div class="col-md-12"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-comment-alt me-2 text-secondary"></i>Catatan & Verifikasi</h6><div class="p-3 border rounded mb-3 bg-light italic">${h.catatan || 'Tidak ada catatan.'}</div><div class="row g-2">${['Shift 1', 'Shift 2', 'Shift 3', 'Supervisor'].map((label, i) => { const field = ['ttd_shift_1', 'ttd_shift_2', 'ttd_shift_3', 'ttd_spv'][i]; return `<div class="col-3 text-center"><div class="border rounded p-2 bg-white">${h[field] ? `<img src="<?= base_url('uploads/ttd') ?>/${h[field]}" class="img-fluid mb-2" style="max-height: 60px;">` : `<div class="py-4 text-muted small">Belum TTD</div>`}<div class="fw-bold small border-top pt-1">${label}</div></div></div>`; }).join('')}</div></div></div>`;
+                    let html = `<div class="row g-4"><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2 text-primary"></i> Informasi Umum</h6><table class="table table-sm table-borderless"><tr><td width="150" class="text-muted">No. SPK</td><td class="fw-bold">${h.nomor_spk}</td></tr><tr><td class="text-muted">Mesin</td><td>${h.nama_mesin} (M#${h.nomor_mesin})</td></tr><tr><td class="text-muted">Produk</td><td>${h.nama_produksi}</td></tr><tr><td class="text-muted">Batch</td><td>${h.batch_number || '-'}</td></tr><tr><td class="text-muted">Tanggal</td><td>${h.tanggal}</td></tr><tr><td class="text-muted">Shift / Grup</td><td>Shift ${h.shift} / ${h.grup || '-'}</td></tr><tr><td class="text-muted">Operator</td><td>${h.operator}</td></tr></table></div><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-chart-line me-2 text-success"></i> Kinerja Produksi</h6><table class="table table-sm table-borderless"><tr><td width="150" class="text-muted">Target</td><td>${h.target} pcs</td></tr><tr>
+
+                    <td class="text-muted">Hasil Bagus</td>
+                    <td class="text-success fw-bold">${(parseInt(h.grand_total_bagus)||0).toLocaleString()} pcs</td>
+
+                    <td class="text-muted">Hasil ilham</td>
+                    <td class="text-success fw-bold">${(parseInt(h.grand_total_bagus)||0).toLocaleString()} pcs</td>
+
+                    </tr><tr><td class="text-muted">Total Reject</td><td class="text-danger fw-bold">${(parseInt(h.grand_total_reject)||0).toLocaleString()} pcs</td></tr><tr><td class="text-muted">Downtime</td><td>${h.total_downtime} menit</td></tr><tr><td class="text-muted">Cycle Time</td><td>${h.cycle_time || '-'}</td></tr></table></div><div class="col-md-12"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-history me-2 text-info"></i> Hasil Produksi Per Jam</h6><table class="table table-sm table-bordered"><thead class="bg-light"><tr><th class="text-center">Jam</th><th class="text-center">Hasil (pcs)</th></tr></thead><tbody>${data.jams.map(j => `<tr><td class="text-center">${j.rentang_jam}</td><td class="text-center">${(parseInt(j.hasil_produksi)||0).toLocaleString()}</td></tr>`).join('')}</tbody></table></div><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3 mt-3"><i class="fas fa-exclamation-triangle me-2 text-danger"></i> Rincian Reject</h6><table class="table table-sm table-bordered"><thead class="bg-light"><tr><th>Jenis Reject</th><th class="text-center">Jumlah</th></tr></thead><tbody>${data.rejects.length ? data.rejects.map(r => `<tr><td>${r.jenis_reject}</td><td class="text-center text-danger fw-bold">${(parseInt(r.jumlah)||0).toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="2" class="text-center text-muted">Tidak ada reject</td></tr>'}</tbody></table></div><div class="col-md-6"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-boxes me-2 text-warning mt-3"></i> Material & Packaging</h6><div class="p-3 bg-light rounded"><p class="mb-1 small"><strong>Material:</strong> ${data.materials[0] ? data.materials[0].merek_kode + ' (' + data.materials[0].pemakaian + ' kg)' : '-'}</p><p class="mb-1 small"><strong>Lot:</strong> ${data.materials[0] ? [data.materials[0].lot_a, data.materials[0].lot_b, data.materials[0].lot_c, data.materials[0].lot_d].filter(x => x).join(', ') : '-'}</p><hr class="my-2"><p class="mb-1 small"><strong>Colorant:</strong> ${data.colorants[0] ? data.colorants[0].code + ' (' + data.colorants[0].pemakaian + ' kg)' : '-'}</p><p class="mb-1 small"><strong>Packaging:</strong> ${data.packaging ? 'Box: ' + data.packaging.box_karung_nicktainer + ' pcs, Plastik: ' + data.packaging.plastik + ' pcs' : '-'}</p></div></div><div class="col-md-12"><h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-comment-alt me-2 text-secondary"></i> Catatan & Verifikasi</h6><div class="p-3 border rounded mb-3 bg-light italic">${h.catatan || 'Tidak ada catatan.'}</div><div class="row g-2">${['Shift 1', 'Shift 2', 'Shift 3', 'Supervisor'].map((label, i) => { const field = ['ttd_shift_1', 'ttd_shift_2', 'ttd_shift_3', 'ttd_spv'][i]; return `<div class="col-3 text-center"><div class="border rounded p-2 bg-white">${h[field] ? `<img src="<?= base_url('uploads/ttd') ?>/${h[field]}" class="img-fluid mb-2" style="max-height: 60px;">` : `<div class="py-4 text-muted small">Belum TTD</div>`}<div class="fw-bold small border-top pt-1">${label}</div></div></div>`; }).join('')}</div></div></div>`;
                     container.innerHTML = html;
                 });
         }

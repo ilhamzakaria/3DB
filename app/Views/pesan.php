@@ -213,7 +213,7 @@
                 var sizeText = formatSize(msg.attachment_size);
                 var label = escapeHtml(msg.attachment_name) + (sizeText ? ' <span class="file-size">(' + sizeText + ')</span>' : '');
                 attachmentHtml = '<div class="msg-attachment">' +
-                    '<a href="' + baseUrl + 'chat/download/' + msg.id + '" target="_blank" rel="noopener">' +
+                    '<a href="' + baseUrl + 'pesan/download/' + msg.id + '" target="_blank" rel="noopener">' +
                     '<i class="fas fa-paperclip"></i> ' + label +
                     '</a>' +
                     '</div>';
@@ -233,7 +233,7 @@
 
         function loadMessages() {
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', baseUrl + 'chat/getMessages?last_id=' + lastId, true);
+            xhr.open('GET', baseUrl + 'pesan/getMessages?last_id=' + lastId, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState !== 4) return;
@@ -271,7 +271,7 @@
                 fd.append('attachment', file);
             }
 
-            xhr.open('POST', baseUrl + 'chat/sendMessage', true);
+            xhr.open('POST', baseUrl + 'pesan/sendMessage', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onreadystatechange = function() {
                 if (xhr.readyState !== 4) return;

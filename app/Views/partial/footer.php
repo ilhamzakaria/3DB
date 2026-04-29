@@ -25,7 +25,7 @@
 (function(){
     var badge = document.getElementById('chatBadge');
     var notifBadge = document.getElementById('notifBadge');
-    var isChatPage = window.location.pathname.indexOf('/chat') === 0;
+    var isChatPage = window.location.pathname.indexOf('/pesan') === 0;
     var isNotifPage = window.location.pathname.indexOf('/notifikasi') === 0;
     var lastCount = -1;
     var lastNotifCount = -1;
@@ -48,14 +48,14 @@
 
     function showNotify(title, body) {
         if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
-            new Notification(title || 'Pesan Baru', { body: body || 'Ada pesan baru di chat', icon: '<?= base_url("assets/img/profile.svg") ?>' });
+            new Notification(title || 'Pesan Baru', { body: body || 'Ada pesan baru', icon: '<?= base_url("assets/img/profile.svg") ?>' });
         }
     }
 
     function pollUnread() {
         if (isChatPage || !badge) return;
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '<?= base_url("chat/getUnreadCount") ?>', true);
+        xhr.open('GET', '<?= base_url("pesan/getUnreadCount") ?>', true);
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== 4) return;
@@ -68,7 +68,7 @@
                         badge.style.display = 'inline-block';
                         if (lastCount >= 0 && c > lastCount) {
                             playNotifSound();
-                            showNotify('Chat', 'Ada ' + c + ' pesan baru');
+                            showNotify('Pesan', 'Ada ' + c + ' pesan baru');
                         }
                     } else {
                         badge.style.display = 'none';

@@ -80,14 +80,6 @@ class Produksi extends BaseController
         return view('produksi', $data);
     }
 
-    public function tambah()
-    {
-        $data = [
-            'title' => 'Tambah Produksi',
-            'spk_list' => $this->getSpkList()
-        ];
-        return view('produksi/tambah', $data);
-    }
 
     public function simpan()
     {
@@ -222,30 +214,6 @@ class Produksi extends BaseController
         return redirect()->to('/produksi')->with('success', 'Data produksi berhasil disimpan.');
     }
 
-    public function edit($id)
-    {
-        if (session('role') != 'produksi') {
-            return redirect()->to('/produksi')->with('error', 'Anda tidak memiliki akses untuk mengubah data.');
-        }
-
-        $header = $this->headerModel->find($id);
-        if (!$header) {
-            return redirect()->to('/produksi')->with('error', 'Data tidak ditemukan.');
-        }
-
-        $data = [
-            'title' => 'Edit Produksi',
-            'spk_list' => $this->getSpkList(),
-            'header' => $header,
-            'jams' => $this->jamModel->where('produksi_header_id', $id)->findAll(),
-            'rejects' => $this->rejectModel->where('produksi_header_id', $id)->findAll(),
-            'materials' => $this->materialModel->where('produksi_header_id', $id)->findAll(),
-            'colorants' => $this->colorantModel->where('produksi_header_id', $id)->findAll(),
-            'packaging' => $this->packagingModel->where('produksi_header_id', $id)->first(),
-            'downtimes' => $this->downtimeModel->where('produksi_header_id', $id)->findAll(),
-        ];
-        return view('produksi/edit', $data);
-    }
 
     public function update($id)
     {
@@ -403,35 +371,31 @@ class Produksi extends BaseController
 
     public function trash()
     {
-        $data = [
-            'title' => 'Tempat Sampah Produksi',
-            'produksi' => $this->headerModel->onlyDeleted()->findAll()
-        ];
-        return view('produksi/trash', $data);
+        return redirect()->to('/produksi');
     }
 
     public function restore($id)
     {
         if (session('role') != 'produksi') {
-            return redirect()->to('/produksi/trash')->with('error', 'Anda tidak memiliki akses untuk memulihkan data.');
+            return redirect()->to('/produksi')->with('error', 'Anda tidak memiliki akses untuk memulihkan data.');
         }
 
         // Use direct query to bypass soft delete protection on update
         $db = $this->dbProduksi();
         $db->table('produksi_headers')->where('id', $id)->update(['deleted_at' => null]);
         
-        return redirect()->to('/produksi/trash')->with('success', 'Data berhasil dipulihkan.');
+        return redirect()->to('/produksi')->with('success', 'Data berhasil dipulihkan.');
     }
 
     public function deletePermanent($id)
     {
         if (session('role') != 'produksi') {
-            return redirect()->to('/produksi/trash')->with('error', 'Anda tidak memiliki akses untuk menghapus data secara permanen.');
+            return redirect()->to('/produksi')->with('error', 'Anda tidak memiliki akses untuk menghapus data secara permanen.');
         }
 
         // Purge the record permanently
         $this->headerModel->delete($id, true);
-        return redirect()->to('/produksi/trash')->with('success', 'Data berhasil dihapus permanen.');
+        return redirect()->to('/produksi')->with('success', 'Data berhasil dihapus permanen.');
     }
 
     public function get_trash()

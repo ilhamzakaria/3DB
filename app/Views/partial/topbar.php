@@ -71,7 +71,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link topbar-menu-link position-relative <?= uri_string() == 'chat' ? 'active' : '' ?>" href="<?= base_url('chat') ?>">
+                        <a class="nav-link topbar-menu-link position-relative <?= uri_string() == 'pesan' ? 'active' : '' ?>" href="<?= base_url('pesan') ?>">
                             Pesan
                             <span id="chatBadge" class="badge badge-danger badge-pill position-absolute" style="display:none; font-size:10px; top: 0; right: 0;">0</span>
                         </a>

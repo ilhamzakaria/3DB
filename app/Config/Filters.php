@@ -80,7 +80,7 @@ class Filters extends BaseFilters
         'before' => [
             'csrf' => [
                 'except' => [
-                    'chat/sendMessage'
+                    'pesan/sendMessage'
                 ]
             ],
         ],

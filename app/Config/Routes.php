@@ -129,11 +129,11 @@ $routes->get('/admin/edit/(:num)', 'Admin::edit/$1');
 $routes->post('/admin/update/(:num)', 'Admin::update/$1');
 
 // chat (ppic, produksi, gudang)
-$routes->get('/chat', 'Chat::index');
-$routes->get('/chat/getMessages', 'Chat::getMessages');
-$routes->get('/chat/getUnreadCount', 'Chat::getUnreadCount');
-$routes->post('/chat/sendMessage', 'Chat::sendMessage');
-$routes->get('/chat/download/(:num)', 'Chat::download/$1');
+$routes->get('/pesan', 'Pesan::index');
+$routes->get('/pesan/getMessages', 'Pesan::getMessages');
+$routes->get('/pesan/getUnreadCount', 'Pesan::getUnreadCount');
+$routes->post('/pesan/sendMessage', 'Pesan::sendMessage');
+$routes->get('/pesan/download/(:num)', 'Pesan::download/$1');
 
 // notifikasi (badge + list)
 $routes->get('/notifikasi', 'Notifikasi::index');
