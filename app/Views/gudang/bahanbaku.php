@@ -1,5 +1,32 @@
 <?= $this->extend('layout/main') ?>
 
+<?= $this->section('vendor_styles') ?>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css">
+<style>
+    .select2-container .select2-selection--single {
+        height: calc(1.5em + 0.75rem + 2px);
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #d1d3e2;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 1.5;
+        padding-left: 0;
+        padding-right: 1.5rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 100%;
+        right: 0.4rem;
+    }
+
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        border: 1px solid #d1d3e2;
+        border-radius: 0.35rem;
+    }
+</style>
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 
 <?php
@@ -100,6 +127,7 @@ $formatDateTime = static function ($value): string {
                 <thead>
                     <tr class="text-center font-weight-bold">
                         <th>Produk</th>
+                        <th>Type</th>
                         <th>Item Barang</th>
                         <th>Status</th>
                         <th>Kode</th>
@@ -122,12 +150,17 @@ $formatDateTime = static function ($value): string {
                             ?>
                             <tr>
                                 <td><?= esc($item['produk'] ?? '-') ?></td>
+                                <td><?= esc($item['tipe'] ?? '-') ?></td>
                                 <td><?= esc($item['nama_bahan'] ?? '-') ?></td>
                                 <td><span class="badge <?= esc($statusBadge) ?>"><?= esc($statusText) ?></span></td>
                                 <td><?= esc($item['kode'] ?? '-') ?></td>
                                 <td><?= esc($item['jumlah'] ?? '-') ?></td>
                                 <td><?= esc($item['nomor_lot'] ?? '-') ?></td>
-                                <td><?= esc($item['no_spk'] ?? '-') ?></td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-link btn-spk-produksi-autofill p-0" data-spk="<?= esc($item['no_spk'] ?? '') ?>" style="text-decoration: none; color: #4361ee;">
+                                        <?= esc($item['no_spk'] ?? '-') ?>
+                                    </button>
+                                </td>
                                 <td><?= esc($item['shif'] ?? '-') ?></td>
                                 <td><?= esc($formatDateTime($item['updated_at'] ?? null)) ?></td>
                                 <td><?= esc($formatDateTime($item['created_at'] ?? null)) ?></td>
@@ -143,6 +176,7 @@ $formatDateTime = static function ($value): string {
                                                     data-target="#editDataModal"
                                                     data-id="<?= esc($item['id']) ?>"
                                                     data-produk="<?= esc($item['produk'] ?? '') ?>"
+                                                    data-tipe="<?= esc($item['tipe'] ?? '') ?>"
                                                     data-nama="<?= esc($item['nama_bahan'] ?? '') ?>"
                                                     data-status="<?= esc($item['status'] ?? '') ?>"
                                                     data-kode="<?= esc($item['kode'] ?? '') ?>"
@@ -211,14 +245,23 @@ $formatDateTime = static function ($value): string {
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="produk">Produk</label>
-                                <input type="text" class="form-control" id="produk" name="produk" placeholder="Input produk">
+                                <label for="produk">Produk <span class="text-danger">*</span></label>
+                                <select class="form-control select2-bahan-baku" id="produk" name="produk" required style="width: 100%;">
+                                    <?php foreach (($bahan_baku_products ?? []) as $produk) : ?>
+                                        <option value="<?= esc($produk) ?>" <?= $produk === 'Galon' ? 'selected' : '' ?>><?= esc($produk) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="shif">Shift</label>
-                                <input type="text" class="form-control" id="shif" name="shif" placeholder="Input shift">
+                                <label for="tipe">Type <span class="text-danger">*</span></label>
+                                <select class="form-control select2-bahan-baku" id="tipe" name="tipe" required style="width: 100%;">
+                                    <option value="">-- Pilih Type --</option>
+                                    <?php foreach (($bahan_baku_types ?? []) as $tipe) : ?>
+                                        <option value="<?= esc($tipe) ?>"><?= esc($tipe) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -227,13 +270,15 @@ $formatDateTime = static function ($value): string {
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="nama_bahan">Item Barang <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nama_bahan" name="nama_bahan" required>
+                                <select class="form-control select2-bahan-baku" id="nama_bahan" name="nama_bahan" required style="width: 100%;">
+                                    <option value="">-- Pilih Type Terlebih Dahulu --</option>
+                                </select>
                             </div>
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="status">Status</label>
                                 <select class="form-control" id="status" name="status">
@@ -243,10 +288,16 @@ $formatDateTime = static function ($value): string {
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="kode">Kode</label>
                                 <input type="text" class="form-control" id="kode" name="kode">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="shif">Shift</label>
+                                <input type="text" class="form-control" id="shif" name="shif" placeholder="Input shift">
                             </div>
                         </div>
                     </div>
@@ -294,17 +345,20 @@ $formatDateTime = static function ($value): string {
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_nama_bahan">Nama Bahan</label>
-                                <input type="text" class="form-control" id="edit_nama_bahan" name="nama_bahan" required>
+                                <label for="edit_tipe">Type <span class="text-danger">*</span></label>
+                                <select class="form-control select2-bahan-baku" id="edit_tipe" name="tipe" required style="width: 100%;">
+                                    <option value="">-- Pilih Type --</option>
+                                    <?php foreach (($bahan_baku_types ?? []) as $tipe) : ?>
+                                        <option value="<?= esc($tipe) ?>"><?= esc($tipe) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_status">Status</label>
-                                <select class="form-control" id="edit_status" name="status" required>
-                                    <?php foreach (($status_options ?? []) as $status) : ?>
-                                        <option value="<?= esc($status) ?>"><?= esc($statusLabels[$status] ?? ucfirst(str_replace('_', ' ', $status))) ?></option>
-                                    <?php endforeach; ?>
+                                <label for="edit_nama_bahan">Item Barang <span class="text-danger">*</span></label>
+                                <select class="form-control select2-bahan-baku" id="edit_nama_bahan" name="nama_bahan" required style="width: 100%;">
+                                    <option value="">-- Pilih Type Terlebih Dahulu --</option>
                                 </select>
                             </div>
                         </div>
@@ -324,11 +378,10 @@ $formatDateTime = static function ($value): string {
                         </div>
                     </div>
                     <div class="row">
-
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="edit_kode">Kode</label>
-                                <input type="text" class="form-control" id="edit_kode" name="kode" required>
+                                <input type="text" class="form-control" id="edit_kode" name="kode">
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -339,8 +392,24 @@ $formatDateTime = static function ($value): string {
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_produk">Produk</label>
-                                <input type="text" class="form-control" id="edit_produk" name="produk" min="0" required>
+                                <label for="edit_produk">Produk <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_produk" name="produk" required>
+                                    <?php foreach (($bahan_baku_products ?? []) as $produk) : ?>
+                                        <option value="<?= esc($produk) ?>" <?= $produk === 'Galon' ? 'selected' : '' ?>><?= esc($produk) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="edit_status">Status <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_status" name="status" required>
+                                    <?php foreach (($status_options ?? []) as $status) : ?>
+                                        <option value="<?= esc($status) ?>"><?= esc($statusLabels[$status] ?? ucfirst(str_replace('_', ' ', $status))) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -416,6 +485,7 @@ $formatDateTime = static function ($value): string {
     </form>
 </div>
 
+<?= $this->section('scripts') ?>
 <script>
     function toggleFilter(show) {
         if (show) {
@@ -427,9 +497,62 @@ $formatDateTime = static function ($value): string {
         }
     }
 
+    const itemData = <?= json_encode($bahan_baku_options ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+    function populateItems(tipeSelectId, itemSelectId, selectedValue = '') {
+        const tipeSelect = document.getElementById(tipeSelectId);
+        const itemSelect = document.getElementById(itemSelectId);
+        const $itemSelect = window.jQuery ? window.jQuery(itemSelect) : null;
+        
+        itemSelect.innerHTML = '<option value="">-- Pilih Item Barang --</option>';
+        itemSelect.disabled = false;
+        itemSelect.removeAttribute('disabled');
+        
+        if (tipeSelect.value && itemData[tipeSelect.value]) {
+            itemData[tipeSelect.value].forEach(function(item) {
+                const option = document.createElement('option');
+                option.value = item;
+                option.textContent = item;
+                if (item === selectedValue) {
+                    option.selected = true;
+                }
+                itemSelect.appendChild(option);
+            });
+        } else {
+            itemSelect.innerHTML = '<option value="">-- Pilih Type Terlebih Dahulu --</option>';
+        }
+
+        if ($itemSelect && typeof window.jQuery.fn.select2 === 'function') {
+            const modal = itemSelect.closest('.modal');
+            const select2Options = {
+                width: '100%',
+                minimumResultsForSearch: 0,
+            };
+
+            if (modal) {
+                select2Options.dropdownParent = window.jQuery(modal);
+            }
+
+            if ($itemSelect.hasClass('select2-hidden-accessible')) {
+                $itemSelect.select2('destroy');
+            }
+
+            $itemSelect.select2(select2Options);
+        }
+    }
+
+    document.getElementById('tipe').addEventListener('change', function() {
+        populateItems('tipe', 'nama_bahan');
+    });
+
+    document.getElementById('edit_tipe').addEventListener('change', function() {
+        populateItems('edit_tipe', 'edit_nama_bahan');
+    });
+
     function setEditModal(button) {
         var id = button.getAttribute('data-id') || '';
         var produk = button.getAttribute('data-produk') || '';
+        var tipe = button.getAttribute('data-tipe') || '';
         var nama = button.getAttribute('data-nama') || '';
         var status = button.getAttribute('data-status') || '';
         var kode = button.getAttribute('data-kode') || '';
@@ -440,7 +563,8 @@ $formatDateTime = static function ($value): string {
 
         document.getElementById('edit_id').value = id;
         document.getElementById('edit_produk').value = produk;
-        document.getElementById('edit_nama_bahan').value = nama;
+        document.getElementById('edit_tipe').value = tipe;
+        populateItems('edit_tipe', 'edit_nama_bahan', nama);
         document.getElementById('edit_status').value = status;
         document.getElementById('edit_kode').value = kode;
         document.getElementById('edit_jumlah').value = jumlah;
@@ -459,11 +583,39 @@ $formatDateTime = static function ($value): string {
         $('#delete_message').text('Yakin ingin menghapus bahan baku "' + nama + '"?');
     }
 
+    function initSelect2ForModal(modalSelector) {
+        if (!window.jQuery || typeof window.jQuery.fn.select2 !== 'function') {
+            return;
+        }
+
+        var $modal = window.jQuery(modalSelector);
+        if (!$modal.length) {
+            return;
+        }
+
+        $modal.find('select.select2-bahan-baku').each(function() {
+            var $select = window.jQuery(this);
+
+            if ($select.hasClass('select2-hidden-accessible')) {
+                $select.select2('destroy');
+            }
+
+            $select.select2({
+                width: '100%',
+                dropdownParent: $modal,
+                minimumResultsForSearch: 0
+            });
+        });
+    }
+
     $(function() {
         var addModal = document.getElementById('addDataModal');
+        var editModal = document.getElementById('editDataModal');
 
         if (addModal) {
             $(addModal).on('shown.bs.modal', function() {
+                initSelect2ForModal('#addDataModal');
+                populateItems('tipe', 'nama_bahan');
                 var noSpkInput = document.getElementById('no_spk');
                 if (noSpkInput) {
                     noSpkInput.focus();
@@ -472,10 +624,26 @@ $formatDateTime = static function ($value): string {
 
             $(addModal).on('hidden.bs.modal', function() {
                 document.querySelector('form[action="<?= base_url('gudang/bahan_baku/tambahData') ?>"]').reset();
+                populateItems('tipe', 'nama_bahan');
             });
         }
+
+        if (editModal) {
+            $(editModal).on('shown.bs.modal', function() {
+                initSelect2ForModal('#editDataModal');
+            });
+        }
+
+        populateItems('tipe', 'nama_bahan');
+        populateItems('edit_tipe', 'edit_nama_bahan');
     });
 </script>
+<?= view('shared/spk_produksi_autofill') ?>
+<?= $this->endSection() ?>
+
+<?= $this->section('vendor_scripts') ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+<?= $this->endSection() ?>
 
 
 <?= $this->endSection() ?>

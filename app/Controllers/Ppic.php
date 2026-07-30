@@ -21,6 +21,28 @@ class Ppic extends BaseController
 
     public function index()
     {
+        // Handle tab-based routing for machine modules and finish goods
+        $tab = $this->request->getGet('tab');
+        if (!empty($tab)) {
+            if (str_starts_with($tab, 'mesin_')) {
+                $m = str_replace('mesin_', '', $tab);
+                // Redirect ke route langsung untuk consistency
+                return redirect()->to('/ppic/mesin_' . $m);
+            } elseif (str_starts_with($tab, 'finish_good_')) {
+                $type = str_replace('finish_good_', '', $tab);
+                // Redirect ke route langsung untuk consistency
+                return redirect()->to('/ppic/finish_good/' . $type);
+            }
+        }
+
+        // Programmatic migration runner to make sure database columns exist!
+        try {
+            $migrations = \Config\Services::migrations();
+            $migrations->setGroup('ppic')->latest();
+        } catch (\Throwable $e) {
+            // Ignore if already migrated or any DB issues
+        }
+
         $q = trim((string) $this->request->getGet('q'));
         $startDate = $this->request->getGet('start_date');
         $endDate = $this->request->getGet('end_date');
@@ -77,8 +99,37 @@ class Ppic extends BaseController
             'start_date'     => $startDate,
             'end_date'       => $endDate,
             'filter'         => $filter,
-            'modern_layout'  => true
+            'modern_layout'  => true,
+            'current_machine' => ''  // Empty when viewing ppic main page (not specific mesin)
         ]);
+    }
+
+    public function createUser()
+    {
+        if (!$this->request->is('post')) {
+            return redirect()->to('/ppic')->with('error', 'Metode tidak diizinkan');
+        }
+
+        $userModel = new \App\Models\MUser();
+        $username = trim((string) $this->request->getPost('username'));
+        $password = $this->request->getPost('password');
+
+        if ($username === '' || $password === '') {
+            return redirect()->back()->with('error', 'Username dan password harus diisi');
+        }
+
+        $existing = $userModel->where('username', $username)->first();
+        if ($existing) {
+            return redirect()->back()->with('error', 'Username sudah digunakan');
+        }
+
+        $userModel->insert([
+            'username' => $username,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'role'     => 'ppic'
+        ]);
+
+        return redirect()->to('/ppic')->with('success', 'User PPIC berhasil dibuat');
     }
     public function tambahData()
     {
@@ -151,6 +202,10 @@ class Ppic extends BaseController
             'targett'     => $this->request->getPost('targett'),
             'revisi'      => $latestRevisi,
             'tanggal'     => $this->request->getPost('tanggal'),
+            'target_awal' => $this->request->getPost('target_awal') !== '' ? $this->request->getPost('target_awal') : null,
+            'target_akhir'=> $this->request->getPost('target_akhir') !== '' ? $this->request->getPost('target_akhir') : null,
+            'realisasi_awal' => $this->request->getPost('realisasi_awal') !== '' ? $this->request->getPost('realisasi_awal') : null,
+            'realisasi_akhir'=> $this->request->getPost('realisasi_akhir') !== '' ? $this->request->getPost('realisasi_akhir') : null,
         ];
 
         // Mapping reject dinamis ke kolom database
@@ -189,7 +244,9 @@ class Ppic extends BaseController
                 }
             }
         }
-        $this->MPpic->save($data);
+        if (!$this->MPpic->save($data)) {
+            return redirect()->back()->withInput()->with('errors', $this->MPpic->errors());
+        }
         $idPpic = (int) $this->MPpic->getInsertID();
         if ($idPpic > 0) {
             if ($hasManualRevisi) {
@@ -231,9 +288,9 @@ class Ppic extends BaseController
     public function edit($id)
     {
         $data = $this->MPpic->find($id);
-        return view('edit', [
+        return view('ppic/modals/edit', [
             'title' => 'Ubah Data Produksi',
-            'data' => $data
+            'data'  => $data
         ]);
     }
 
@@ -268,9 +325,15 @@ class Ppic extends BaseController
             'targett'     => $this->request->getPost('targett'),
             'revisi'      => $this->request->getPost('revisi'),
             'tanggal'     => $this->request->getPost('tanggal'),
+            'target_awal' => $this->request->getPost('target_awal') !== '' ? $this->request->getPost('target_awal') : null,
+            'target_akhir'=> $this->request->getPost('target_akhir') !== '' ? $this->request->getPost('target_akhir') : null,
+            'realisasi_awal' => $this->request->getPost('realisasi_awal') !== '' ? $this->request->getPost('realisasi_awal') : null,
+            'realisasi_akhir'=> $this->request->getPost('realisasi_akhir') !== '' ? $this->request->getPost('realisasi_akhir') : null,
         ];
 
-        $ppicModel->update($id, $data);
+        if (!$ppicModel->update($id, $data)) {
+            return redirect()->back()->withInput()->with('errors', $ppicModel->errors());
+        }
 
         // kirim notifikasi jika revisi berubah (atau pertama kali diisi)
         $newRevisi = trim((string) ($data['revisi'] ?? ''));
@@ -686,13 +749,12 @@ class Ppic extends BaseController
     {
         $data = $this->MPpic->findAll();
 
-        // Bersihkan output buffer (penting!)
         if (ob_get_length()) {
             ob_end_clean();
         }
 
         header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-        header("Content-Disposition: attachment; filename=data_produksi.xls");
+        header("Content-Disposition: attachment; filename=data_produksi_ppic.xls");
         header("Pragma: no-cache");
         header("Expires: 0");
 
@@ -705,31 +767,23 @@ class Ppic extends BaseController
                 <th>Grade</th>
                 <th>Warna</th>
                 <th>Nomor Mesin</th>
-                <th>Batch Number</th>
                 <th>Shift</th>
-                <th>Nomor Mesin</th>
-                <th>Packing Isi</th>
-                <th>Cycle Time</th>
                 <th>Target</th>
                 <th>Operator</th>
             </tr>";
 
         foreach ($data as $d) {
             echo "<tr>
-                    <td>" . $d['no_spk'] . "</td>
-                    <td>" . $d['tanggal'] . "</td>
-                    <td>" . $d['nama_mesin'] . "</td>
-                    <td>" . $d['nama_produk'] . "</td>
-                    <td>" . $d['grade'] . "</td>
-                    <td>" . $d['warna'] . "</td>
-                    <td>" . $d['nomor_mesin'] . "</td>
-                    <td>" . $d['batch_number'] . "</td>
-                    <td>" . $d['shift'] . "</td>
-                    <td>" . $d['nomor_mesin'] . "</td>
-                    <td>" . $d['packing_isi'] . "</td>
-                    <td>" . $d['cycle_time'] . "</td>
-                    <td>" . $d['targett'] . "</td>
-                    <td>" . $d['operator'] . "</td>
+                    <td>" . esc($d['no_spk']) . "</td>
+                    <td>" . esc($d['tanggal']) . "</td>
+                    <td>" . esc($d['nama_mesin']) . "</td>
+                    <td>" . esc($d['nama_produk']) . "</td>
+                    <td>" . esc($d['grade']) . "</td>
+                    <td>" . esc($d['warna']) . "</td>
+                    <td>" . esc($d['nomor_mesin']) . "</td>
+                    <td>" . esc($d['shif']) . "</td>
+                    <td>" . esc($d['targett']) . "</td>
+                    <td>" . esc($d['operator']) . "</td>
                 </tr>";
         }
 

@@ -80,8 +80,9 @@ class Security extends BaseConfig
      * --------------------------------------------------------------------------
      *
      * Redirect to previous page with error on failure.
+     * Set false to prevent 403 redirect loops on production (HTTP site).
      *
      * @see https://codeigniter4.github.io/userguide/libraries/security.html#redirection-on-failure
      */
-    public bool $redirect = (ENVIRONMENT === 'production');
+    public bool $redirect = false;
 }

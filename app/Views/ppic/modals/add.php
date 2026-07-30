@@ -96,6 +96,20 @@
                         </div>
 
                         <div class="col-md-4">
+                            <label class="filter-section-title">Jumlah</label>
+                            <input type="text" class="form-control" name="jumlah" id="add_jumlah" placeholder="0">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="filter-section-title">Status</label>
+                            <select class="form-select" name="status" id="add_status">
+                                <option value="">-- Pilih Status --</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Ganti Packing">Ganti Packing</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
                             <label class="filter-section-title">Revisi (R1)</label>
                             <input type="text" class="form-control" name="revisi_1" id="add_revisi_1" placeholder="Input revisi jika ada...">
                         </div>
@@ -103,6 +117,38 @@
                         <div class="col-md-4">
                             <label class="filter-section-title">Tanggal</label>
                             <input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Target Awal (Mulai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['target_awal'] ?? null) ? 'is-invalid' : '' ?>" name="target_awal" id="add_target_awal" value="<?= old('target_awal') ?>">
+                            <?php if (session()->getFlashdata('errors')['target_awal'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['target_awal'] ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Target Akhir (Selesai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['target_akhir'] ?? null) ? 'is-invalid' : '' ?>" name="target_akhir" id="add_target_akhir" value="<?= old('target_akhir') ?>">
+                            <?php if (session()->getFlashdata('errors')['target_akhir'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['target_akhir'] ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Realisasi Awal (Aktual Mulai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['realisasi_awal'] ?? null) ? 'is-invalid' : '' ?>" name="realisasi_awal" id="add_realisasi_awal" value="<?= old('realisasi_awal') ?>">
+                            <?php if (session()->getFlashdata('errors')['realisasi_awal'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['realisasi_awal'] ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Realisasi Akhir (Aktual Selesai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['realisasi_akhir'] ?? null) ? 'is-invalid' : '' ?>" name="realisasi_akhir" id="add_realisasi_akhir" value="<?= old('realisasi_akhir') ?>">
+                            <?php if (session()->getFlashdata('errors')['realisasi_akhir'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['realisasi_akhir'] ?></div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

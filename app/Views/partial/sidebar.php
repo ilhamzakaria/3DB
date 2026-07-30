@@ -27,12 +27,42 @@
         </li>
     <?php endif; ?>
 
+    <!-- PPIC -->
+    <?php if (in_array($role, ['manager', 'admin', 'ppic', 'operator'])): ?>
+        <li class="nav-item <?= ($uri->getSegment(1) == 'ppic') ? 'active' : '' ?>">
+            <a class="nav-link" href="<?= base_url('ppic') ?>">
+                <i class="fas fa-fw fa-tasks"></i>
+                <span>PPIC</span>
+            </a>
+        </li>
+    <?php endif; ?>
+
     <!-- Produksi -->
-    <?php if (in_array($role, ['manager', 'admin', 'produksi', 'ppic'])): ?>
+    <?php if (in_array($role, ['manager', 'admin', 'produksi', 'ppic', 'operator'])): ?>
         <li class="nav-item <?= ($uri->getSegment(1) == 'produksi') ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('produksi') ?>">
                 <i class="fas fa-fw fa-industry"></i>
                 <span>Produksi</span>
+            </a>
+        </li>
+    <?php endif; ?>
+
+    <!-- Gudang (Status Feature) -->
+    <?php if (in_array($role, ['manager', 'admin', 'gudang'])): ?>
+        <li class="nav-item <?= ($uri->getSegment(1) == 'gudang') ? 'active' : '' ?>">
+            <a class="nav-link" href="<?= base_url('gudang') ?>">
+                <i class="fas fa-fw fa-warehouse"></i>
+                <span>Gudang</span>
+            </a>
+        </li>
+    <?php endif; ?>
+
+    <!-- Warehouse 2 -->
+    <?php if (in_array($role, ['manager', 'admin', 'gudang', 'operator'])): ?>
+        <li class="nav-item <?= ($uri->getSegment(1) == 'warehouse2') ? 'active' : '' ?>">
+            <a class="nav-link" href="<?= base_url('warehouse2') ?>">
+                <i class="fas fa-fw fa-cube"></i>
+                <span>Warehouse 2</span>
             </a>
         </li>
     <?php endif; ?>
@@ -47,7 +77,6 @@
     <?php endif; ?> -->
 
     <!-- Logout -->
-
 
 
     <!-- Divider (garis)-->

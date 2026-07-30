@@ -55,7 +55,7 @@
             });
         }
 
-        // Edit Modal Handler
+        // Edit Modal Handler - Only for PPIC main page (not for mesin-specific pages)
         const modalEdit = document.getElementById('modalEdit');
         if (modalEdit) {
             modalEdit.addEventListener('show.bs.modal', function(event) {
@@ -63,7 +63,7 @@
                 if (!btn) return;
 
                 const id = btn.getAttribute('data-id');
-                const fields = ['jam', 'no_spk', 'nama_mesin', 'nama_produk', 'grade', 'warna', 'nomor_mesin', 'shif', 'operator', 'targett', 'revisi', 'tanggal'];
+                const fields = ['jam', 'no_spk', 'nama_mesin', 'nama_produk', 'grade', 'warna', 'nomor_mesin', 'shif', 'operator', 'targett', 'jumlah', 'revisi', 'tanggal', 'target_awal', 'target_akhir', 'realisasi_awal', 'realisasi_akhir', 'status'];
 
                 fields.forEach(field => {
                     const el = document.getElementById('edit_' + field);
@@ -73,11 +73,14 @@
                 const editIdField = document.getElementById('edit_id');
                 if (editIdField) editIdField.value = id;
                 const formEdit = document.getElementById('formEdit');
-                if (formEdit) formEdit.setAttribute('action', "<?= base_url('ppic/update/') ?>" + id);
+                // Only set action if not already set by mesin-specific form (which uses data-action)
+                if (formEdit && !formEdit.getAttribute('action')) {
+                    formEdit.setAttribute('action', "<?= base_url('ppic/update/') ?>" + id);
+                }
             });
         }
 
-        // Delete Modal Handler
+        // Delete Modal Handler - Only for PPIC main page (not for mesin-specific pages)
         const modalDelete = document.getElementById('modalDelete');
         if (modalDelete) {
             modalDelete.addEventListener('show.bs.modal', function(event) {
@@ -89,10 +92,72 @@
                 const deleteSpkName = document.getElementById('deleteSpkName');
                 if (deleteSpkName) deleteSpkName.textContent = spk;
                 const formDelete = document.getElementById('formDelete');
-                if (formDelete) formDelete.setAttribute('action', "<?= base_url('ppic/delete/') ?>" + id);
+                // Only set action if not already set by mesin-specific form (which uses data-action)
+                if (formDelete && !formDelete.getAttribute('action')) {
+                    formDelete.setAttribute('action', "<?= base_url('ppic/delete/') ?>" + id);
+                }
             });
         }
-        // Recycle Bin Loading
+
+        // SPK → Produksi shortcut
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-spk-to-produksi');
+            if (!btn) return;
+
+            const spk = (btn.dataset.spk || '').trim();
+            if (!spk) return;
+
+            const url = new URL('<?= base_url('produksi') ?>', window.location.origin);
+            url.searchParams.set('open_add', '1');
+            url.searchParams.set('spk', spk);
+            window.location.href = url.toString();
+        });
+
+        // Recycle Bin Loading - Via Modal Event
+        const trashModal = document.getElementById('trashModal');
+        if (trashModal) {
+            trashModal.addEventListener('show.bs.modal', function() {
+                const tbody = document.querySelector('#table_trash tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat...</td></tr>';
+                fetch('<?= base_url('ppic/get_trash') ?>')
+                    .then(r => r.json())
+                    .then(data => {
+                        tbody.innerHTML = '';
+                        if (data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Tempat sampah kosong.</td></tr>';
+                            return;
+                        }
+                        data.forEach(p => {
+                            const html = `
+                                <tr style="font-size: 13px;">
+                                    <td class="px-3 py-2">
+                                        <div class="font-weight-bold" style="margin-bottom: -2px;">${p.no_spk}</div>
+                                        <div class="text-muted" style="font-size: 11px;">${p.nama_mesin} - ${p.nama_produk}</div>
+                                    </td>
+                                    <td class="py-2 text-center text-muted">${p.deleted_at}</td>
+                                    <td class="text-end py-2 px-3">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <a href="<?= base_url('ppic/restore') ?>/${p.id}" class="btn btn-success btn-xs px-2" style="font-size: 10px; padding: 2px 8px;" title="Pulihkan">
+                                                <i class="fas fa-undo"></i>
+                                            </a>
+                                            <a href="<?= base_url('ppic/delete_permanent') ?>/${p.id}" class="btn btn-outline-danger btn-xs px-2" style="font-size: 10px; padding: 2px 8px;" title="Hapus Permanen" onclick="return confirm('Hapus permanen? Tidak dapat dikembalikan!')">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>`;
+                            tbody.insertAdjacentHTML('beforeend', html);
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Error loading trash:', err);
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-danger">Gagal memuat data sampah</td></tr>';
+                    });
+            });
+        }
+
+        // Recycle Bin Loading - Via Button Click (Legacy)
         const btnOpenTrash = document.getElementById('btn_open_trash');
         if (btnOpenTrash) {
             btnOpenTrash.addEventListener('click', function() {

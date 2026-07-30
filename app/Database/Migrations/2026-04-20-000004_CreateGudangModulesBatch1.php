@@ -6,6 +6,8 @@ use CodeIgniter\Database\Migration;
 
 class CreateGudangModulesBatch1 extends Migration
 {
+    protected $DBGroup = 'gudang';
+
     public function up()
     {
         // 1. Gilingan Galon

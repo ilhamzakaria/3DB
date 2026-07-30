@@ -12,6 +12,7 @@ class GalonReject extends BaseController
     private const SUMBER_OPTIONS = ['supplier', 'produksi'];
 
     protected $MGalonReject;
+    private ?array $galonRejectOptions = null;
 
     public function __construct()
     {
@@ -50,6 +51,7 @@ class GalonReject extends BaseController
         return view(self::VIEW_PATH, [
             'title' => 'Galon Reject',
             'galon_reject' => $galon_reject,
+            'galon_reject_options' => $this->getGalonRejectOptions(),
             'q' => $q,
             'sumber_filter' => $sumber,
             'status_options' => self::STATUS_OPTIONS,
@@ -68,17 +70,7 @@ class GalonReject extends BaseController
             return redirect()->to(self::INDEX_ROUTE);
         }
 
-        $data = [
-            'produk' => $this->request->getPost('produk'),
-            'nama_galon_reject' => $this->request->getPost('nama_galon_reject'),
-            'sumber_reject' => $this->request->getPost('sumber_reject'),
-            'status' => $this->normalizeStatus($this->request->getPost('status')),
-            'kode' => trim((string) $this->request->getPost('kode')),
-            'jumlah' => trim((string) $this->request->getPost('jumlah')),
-            'nomor_lot' => trim((string) $this->request->getPost('nomor_lot')),
-            'no_spk' => $this->request->getPost('no_spk') !== '' ? (int) $this->request->getPost('no_spk') : null,
-            'shif' => trim((string) $this->request->getPost('shif')),
-        ];
+        $data = $this->buildPayloadFromRequest();
 
         if ($this->MGalonReject->insert($data)) {
             session()->setFlashdata('success', 'Data galon reject berhasil ditambahkan');
@@ -118,17 +110,7 @@ class GalonReject extends BaseController
             return redirect()->to(self::INDEX_ROUTE);
         }
 
-        $data = [
-            'produk' => $this->request->getPost('produk'),
-            'nama_galon_reject' => $this->request->getPost('nama_galon_reject'),
-            'sumber_reject' => $this->request->getPost('sumber_reject'),
-            'status' => $this->normalizeStatus($this->request->getPost('status')),
-            'kode' => trim((string) $this->request->getPost('kode')),
-            'jumlah' => trim((string) $this->request->getPost('jumlah')),
-            'nomor_lot' => trim((string) $this->request->getPost('nomor_lot')),
-            'no_spk' => $this->request->getPost('no_spk') !== '' ? (int) $this->request->getPost('no_spk') : null,
-            'shif' => trim((string) $this->request->getPost('shif')),
-        ];
+        $data = $this->buildPayloadFromRequest();
 
         if ($this->MGalonReject->update($id, $data)) {
             session()->setFlashdata('success', 'Data galon reject berhasil diupdate');
@@ -166,5 +148,101 @@ class GalonReject extends BaseController
         }
 
         return $status;
+    }
+
+    private function buildPayloadFromRequest(): array
+    {
+        $selection = $this->resolveGalonRejectSelection(
+            $this->request->getPost('item_key'),
+            $this->request->getPost('nama_galon_reject'),
+            $this->request->getPost('produk'),
+            $this->request->getPost('kode')
+        );
+
+        return [
+            'produk' => $selection['produk'],
+            'nama_galon_reject' => $selection['nama_galon_reject'],
+            'sumber_reject' => $this->request->getPost('sumber_reject'),
+            'status' => $this->normalizeStatus($this->request->getPost('status')),
+            'kode' => $selection['kode'],
+            'jumlah' => trim((string) $this->request->getPost('jumlah')),
+            'nomor_lot' => trim((string) $this->request->getPost('nomor_lot')),
+            'no_spk' => $this->request->getPost('no_spk') !== '' ? (int) $this->request->getPost('no_spk') : null,
+            'shif' => trim((string) $this->request->getPost('shif')),
+        ];
+    }
+
+    private function resolveGalonRejectSelection(?string $itemKey, ?string $nama, ?string $produk, ?string $kode): array
+    {
+        $itemKey = trim((string) $itemKey);
+        $options = $this->getGalonRejectOptions();
+
+        if ($itemKey !== '' && ctype_digit($itemKey)) {
+            $index = (int) $itemKey;
+
+            if (isset($options[$index])) {
+                return [
+                    'nama_galon_reject' => (string) ($options[$index]['item'] ?? ''),
+                    'produk' => (string) ($options[$index]['kode_warna'] ?? ''),
+                    'kode' => (string) ($options[$index]['kode_barang'] ?? ''),
+                ];
+            }
+        }
+
+        return [
+            'nama_galon_reject' => trim((string) $nama),
+            'produk' => trim((string) $produk),
+            'kode' => trim((string) $kode),
+        ];
+    }
+
+    private function getGalonRejectOptions(): array
+    {
+        if ($this->galonRejectOptions !== null) {
+            return $this->galonRejectOptions;
+        }
+
+        $path = ROOTPATH . 'catatan/catatan.md';
+        if (!is_file($path)) {
+            return $this->galonRejectOptions = [];
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES);
+        if ($lines === false) {
+            return $this->galonRejectOptions = [];
+        }
+
+        $startLine = null;
+        foreach ($lines as $index => $line) {
+            if (stripos($line, 'dibawah ini datanya') !== false) {
+                $startLine = $index + 1;
+                break;
+            }
+        }
+
+        if ($startLine === null) {
+            return $this->galonRejectOptions = [];
+        }
+
+        $options = [];
+        foreach (array_slice($lines, $startLine) as $line) {
+            $line = trim((string) $line);
+
+            if ($line === '' || $line[0] === '#' || $line[0] === '{') {
+                continue;
+            }
+
+            if (!preg_match('/^(?:(\d+)\s+)?(.*?)\s{2,}(Gallon.*)$/u', $line, $matches)) {
+                continue;
+            }
+
+            $options[] = [
+                'kode_barang' => trim((string) ($matches[1] ?? '')),
+                'kode_warna' => trim((string) ($matches[2] ?? '')),
+                'item' => trim((string) ($matches[3] ?? '')),
+            ];
+        }
+
+        return $this->galonRejectOptions = $options;
     }
 }

@@ -14,8 +14,8 @@ class RolePpic implements FilterInterface
             return redirect()->to('/login');
         }
 
-        if (!in_array(session()->get('role'), ['home', 'admin', 'manager', 'ppic', 'operator', 'gudang', 'produksi'])) {
-            return redirect()->to('/operator');
+        if (!in_array(session()->get('role'), ['home', 'admin', 'manager_ppic', 'ppic', 'operator_ppic', 'gudang', 'produksi'])) {
+            return redirect()->to('/home');
         }
     }
 

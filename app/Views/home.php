@@ -1,642 +1,438 @@
 <?= $this->extend('layout/main') ?>
 <?= $this->section('content') ?>
 
+<?php
+$fmtDate = static fn($v) => ($t = ($v ? strtotime($v) : false)) ? date('d M Y', $t) : '-';
+$dash    = static fn($v) => trim((string) $v) !== '' ? esc($v) : '-';
+$num     = static fn($v) => ($v !== '' && $v !== null && $v !== '-') ? number_format((int)$v) : '-';
+
+$shiftBadge = static function($s) {
+    if ($s === '' || $s === null) return '-';
+    $cls = match((string)$s) { '1'=>'primary', '2'=>'warning', '3'=>'dark', default=>'secondary' };
+    return '<span class="badge badge-' . $cls . ($s=='2'?' text-dark':'') . '">' . esc($s) . '</span>';
+};
+?>
+
 <style>
-    /* Mengaktifkan scroll horizontal seperti Excel pada pembungkus utama */
-    #wrapper #content-wrapper {
-        overflow-x: auto !important;
-    }
+/* ── Wrapper scroll ── */
+.home-scroll-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
 
-    /* Pembungkus tabel untuk memastikan scroll berjalan lancar di mobile/desktop */
-    .home-table-wrap {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
-        width: 100%;
-        margin-bottom: 1.5rem;
-    }
+/* ── Tabel ── */
+.home-tbl {
+    min-width: 1500px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;   /* lebih besar dari sebelumnya */
+}
+.home-tbl th,
+.home-tbl td {
+    padding: 7px 10px;
+    border: 1px solid #dee2e6;
+    white-space: nowrap;
+    vertical-align: middle;
+}
 
-    .home-table-wrap table {
-        min-width: 1800px;
-        /* Lebar minimum agar scroll horizontal muncul */
-        margin-bottom: 0;
-        border-collapse: collapse;
-        background-color: white;
-    }
+/* ── Header departemen ── */
+.hdr-dept {
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 8px 10px;
+    color: #fff;
+}
+.hdr-ppic    { background: #4e73df; }
+.hdr-prod    { background: #1cc88a; }
+.hdr-gudang  { background: #36b9cc; }
 
-    .home-table-wrap th,
-    .home-table-wrap td {
-        white-space: nowrap;
-        /* Mencegah teks turun ke bawah (wrap) */
-        padding: 10px 12px;
-        border: 1px solid #dee2e6;
-        vertical-align: middle;
-    }
+/* ── Sub-header ── */
+.home-tbl thead tr.sub-row th {
+    background: #f0f3ff;
+    font-size: .78rem;
+    font-weight: 700;
+    color: #444;
+    text-align: center;
+}
 
-    /* Styling Header Seksi mirip halaman Admin */
-    .home-table-wrap .section-header1 {
-        background: #4e73df !important;
-        /* Warna biru primary */
-        color: white !important;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+/* ── Pembatas kiri departemen ── */
+/* .sep-prod   { border-left: 3px solid #1cc88a !important; }
+.sep-gudang { border-left: 3px solid #36b9cc !important; } */
 
-    .section-header2 {
-        background: #10b981 !important; /* Emerald Green for Produksi */
-        color: white !important;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+/* ── Garis tanggal sejajar ── */
+.tanggal-prod   { border-left: 3px solid #1cc88a !important; }
+.tanggal-gudang { border-left: 3px solid #36b9cc !important; }
 
-    .section-header3 {
-        background: #0ea5e9 !important; /* Sky Blue for Gudang */
-        color: white !important;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+/* ── Body rows ── */
+.home-tbl tbody tr:nth-child(even) { background: #fafbff; }
+.home-tbl tbody tr:hover           { background: #eef2ff; }
 
-    .sub-header-gudang {
-        background: #f0f9ff !important;
-        color: #0369a1 !important;
-        font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-    }
+/* ── Badge SPK ── */
+.spk-badge {
+    display: inline-block;
+    background: rgba(78,115,223,.1);
+    color: #4e73df;
+    border: 1px solid rgba(78,115,223,.3);
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: .78rem;
+}
 
-    .home-table-wrap thead .table-light th {
-        background-color: #f8f9fc;
-        font-weight: 700;
-        color: #4e73df;
-    }
+/* ── Angka produksi ── */
+.good { color: #1cc88a; font-weight: 700; }
+.bad  { color: #e74a3b; }
 
-    /* Warna baris selang-seling */
-    .home-table-wrap tr:nth-child(even) {
-        background-color: #f8f9fc;
-    }
+/* ── Chip filter aktif ── */
+.fchip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #eef4ff; color: #1d4ed8;
+    padding: 3px 12px; border-radius: 20px;
+    font-size: .8rem; font-weight: 600;
+}
 
-    .home-table-wrap tr:hover {
-        background-color: #f1f4ff;
-    }
+/* ── Target/Realisasi shift ── */
+.shift-grid { display: flex; gap: 4px; justify-content: center; }
+.shift-cell {
+    min-width: 38px;
+    text-align: center;
+    font-size: .72rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid #e3e6f0;
+    background: #f8f9fc;
+    line-height: 1.4;
+}
+.shift-cell small { display: block; font-size: .62rem; color: #999; font-weight: 600; }
+.shift-cell.has-val { background: #eef2ff; border-color: #c7d2fe; color: #3730a3; }
+.shift-cell.real-val { background: #f0fdf4; border-color: #86efac; color: #166534; }
 
+/* ── Info icon dengan tooltip ── */
+.fa-info-circle[title] {
+    position: relative;
+}
+.fa-info-circle[title]:hover {
+    color: #4e73df !important;
+    transition: color 0.2s ease;
+}
 
-
-    .filter-toggle {
-        position: relative;
-    }
-
-    .filter-count {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 20px;
-        height: 20px;
-        margin-left: 6px;
-        padding: 0 6px;
-        border-radius: 999px;
-        background: #0d6efd;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 700;
-    }
-
-    .filter-summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-        margin-top: 12px;
-    }
-
-    .filter-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: #eef4ff;
-        color: #1d4ed8;
-        font-size: 0.82rem;
-        font-weight: 600;
-    }
-
-    .filter-drawer {
-        max-width: 360px;
-    }
-
-    .filter-drawer .offcanvas-header {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .filter-drawer .offcanvas-body {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .filter-hint {
-        margin: 0;
-        color: #6c757d;
-        font-size: 0.84rem;
-    }
-
-
+/* ── Info icon dengan tooltip ── */
+.fa-info-circle[title] {
+    position: relative;
+}
+.fa-info-circle[title]:hover {
+    color: #4e73df !important;
+    transition: color 0.2s ease;
+}
 </style>
 
-
-
 <div class="container-fluid">
-    <?php
-    $searchValue = trim((string) ($q ?? ''));
-    $filterPeriode = trim((string) ($periode ?? ''));
-    $filterTanggal = trim((string) ($tanggal ?? ''));
-    $filterStartDate = trim((string) ($start_date ?? ''));
-    $filterEndDate = trim((string) ($end_date ?? ''));
-    $homeBaseUrl = base_url('home');
 
-    $activeFilterCount = 0;
-    if ($filterPeriode !== '') $activeFilterCount++;
-    if ($filterTanggal !== '') $activeFilterCount++;
-    if ($filterStartDate !== '' || $filterEndDate !== '') $activeFilterCount++;
-    
-    // Add count for column filters
-    foreach ($col_filter as $field => $values) {
-        if (!empty($values)) $activeFilterCount++;
-    }
+<!-- Production Summary Section -->
+<?= view('partials/production_summary', compact('prodData')) ?>
 
-    // Helper to render sidebar filter section
-    function renderSidebarFilter($field, $displayName, $uniqueValues, $activeFilters) {
-        $selected = $activeFilters[$field] ?? [];
-        if (empty($uniqueValues)) return;
-        ?>
-        <div class="mb-3">
-            <label class="filter-section-title"><?= esc($displayName) ?></label>
-            <div class="filter-options-list border rounded p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
-                <?php foreach ($uniqueValues as $val): ?>
-                    <label class="filter-option-item d-block mb-1">
-                        <input type="checkbox" name="col_filter[<?= esc($field) ?>][]" value="<?= esc($val) ?>" 
-                            <?= in_array($val, $selected) ? 'checked' : '' ?>>
-                        <?= esc($val) ?>
-                    </label>
-                <?php endforeach; ?>
-            </div>
+<div class="card shadow mb-3">
+
+  <!-- ── Header filter bar ── -->
+  <div class="card-header py-3">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+
+      <!-- Kiri: judul + chips aktif -->
+      <div class="d-flex align-items-center flex-wrap gap-2">
+        <span class="font-weight-bold text-primary mr-2">
+          <i class="fas fa-chart-bar mr-1"></i> Dashboard Produksi
+        </span>
+        <?php if ($filter === 'day'):   ?><span class="fchip"><i class="fas fa-dot-circle fa-xs"></i> Hari Ini</span><?php endif; ?>
+        <?php if ($filter === 'week'):  ?><span class="fchip"><i class="fas fa-dot-circle fa-xs"></i> 7 Hari</span><?php endif; ?>
+        <?php if ($filter === 'month'): ?><span class="fchip"><i class="fas fa-dot-circle fa-xs"></i> 30 Hari</span><?php endif; ?>
+        <?php if (!empty($start_date) || !empty($end_date)): ?>
+          <span class="fchip">
+            <i class="fas fa-calendar-alt fa-xs"></i>
+            <?= esc($start_date ?: '...') ?> – <?= esc($end_date ?: '...') ?>
+            <a href="<?= base_url('home') ?>" class="text-danger ml-1"><i class="fas fa-times-circle"></i></a>
+          </span>
+        <?php endif; ?>
+        <?php if ($q !== ''): ?>
+          <span class="fchip">
+            <i class="fas fa-search fa-xs"></i> "<?= esc($q) ?>"
+            <a href="<?= base_url('home') ?>" class="text-danger ml-1"><i class="fas fa-times-circle"></i></a>
+          </span>
+        <?php endif; ?>
+      </div>
+
+      <!-- Kanan: kontrol -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+
+        <!-- Shortcut -->
+        <div class="btn-group btn-group-sm">
+          <a href="<?= base_url('home?filter=day') ?>"
+             class="btn <?= $filter==='day'   ? 'btn-primary' : 'btn-outline-primary' ?>">Hari Ini</a>
+          <a href="<?= base_url('home?filter=week') ?>"
+             class="btn <?= $filter==='week'  ? 'btn-primary' : 'btn-outline-primary' ?>">7 Hari</a>
+          <a href="<?= base_url('home?filter=month') ?>"
+             class="btn <?= $filter==='month' ? 'btn-primary' : 'btn-outline-primary' ?>">30 Hari</a>
+          <?php if ($filter): ?>
+            <a href="<?= base_url('home') ?>" class="btn btn-outline-secondary">Reset</a>
+          <?php endif; ?>
         </div>
-        <?php
-    }
 
-    $periodLabels = [
-        'hari' => 'Harian',
-        'minggu' => 'Mingguan',
-        'bulan' => 'Bulanan',
-    ];
+        <!-- Date range -->
+        <form method="get" action="<?= base_url('home') ?>" class="d-flex align-items-center gap-1 mb-0">
+          <?php if ($q !== ''): ?><input type="hidden" name="q" value="<?= esc($q) ?>"><?php endif; ?>
+          <input type="date" name="start_date" class="form-control form-control-sm"
+                 value="<?= esc($start_date) ?>" style="width:135px">
+          <span class="text-muted small">–</span>
+          <input type="date" name="end_date"   class="form-control form-control-sm"
+                 value="<?= esc($end_date) ?>"   style="width:135px">
+          <button class="btn btn-sm btn-outline-primary px-2" type="submit">
+            <i class="fas fa-filter"></i>
+          </button>
+        </form>
 
-    $dateSummary = '';
-    if ($filterStartDate !== '' && $filterEndDate !== '') {
-        $dateSummary = $filterStartDate . ' s/d ' . $filterEndDate;
-    } elseif ($filterStartDate !== '') {
-        $dateSummary = 'Mulai ' . $filterStartDate;
-    } elseif ($filterEndDate !== '') {
-        $dateSummary = 'Sampai ' . $filterEndDate;
-    }
-    ?>
+        <!-- Search -->
+        <form method="get" action="<?= base_url('home') ?>" class="d-flex align-items-center gap-1 mb-0">
+          <?php if ($filter): ?><input type="hidden" name="filter" value="<?= esc($filter) ?>"><?php endif; ?>
+          <input type="text" name="q" class="form-control form-control-sm"
+                 style="min-width:200px" placeholder="Cari SPK, mesin, produk..."
+                 value="<?= esc($q) ?>">
+          <button class="btn btn-sm btn-primary px-2" type="submit">
+            <i class="fas fa-search"></i>
+          </button>
+        </form>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-
-
-                <div class="ms-auto d-flex align-items-center gap-2">
-                    <div class="dropdown">
-                        <button class="btn btn-outline-primary btn-sm dropdown-toggle shadow-sm" type="button" id="periodFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-calendar-alt"></i>
-                            <?php
-                            if ($filter === 'day') echo 'Hari Ini';
-                            elseif ($filter === 'week') echo 'Minggu';
-                            elseif ($filter === 'month') echo 'Bulan';
-                            else echo 'Periode';
-                            ?>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" aria-labelledby="periodFilterDropdown" style="border-radius: 12px;">
-                            <li><a class="dropdown-item py-2 <?= ($filter === 'day') ? 'active bg-primary text-white' : '' ?>" href="<?= base_url('home?filter=day') ?>"><i class="fas fa-calendar-day mr-2 opacity-50"></i> Hari Ini</a></li>
-                            <li><a class="dropdown-item py-2 <?= ($filter === 'week') ? 'active bg-primary text-white' : '' ?>" href="<?= base_url('home?filter=week') ?>"><i class="fas fa-calendar-week mr-2 opacity-50"></i> Minggu</a></li>
-                            <li><a class="dropdown-item py-2 <?= ($filter === 'month') ? 'active bg-primary text-white' : '' ?>" href="<?= base_url('home?filter=month') ?>"><i class="fas fa-calendar-alt mr-2 opacity-50"></i> Bulan</a></li>
-                            <?php if ($filter): ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item py-2 text-danger" href="<?= base_url('home') ?>"><i class="fas fa-sync-alt mr-2 opacity-50"></i> Reset Filter</a></li>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
-
-                    <form method="get" action="<?= esc($homeBaseUrl) ?>" class="d-flex align-items-center gap-2 mb-0" id="mainSearchForm">
-                        <!-- Keep existing filters -->
-                        <input type="hidden" name="periode" value="<?= esc($filterPeriode) ?>">
-                        <input type="hidden" name="tanggal" value="<?= esc($filterTanggal) ?>">
-                        <input type="hidden" name="start_date" value="<?= esc($filterStartDate) ?>">
-                        <input type="hidden" name="end_date" value="<?= esc($filterEndDate) ?>">
-                        
-                        <?php foreach ($col_filter as $field => $values): ?>
-                            <?php foreach ($values as $val): ?>
-                                <input type="hidden" name="col_filter[<?= esc($field) ?>][]" value="<?= esc($val) ?>">
-                            <?php endforeach; ?>
-                        <?php endforeach; ?>
-                        
-
-
-                        <input
-                            type="text"
-                            name="q"
-                            class="form-control form-control-sm"
-                            style="min-width: 260px;"
-                            placeholder="Cari data..."
-                            value="<?= esc($searchValue) ?>">
-                        <button class="btn btn-primary btn-sm" type="submit">Cari</button>
-                    </form>
-
-                    <button
-                        class="btn btn-outline-primary btn-sm filter-toggle"
-                        type="button"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#homeFilterDrawer"
-                        aria-controls="homeFilterDrawer">
-                        <i class="fas fa-filter"></i> Filter
-                        <?php if ($activeFilterCount > 0): ?>
-                            <span class="filter-count"><?= $activeFilterCount ?></span>
-                        <?php endif; ?>
-                    </button>
-
-
-                </div>
-            </div>
-
-            <?php if ($activeFilterCount > 0): ?>
-                <div class="filter-summary">
-                    <?php if ($filterPeriode !== ''): ?>
-                        <span class="filter-chip">Periode: <?= esc($periodLabels[$filterPeriode] ?? ucfirst($filterPeriode)) ?></span>
-                    <?php endif; ?>
-                    <?php if ($filterTanggal !== ''): ?>
-                        <span class="filter-chip">Tanggal: <?= esc($filterTanggal) ?></span>
-                    <?php endif; ?>
-                    <?php if ($dateSummary !== ''): ?>
-                        <span class="filter-chip">Rentang: <?= esc($dateSummary) ?></span>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-        <div class="card-body">
-            <div class="offcanvas offcanvas-end filter-drawer" tabindex="-1" id="homeFilterDrawer" aria-labelledby="homeFilterDrawerLabel">
-                <div class="offcanvas-header">
-                    <div>
-                        <h5 class="offcanvas-title mb-1" id="homeFilterDrawerLabel">Filter Home</h5>
-                        <p class="filter-hint">Pilih periode, tanggal acuan, dan rentang tanggal agar data lebih spesifik.</p>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body">
-                    <form method="get" action="<?= esc($homeBaseUrl) ?>" class="d-flex flex-column gap-3">
-                        <input type="hidden" name="q" value="<?= esc($searchValue) ?>">
-
-                        <div>
-                            <label class="filter-section-title" for="homeFilterPeriode">Periode</label>
-                            <select id="homeFilterPeriode" name="periode" class="form-control">
-                                <option value="">-- Semua --</option>
-                                <option value="hari" <?= $filterPeriode === 'hari' ? 'selected' : '' ?>>Harian</option>
-                                <option value="minggu" <?= $filterPeriode === 'minggu' ? 'selected' : '' ?>>Mingguan</option>
-                                <option value="bulan" <?= $filterPeriode === 'bulan' ? 'selected' : '' ?>>Bulanan</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="filter-section-title" for="homeFilterStartDate">Tanggal Mulai</label>
-                            <input
-                                type="date"
-                                id="homeFilterStartDate"
-                                name="start_date"
-                                class="form-control"
-                                value="<?= esc($filterStartDate) ?>">
-                        </div>
-
-                        <div>
-                            <label class="filter-section-title" for="homeFilterEndDate">Tanggal Selesai</label>
-                            <input
-                                type="date"
-                                id="homeFilterEndDate"
-                                name="end_date"
-                                class="form-control"
-                                value="<?= esc($filterEndDate) ?>">
-                        </div>
-
-                        <hr>
-                        <h6 class="text-primary fw-bold mb-3">Filter Kolom</h6>
-
-                        <!-- PPIC Filters -->
-                        <div class="mb-4">
-                            <small class="text-muted fw-bold d-block mb-2 text-uppercase">Departemen PPIC</small>
-                            <?php renderSidebarFilter('nama_mesin', 'Nama Mesin', $unique_values['ppic_nama_mesin'] ?? [], $col_filter); ?>
-                            <?php renderSidebarFilter('nama_produk', 'Nama Produk', $unique_values['ppic_nama_produk'] ?? [], $col_filter); ?>
-                            <?php renderSidebarFilter('shif', 'Shift', $unique_values['ppic_shif'] ?? [], $col_filter); ?>
-                            <?php renderSidebarFilter('operator', 'Operator', $unique_values['ppic_operator'] ?? [], $col_filter); ?>
-                        </div>
-
-                        <!-- Production Filters -->
-                        <div class="mb-4">
-                            <small class="text-muted fw-bold d-block mb-2 text-uppercase">Departemen Produksi</small>
-                            <?php renderSidebarFilter('nama_mesin', 'Mesin', $unique_values['prod_nama_mesin'] ?? [], $col_filter); ?>
-                            <?php renderSidebarFilter('nama_produksi', 'Produk', $unique_values['prod_nama_produksi'] ?? [], $col_filter); ?>
-                            <?php renderSidebarFilter('shift', 'Shift', $unique_values['prod_shift'] ?? [], $col_filter); ?>
-                            <?php renderSidebarFilter('operator', 'Operator', $unique_values['prod_operator'] ?? [], $col_filter); ?>
-                        </div>
-
-                        <!-- Gudang Filters -->
-                        <div class="mb-4">
-                            <small class="text-muted fw-bold d-block mb-2 text-uppercase">Departemen Gudang</small>
-                            <?php renderSidebarFilter('shif', 'Shift', $unique_values['gudang_shif'] ?? [], $col_filter); ?>
-                            <?php renderSidebarFilter('bahan_baku', 'Bahan Baku', $unique_values['gudang_bahan_baku'] ?? [], $col_filter); ?>
-                        </div>
-
-                        <div class="filter-actions sticky-bottom bg-white pt-3 border-top">
-                            <button class="btn btn-primary flex-fill" type="submit">Terapkan</button>
-                            <a href="<?= esc($homeBaseUrl) ?>" class="btn btn-outline-secondary flex-fill">Reset</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="home-table-wrap">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th colspan="9" class="section-header1 text-center">Departemen PPIC</th>
-                            <th colspan="9" class="section-header2 text-center">Departemen Produksi</th>
-                            <th colspan="17" class="section-header3 text-center">Departemen Gudang</th>
-                        </tr>
-                        <tr>
-                            <th colspan="9" class="bg-light text-center small text-muted font-weight-bold">Info & Target</th>
-                            <th colspan="9" class="bg-light text-center small text-muted font-weight-bold">Hasil Produksi</th>
-                            <th colspan="2" class="sub-header-gudang text-center">Info</th>
-                            <th colspan="1" class="sub-header-gudang text-center">Bahan</th>
-                            <th colspan="3" class="sub-header-gudang text-center">Packaging</th>
-                            <th colspan="1" class="sub-header-gudang text-center">MB</th>
-                            <th colspan="5" class="sub-header-gudang text-center">Reject</th>
-                            <th colspan="1" class="sub-header-gudang text-center">Stiker</th>
-                            <th colspan="3" class="sub-header-gudang text-center">Lainnya</th>
-                            <th colspan="1" class="sub-header-gudang text-center">Tgl</th>
-                        </tr>
-                        <tr class="table-light text-center">
-                            <th>Tanggal</th>
-                            <th>No SPK</th>
-                            <th>Nama Mesin</th>
-                            <th>Nama Produk</th>
-                            <th>Shift</th>
-                            <th>Operator</th>
-                            <th>Target</th>
-                            <th>Jam</th>
-                            <th>Revisi</th>
-                            <!-- Produksi -->
-                            <th>No SPK</th>
-                            <th>Mesin</th>
-                            <th>Produk</th>
-                            <th>Shift</th>
-                            <th>Operator</th>
-                            <th class="text-right">Hasil Bagus</th>
-                            <th class="text-right">Reject</th>
-                            <th class="text-center">Selisih</th>
-                            <th>Tanggal</th>
-                            <!-- Gudang -->
-                            <th>No SPK</th>
-                            <th>Shift</th>
-                            <th>Bahan Baku</th>
-                            <th>Box</th>
-                            <th>Karung</th>
-                            <th>Plastik</th>
-                            <th>Masterbatch</th>
-                            <th>G. Reject Sup</th>
-                            <th>G. Reject Prod</th>
-                            <th>Gil. Reject Sup</th>
-                            <th>Gil. Reject Prod</th>
-                            <th>Stiker</th>
-                            <th>Reject Preform</th>
-                            <th>Bekuat PET</th>
-                            <th>bekuan capgalon</th>
-                            <th>Gilingan Screwcap</th>
-                            <th>tanggal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($ppic) || !empty($produksi) || !empty($gudang)): ?>
-                            <?php
-                            // Mengambil jumlah baris terbanyak untuk iterasi gabungan
-                            $rowCount = max(count($ppic ?? []), count($produksi ?? []), count($gudang ?? []));
-                            for ($i = 0; $i < $rowCount; $i++):
-                                $p = $ppic[$i] ?? [];
-                                $prod = $produksi[$i] ?? [];
-                                $g = $gudang[$i] ?? [];
-                            ?>
-                                <tr class="align-middle">
-                                    <td><?= !empty($p['tanggal']) ? date('d M Y', strtotime($p['tanggal'])) : '-' ?></td>
-                                    <td><span class="badge badge-modern badge-spk" style="background: rgba(67, 97, 238, 0.1) !important; color: #4361ee !important; border: 1px solid rgba(67, 97, 238, 0.3) !important; font-weight: 700 !important; padding: 0.35em 0.8em; border-radius: 6px; font-size: 0.8rem;"><?= esc($p['no_spk'] ?? '-') ?></span></td>
-                                    <td><?= esc($p['nama_mesin'] ?? '-') ?></td>
-                                    <td><?= esc($p['nama_produk'] ?? '-') ?></td>
-                                    <td><?= esc($p['shif'] ?? $p['shif'] ?? '-') ?></td>
-                                    <td><?= esc($p['operator'] ?? '-') ?></td>
-                                    <td><?= esc($p['targett'] ?? '-') ?></td>
-                                    <td><?= esc($p['jam'] ?? '-') ?></td>
-
-                                    <?php
-                                    $revisiItems = $p['revisi_items'] ?? [];
-                                    $hasAnyRevisi = false;
-                                    for ($ke = 1; $ke <= 5; $ke++) {
-                                        $nilai = trim((string) ($revisiItems[$ke]['nilai'] ?? ''));
-                                        if ($nilai !== '') {
-                                            $hasAnyRevisi = true;
-                                            break;
-                                        }
-                                    }
-                                    ?>
-                                    <td class="<?= $hasAnyRevisi ? 'text-danger' : '' ?>">
-                                        <?php for ($ke = 1; $ke <= 5; $ke++): ?>
-                                            <?php
-                                            $item = $revisiItems[$ke] ?? [];
-                                            $nilai = trim((string) ($item['nilai'] ?? ''));
-                                            $tanggalLabel = $item['tanggal_label'] ?? '-';
-                                            $jamLabel = $item['jam_label'] ?? '-';
-                                            ?>
-
-                                            <?php
-                                            $nilaiLabel = $nilai !== '' ? $nilai : '-';
-                                            $tanggalLabel = $tanggalLabel !== '' ? $tanggalLabel : '-';
-                                            $jamLabel = $jamLabel !== '' ? $jamLabel : '-';
-                                            $textClass = $nilai !== '' ? 'text-danger' : 'text-muted';
-                                            ?>
-                                            <a href="#"
-                                                class="btn btn-link p-0 <?= $textClass ?> revisi-btn"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalRevisi"
-                                                data-revisi-ke="<?= (int) $ke ?>"
-                                                data-nilai="<?= esc((string) $nilaiLabel) ?>"
-                                                data-tanggal="<?= esc($item['tanggal_revisi'] ?? '-') ?>"
-                                                data-jam="<?= esc((string) $jamLabel) ?>">
-                                                <?= $nilai ?? $item['nilai'] ?>
-                                            </a>
-
-                                            <?php if ($ke < 5): ?>
-                                                <span class="<?= $hasAnyRevisi ? 'text-danger' : 'text-muted' ?>">
-                                                    <?php if (!empty($nilai) && $ke < 5): ?>
-                                                        |
-                                                    <?php endif; ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        <?php endfor; ?>
-                                    </td>
-                                    <!-- Produksi Section -->
-                                    <td><span class="badge badge-modern badge-spk" style="background: rgba(67, 97, 238, 0.1) !important; color: #4361ee !important; border: 1px solid rgba(67, 97, 238, 0.3) !important; font-weight: 700 !important; padding: 0.35em 0.8em; border-radius: 6px; font-size: 0.8rem;"><?= esc($prod['nomor_spk'] ?? '-') ?></span></td>
-                                    <td><?= esc($prod['nama_mesin'] ?? '-') ?></td>
-                                    <td><?= esc($prod['nama_produksi'] ?? '-') ?></td>
-                                    <td class="text-center"><?= esc($prod['shift'] ?? '-') ?></td>
-                                    <td><?= esc($prod['operator'] ?? '-') ?></td>
-                                    <td class="text-right font-weight-bold text-success"><?= esc($prod['grand_total_bagus'] ?? '0') ?></td>
-                                    <td class="text-right text-danger"><?= esc($prod['grand_total_reject'] ?? '0') ?></td>
-                                    <?php
-                                    $targetPpic = is_numeric($p['nilai'] ?? null) ? (int) $p['nilai'] : (int) ($p['revisi'] ?? 0);
-                                    $hasilBagus = is_numeric($prod['grand_total_bagus'] ?? null) ? (int) $prod['grand_total_bagus'] : 0;
-                                    $selisih = $targetPpic - $hasilBagus;
-                                    ?>
-                                    <td class="text-center <?= $selisih < 0 ? 'text-danger' : 'text-primary font-weight-bold' ?>">
-                                        <?= esc($selisih) ?>
-                                    </td>
-                                    <td><?= !empty($prod['tanggal']) ? date('d M Y', strtotime($prod['tanggal'])) : '-' ?></td>
-
-                                    <!-- Gudang -->
-                                    <td class="text-center"><span class="badge badge-modern badge-spk" style="background: rgba(67, 97, 238, 0.1) !important; color: #4361ee !important; border: 1px solid rgba(67, 97, 238, 0.3) !important; font-weight: 700 !important; padding: 0.35em 0.8em; border-radius: 6px; font-size: 0.8rem;"><?= esc($g['no_spk'] ?? '-') ?></span></td>
-                                    <td class="text-center"><?= esc($g['shif'] ?? '-') ?></td>
-                                    <td><?= esc($g['bahan_baku'] ?? '-') ?></td>
-                                    <td class="text-right"><?= ($v = $g['box'] ?? '-') !== '-' && $v != 0 ? '<span class="fw-bold">' . esc($v) . '</span>' : esc($v) ?></td>
-                                    <td class="text-right"><?= ($v = $g['karung'] ?? '-') !== '-' && $v != 0 ? '<span class="fw-bold">' . esc($v) . '</span>' : esc($v) ?></td>
-                                    <td class="text-right"><?= ($v = $g['plastik'] ?? '-') !== '-' && $v != 0 ? '<span class="fw-bold">' . esc($v) . '</span>' : esc($v) ?></td>
-                                    <td class="text-right"><?= ($v = $g['masterbatch'] ?? '-') !== '-' && $v != 0 ? '<span class="fw-bold">' . esc($v) . '</span>' : esc($v) ?></td>
-                                    <td class="text-right text-danger"><?= ($v = $g['galon_reject_supplier'] ?? '-') !== '-' && $v != 0 ? esc($v) : '-' ?></td>
-                                    <td class="text-right text-danger"><?= ($v = $g['galon_reject_produksi'] ?? '-') !== '-' && $v != 0 ? esc($v) : '-' ?></td>
-                                    <td class="text-right text-danger"><?= ($v = $g['gilingan_reject_supplier'] ?? '-') !== '-' && $v != 0 ? esc($v) : '-' ?></td>
-                                    <td class="text-right text-danger"><?= ($v = $g['gilingan_reject_produksi'] ?? '-') !== '-' && $v != 0 ? esc($v) : '-' ?></td>
-                                    <td class="text-right"><?= ($v = $g['stiker'] ?? '-') !== '-' && $v != 0 ? '<span class="fw-bold">' . esc($v) . '</span>' : esc($v) ?></td>
-                                    <td class="text-right text-danger"><?= ($v = $g['reject_preform'] ?? '-') !== '-' && $v != 0 ? esc($v) : '-' ?></td>
-                                    <td class="text-right"><?= esc($g['bekuat_pet'] ?? '-') ?></td>
-                                    <td class="text-right"><?= esc($g['bekuan_capgalon'] ?? '-') ?></td>
-                                    <td class="text-right"><?= esc($g['gilingan_screwcap'] ?? '-') ?></td>
-                                    <td class="text-center small"><?= !empty($g['tanggal']) ? date('d M Y', strtotime($g['tanggal'])) : '-' ?></td>
-                                </tr>
-                            <?php endfor; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="22" class="text-center text-muted py-4">
-                                    <?php $message = 'Belum ada data dari departemen terkait.'; ?>
-                                    <?= esc($message) ?>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-                <div class="modal fade" id="modalRevisi" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-
-                            <div class="modal-header">
-                                <h5 class="modal-title">Detail Revisi</h5>
-                                <br>
-                            </div>
-
-                            <div class="modal-body" id="isiRevisi">
-                                <!-- isi dari klik akan masuk sini -->
-                            </div>
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-                <div class="px-3 py-2 border-top d-flex justify-content-between align-items-center bg-white">
-                    <div class="small text-muted">
-                        Menampilkan <?= ($current_page - 1) * $per_page + 1 ?> - <?= min($current_page * $per_page, $total_rows) ?> dari <?= $total_rows ?> data
-                    </div>
-                    <div>
-                        <?= $pager ?>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const buttons = document.querySelectorAll(".revisi-btn");
-        const isiModal = document.getElementById("isiRevisi");
-        if (!isiModal) return;
+  <!-- ── Body tabel ── -->
+  <div class="card-body p-0">
+    <div class="home-scroll-wrap">
+      <table class="home-tbl">
+        <thead>
 
-        buttons.forEach(btn => {
-            btn.addEventListener("click", function() {
-                const ke = this.getAttribute("data-revisi-ke") || "-";
-                const nilai = this.getAttribute("data-nilai") || "-";
-                const tanggal = this.getAttribute("data-tanggal") || "-";
+          <!-- Baris 1: Nama departemen -->
+          <tr>
+            <th colspan="8" class="hdr-dept hdr-ppic">
+              <i class="fas fa-cogs mr-1"></i> LOG MESIN (PPIC2)
+            </th>
+            <th colspan="8" class="hdr-dept hdr-prod" style="border-left:3px solid #17a37a;">
+              <i class="fas fa-industry mr-1"></i> Produksi
+            </th>
+            <th colspan="9" class="hdr-dept hdr-gudang" style="border-left:3px solid #1e8fa3;">
+              <i class="fas fa-warehouse mr-1"></i> Warehouse 2
+            </th>
+          </tr>
 
+          <!-- Baris 2: Nama kolom -->
+          <tr class="sub-row">
+            <!-- LOG MESIN (8 kolom) -->
+            <th>Tanggal</th>
+            <th>No. SPK</th>
+            <th>Mesin</th>
+            <th>Nama Produk</th>
+            <th>Grade / Brand</th>
+            <th>Warna</th>
+            <th>Target (S1/S2/S3)</th>
+            <th>Realisasi (S1/S2/S3)</th>
+            <!-- Produksi (8 kolom) -->
+            <th style="border-left:3px solid #17a37a;">Tanggal</th>
+            <th>No. SPK</th>
+            <th>Mesin</th>
+            <th>Nama Produk</th>
+            <th>Operator</th>
+            <th>Shift</th>
+            <th class="good">Hasil Bagus (S1/S2/S3)</th>
+            <th class="bad">Reject (S1/S2/S3)</th>
+            <!-- Warehouse 2 (9 kolom) -->
+            <th style="border-left:3px solid #1e8fa3;">Tanggal</th>
+            <th>SPK</th>
+            <th>Produk</th>
+            <th>Hasil Bagus</th>
+            <th>Hasil Reject</th>
+            <th>Material</th>
+            <th>Colorant</th>
+            <th>Packaging</th>
+            <th>Operator</th>
+          </tr>
+        </thead>
 
-                let tanggalFormat = "-";
-                let jamFormat = "-";
+        <tbody>
+          <?php if (empty($rows)): ?>
+            <tr>
+              <td colspan="25" class="text-center text-muted py-5">
+                <i class="fas fa-inbox fa-2x d-block mb-2 opacity-50"></i>
+                Tidak ada data<?= $q !== '' ? ' untuk "<b>' . esc($q) . '</b>"' : '' ?>
+              </td>
+            </tr>
+          <?php else: ?>
+            <?php foreach ($rows as $row):
+              $m = $row['mesin']      ?? [];
+              $p = $row['produksi']   ?? [];
+              $w = $row['warehouse2'] ?? [];
 
-                if (tanggal.includes(" ")) {
-                    const tglObj = new Date(tanggal);
-                    tanggalFormat = tglObj.toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric"
-                    });
-                    jamFormat = tglObj.toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false
-                    });
-                } else {
-                    tanggalFormat = tanggal;
-                }
+              // Shift warna berdasarkan LOG MESIN atau Produksi
+              $shif = $m['shif'] ?? $p['shift'] ?? '';
 
-                isiModal.innerHTML = "";
-                const items = [
-                    ["Revisi Ke", ke],
-                    ["Target", nilai],
-                    ["Tanggal", tanggalFormat],
-                    ["Jam", jamFormat],
-                ];
+              // Grade/brand combo
+              $grade = trim($m['grade'] ?? '');
+              $brand = trim($m['brand'] ?? '');
+              $gradeBrand = implode(' / ', array_filter([$grade, $brand]));
 
-                items.forEach(([label, value]) => {
-                    const row = document.createElement("div");
-                    row.style.display = "flex";
-                    row.style.marginBottom = "6px";
-                    const labelDiv = document.createElement("div");
-                    labelDiv.style.minWidth = "80px";
-                    labelDiv.style.fontWeight = "bold";
-                    labelDiv.innerText = label;
-                    const colon = document.createElement("div");
-                    colon.style.marginRight = "6px";
-                    colon.innerText = ":";
-                    const valueDiv = document.createElement("div");
-                    let displayValue = value ?? "-";
-                    if (label.toLowerCase().includes("jam") && displayValue !== "-") {
-                        displayValue = displayValue.replace(".", ":");
+              // Target dan Realisasi per shift
+              $t1 = $m['target_shift1']    ?? ''; $t2 = $m['target_shift2']    ?? ''; $t3 = $m['target_shift3']    ?? '';
+              $r1 = $m['realisasi_shift1'] ?? ''; $r2 = $m['realisasi_shift2'] ?? ''; $r3 = $m['realisasi_shift3'] ?? '';
+            ?>
+            <tr>
+              <!-- ── LOG MESIN ── -->
+              <td><?= esc($fmtDate($m['tanggal'] ?? '')) ?></td>
+              <td><span class="spk-badge"><?= $dash($m['no_spk'] ?? '') ?></span></td>
+              <td>
+                <?php if (!empty($m['mesin_label'])): ?>
+                  <span class="badge badge-light border text-secondary font-weight-bold"><?= esc($m['mesin_label']) ?></span>
+                <?php else: ?><?= $dash($m['nama_mesin'] ?? '') ?><?php endif; ?>
+                <?php if (!empty($m['nomor_mesin'])): ?>
+                  <small class="text-muted ml-1"><?= esc($m['nomor_mesin']) ?></small>
+                <?php endif; ?>
+              </td>
+              <td><?= $dash($m['nama_produk'] ?? '') ?></td>
+              <td><?= $dash($gradeBrand) ?></td>
+              <td><?= $dash($m['warna'] ?? '') ?></td>
+              <!-- <td class="text-center"><?= $shiftBadge($shif) ?></td> -->
+
+              <!-- Target S1/S2/S3 -->
+              <td>
+                <div class="shift-grid">
+                  <?php foreach ([['S1',$t1],['S2',$t2],['S3',$t3]] as [$lbl,$val]): ?>
+                    <div class="shift-cell <?= $val !== '' ? 'has-val' : '' ?>">
+                      <small><?= $lbl ?></small>
+                      <?= $val !== '' ? esc(number_format((int)$val)) : '-' ?>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              </td>
+
+              <!-- Realisasi S1/S2/S3 -->
+              <td>
+                <div class="shift-grid">
+                  <?php 
+                    // Prefer produksi realisasi if available, otherwise use mesin table
+                    $r1 = $m['produksi_realisasi_shift1'] ?? $m['realisasi_shift1'] ?? '';
+                    $r2 = $m['produksi_realisasi_shift2'] ?? $m['realisasi_shift2'] ?? '';
+                    $r3 = $m['produksi_realisasi_shift3'] ?? $m['realisasi_shift3'] ?? '';
+                    $jamAwal = $m['waktu_awal_realisasi'] ?? '';
+                    $jamAkhir = $m['waktu_akhir_realisasi'] ?? '';
+                    $jamDisplay = '';
+                    if ($jamAwal || $jamAkhir) {
+                      $jamDisplay = 'Jam Realisasi: ' . ($jamAwal ? date('H:i', strtotime($jamAwal)) : '-') . ' - ' . ($jamAkhir ? date('H:i', strtotime($jamAkhir)) : '-');
                     }
-                    valueDiv.innerText = displayValue;
-                    row.appendChild(labelDiv);
-                    row.appendChild(colon);
-                    row.appendChild(valueDiv);
-                    isiModal.appendChild(row);
-                });
-            });
-        });
-    });
+                    
+                    // Helper function to determine cell color based on target vs realisasi
+                    $getCellStyle = function($target, $realisasi) {
+                      $t = (int)($target ?? 0);
+                      $r = (int)($realisasi ?? 0);
+                      if ($r === 0 && $t === 0) return 'background: #f8f9fc; border-color: #e3e6f0;'; // No data
+                      if ($r >= $t) return 'background: #f0fdf4; border-color: #86efac; color: #166534;'; // Green - target achieved
+                      return 'background: #fef2f2; border-color: #fca5a5; color: #991b1b;'; // Red - target not met
+                    };
+                  ?>
+                  <?php foreach ([['S1',$r1,$t1],['S2',$r2,$t2],['S3',$r3,$t3]] as [$lbl,$val,$target]): ?>
+                    <div class="shift-cell" style="<?= $getCellStyle($target, $val) ?>" title="<?= $jamDisplay ?: 'Waktu realisasi' ?>">
+                      <small><?= $lbl ?></small>
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 2px; font-size: 0.85rem;">
+                        <?= $val !== '' && $val !== null ? esc(number_format((int)$val)) : '-' ?>
+                        <i class="fas fa-clock" style="font-size: 0.55rem; opacity: 0.8;" title="<?= $jamDisplay ?: 'Waktu realisasi' ?>"></i>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              </td>
 
+              <!-- ── Produksi ── -->
+              <td style="border-left:3px solid #17a37a;"><?= esc($fmtDate($p['tanggal'] ?? '')) ?></td>
+              <td><span class="spk-badge"><?= $dash($p['nomor_spk'] ?? '') ?></span></td>
+              <td><?= $dash($p['nama_mesin'] ?? '') ?></td>
+              <td><?= $dash($p['nama_produk'] ?? '') ?></td>
+              <td><?= $dash($p['operator']   ?? '') ?></td>
+              <td class="text-center"><?= $shiftBadge($p['shift'] ?? '') ?></td>
+              
+              <!-- Hasil Bagus S1/S2/S3 -->
+              <td>
+                <div class="shift-grid">
+                  <?php 
+                    $b1 = $m['produksi_bagus_shift1'] ?? null;
+                    $b2 = $m['produksi_bagus_shift2'] ?? null;
+                    $b3 = $m['produksi_bagus_shift3'] ?? null;
+                    $hasShiftData = ($b1 !== null || $b2 !== null || $b3 !== null);
+                    // Fallback: jika tidak ada data per-shift dari mesin, pakai grand_total dari produksi
+                    if (!$hasShiftData && isset($p['grand_total_bagus']) && $p['grand_total_bagus'] !== null && $p['grand_total_bagus'] !== '') {
+                        $b1 = $p['grand_total_bagus'];
+                    }
+                  ?>
+                  <?php foreach ([['S1',$b1],['S2',$b2],['S3',$b3]] as [$lbl,$val]): ?>
+                    <div class="shift-cell <?= $val !== null && $val !== '' ? 'real-val' : '' ?>" style="border-color: #86efac;">
+                      <small><?= (!$hasShiftData && $lbl !== 'S1') ? '' : $lbl ?></small>
+                      <?= $val !== null && $val !== '' ? esc(number_format((int)$val)) : '-' ?>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              </td>
+              
+              <!-- Reject S1/S2/S3 -->
+              <td>
+                <div class="shift-grid">
+                  <?php 
+                    $rj1 = $m['produksi_reject_shift1'] ?? null;
+                    $rj2 = $m['produksi_reject_shift2'] ?? null;
+                    $rj3 = $m['produksi_reject_shift3'] ?? null;
+                    $hasShiftDataReject = ($rj1 !== null || $rj2 !== null || $rj3 !== null);
+                    // Fallback: jika tidak ada data per-shift dari mesin, pakai grand_total dari produksi
+                    if (!$hasShiftDataReject && isset($p['grand_total_reject']) && $p['grand_total_reject'] !== null && $p['grand_total_reject'] !== '') {
+                        $rj1 = $p['grand_total_reject'];
+                    }
+                  ?>
+                  <?php foreach ([['S1',$rj1],['S2',$rj2],['S3',$rj3]] as [$lbl,$val]): ?>
+                    <div class="shift-cell <?= $val !== null && $val !== '' ? 'real-val' : '' ?>" style="border-color: #fca5a5;">
+                      <small><?= (!$hasShiftDataReject && $lbl !== 'S1') ? '' : $lbl ?></small>
+                      <?= $val !== null && $val !== '' ? esc(number_format((int)$val)) : '-' ?>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              </td>
 
-</script>
+              <!-- ── Warehouse 2 ── -->
+              <td style="border-left:3px solid #1e8fa3;"><?= esc($fmtDate($w['tanggal'] ?? '')) ?></td>
+              <td><?= $dash($w['spk']          ?? '') ?></td>
+              <td style="max-width:160px;white-space:normal"><?= $dash($w['produk']       ?? '') ?></td>
+              <td class="text-right good"><?= ($w['hasil_bagus']  ?? '') !== '' ? esc(number_format((float)$w['hasil_bagus'],  2)) : '-' ?></td>
+              <td class="text-right bad"><?= ($w['hasil_reject'] ?? '') !== '' ? esc(number_format((float)$w['hasil_reject'], 2)) : '-' ?></td>
+              <td style="max-width:140px;white-space:normal"><?= $dash($w['material']     ?? '') ?></td>
+              <td style="max-width:120px;white-space:normal"><?= $dash($w['colorant']     ?? '') ?></td>
+              <td style="max-width:140px;white-space:normal"><?= $dash($w['packaging']    ?? '') ?></td>
+              <td style="max-width:140px;white-space:normal"><?= $dash($w['operator']     ?? '') ?></td>
+            </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer paginasi -->
+    <div class="px-3 py-2 border-top d-flex flex-wrap justify-content-between align-items-center bg-light gap-2">
+      <small class="text-muted">
+        Menampilkan
+        <strong><?= number_format(($current_page - 1) * $per_page + 1) ?></strong> –
+        <strong><?= number_format(min($current_page * $per_page, $total_rows)) ?></strong>
+        dari <strong><?= number_format($total_rows) ?></strong> baris
+      </small>
+      <div><?= $pager ?></div>
+    </div>
+  </div>
+
+</div>
+</div>
 
 <?= $this->endSection() ?>

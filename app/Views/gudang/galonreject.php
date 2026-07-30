@@ -20,6 +20,24 @@ $sumberLabels = [
     'produksi' => 'Reject Produksi',
 ];
 
+$galonRejectOptions = $galon_reject_options ?? [];
+
+$buildGalonRejectLabel = static function (array $item): string {
+    $parts = [];
+
+    if (!empty($item['kode_warna'])) {
+        $parts[] = $item['kode_warna'];
+    }
+
+    if (!empty($item['kode_barang'])) {
+        $parts[] = $item['kode_barang'];
+    }
+
+    $parts[] = $item['item'] ?? '-';
+
+    return implode(' - ', $parts);
+};
+
 $formatDateTime = static function ($value): string {
     $timestamp = $value ? strtotime((string) $value) : false;
 
@@ -136,7 +154,11 @@ $formatDateTime = static function ($value): string {
                                 <td><?= esc($item['kode'] ?? '-') ?></td>
                                 <td><?= esc($item['jumlah'] ?? '-') ?></td>
                                 <td><?= esc($item['nomor_lot'] ?? '-') ?></td>
-                                <td><?= esc($item['no_spk'] ?? '-') ?></td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-link btn-spk-produksi-autofill p-0" data-spk="<?= esc($item['no_spk'] ?? '') ?>" style="text-decoration: none; color: #4361ee;">
+                                        <?= esc($item['no_spk'] ?? '-') ?>
+                                    </button>
+                                </td>
                                 <td><?= esc($item['shif'] ?? '-') ?></td>
                                 <td><?= esc($formatDateTime($item['created_at'] ?? null)) ?></td>
                                 <td><?= esc($formatDateTime($item['updated_at'] ?? null)) ?></td>
@@ -215,20 +237,51 @@ $formatDateTime = static function ($value): string {
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="produk">Produk</label>
-                                <input type="text" class="form-control" id="produk" name="produk" placeholder="Input produk">
+                                <label for="item_key_display">Item Galon Reject <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="item_key_display"
+                                    list="item_key_list"
+                                    placeholder="Cari item, produk, atau kode..."
+                                    autocomplete="off"
+                                    required
+                                >
+                                <input type="hidden" id="item_key" name="item_key">
+                                <datalist id="item_key_list">
+                                    <?php foreach ($galonRejectOptions as $index => $option) : ?>
+                                        <option
+                                            value="<?= esc($buildGalonRejectLabel($option)) ?>"
+                                            data-index="<?= esc((string) $index) ?>"
+                                            data-item="<?= esc($option['item'] ?? '') ?>"
+                                            data-produk="<?= esc($option['kode_warna'] ?? '') ?>"
+                                            data-kode="<?= esc($option['kode_barang'] ?? '') ?>"
+                                        ></option>
+                                    <?php endforeach; ?>
+                                </datalist>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="nama_galon_reject" name="nama_galon_reject">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="produk">Produk / Kode Warna</label>
+                                <input type="text" class="form-control" id="produk" name="produk" placeholder="Otomatis terisi" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="kode">Kode Barang</label>
+                                <input type="text" class="form-control" id="kode" name="kode" placeholder="Otomatis terisi" readonly>
                             </div>
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="nama_galon_reject">Item Galon Reject <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nama_galon_reject" name="nama_galon_reject" required>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="sumber_reject">Sumber Reject <span class="text-danger">*</span></label>
                                 <select class="form-control" id="sumber_reject" name="sumber_reject" required>
@@ -238,9 +291,6 @@ $formatDateTime = static function ($value): string {
                                 </select>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="status">Status</label>
@@ -249,12 +299,6 @@ $formatDateTime = static function ($value): string {
                                         <option value="<?= esc($status) ?>" <?= ($status === 'bahan_masuk' ? 'selected' : '') ?>><?= esc($statusLabels[$status] ?? ucfirst(str_replace('_', ' ', $status))) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="kode">Kode</label>
-                                <input type="text" class="form-control" id="kode" name="kode">
                             </div>
                         </div>
                     </div>
@@ -306,38 +350,45 @@ $formatDateTime = static function ($value): string {
                 <input type="hidden" name="id" id="edit_id">
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                             <div class="form-group">
-                                <label for="edit_nama_galon_reject">Nama Galon Reject</label>
-                                <input type="text" class="form-control" id="edit_nama_galon_reject" name="nama_galon_reject" required>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="edit_sumber_reject">Sumber Reject</label>
-                                <select class="form-control" id="edit_sumber_reject" name="sumber_reject" required>
-                                    <?php foreach ($sumber_options as $opt) : ?>
-                                        <option value="<?= esc($opt) ?>"><?= esc($sumberLabels[$opt] ?? ucfirst($opt)) ?></option>
+                                <label for="edit_item_key_display">Item Galon Reject <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="edit_item_key_display"
+                                    list="edit_item_key_list"
+                                    placeholder="Cari item, produk, atau kode..."
+                                    autocomplete="off"
+                                    required
+                                >
+                                <input type="hidden" id="edit_item_key" name="item_key">
+                                <datalist id="edit_item_key_list">
+                                    <?php foreach ($galonRejectOptions as $index => $option) : ?>
+                                        <option
+                                            value="<?= esc($buildGalonRejectLabel($option)) ?>"
+                                            data-index="<?= esc((string) $index) ?>"
+                                            data-item="<?= esc($option['item'] ?? '') ?>"
+                                            data-produk="<?= esc($option['kode_warna'] ?? '') ?>"
+                                            data-kode="<?= esc($option['kode_barang'] ?? '') ?>"
+                                        ></option>
                                     <?php endforeach; ?>
-                                </select>
+                                </datalist>
                             </div>
                         </div>
                     </div>
+                    <input type="hidden" id="edit_nama_galon_reject" name="nama_galon_reject">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_status">Status</label>
-                                <select class="form-control" id="edit_status" name="status" required>
-                                    <?php foreach ($status_options as $status) : ?>
-                                        <option value="<?= esc($status) ?>"><?= esc($statusLabels[$status] ?? ucfirst(str_replace('_', ' ', $status))) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <label for="edit_produk">Produk / Kode Warna</label>
+                                <input type="text" class="form-control" id="edit_produk" name="produk" placeholder="Otomatis terisi" readonly>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_kode">Kode</label>
-                                <input type="text" class="form-control" id="edit_kode" name="kode">
+                                <label for="edit_kode">Kode Barang</label>
+                                <input type="text" class="form-control" id="edit_kode" name="kode" placeholder="Otomatis terisi" readonly>
                             </div>
                         </div>
                     </div>
@@ -364,11 +415,27 @@ $formatDateTime = static function ($value): string {
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_produk">Produk</label>
-                                <input type="text" class="form-control" id="edit_produk" name="produk">
+                                <label for="edit_sumber_reject">Sumber Reject</label>
+                                <select class="form-control" id="edit_sumber_reject" name="sumber_reject" required>
+                                    <?php foreach ($sumber_options as $opt) : ?>
+                                        <option value="<?= esc($opt) ?>"><?= esc($sumberLabels[$opt] ?? ucfirst($opt)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="edit_status">Status</label>
+                                <select class="form-control" id="edit_status" name="status" required>
+                                    <?php foreach ($status_options as $status) : ?>
+                                        <option value="<?= esc($status) ?>"><?= esc($statusLabels[$status] ?? ucfirst(str_replace('_', ' ', $status))) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
                             <div class="form-group">
                                 <label for="edit_shif">Shift</label>
                                 <input type="text" class="form-control" id="edit_shif" name="shif">
@@ -458,6 +525,146 @@ $formatDateTime = static function ($value): string {
         }
     }
 
+    const galonRejectOptions = <?= json_encode($galonRejectOptions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+    function buildGalonRejectLabel(option) {
+        const parts = [];
+
+        if (option && option.kode_warna) {
+            parts.push(option.kode_warna || '');
+        }
+
+        if (option && option.kode_barang) {
+            parts.push(option.kode_barang || '');
+        }
+
+        parts.push((option && option.item) || '-');
+
+        return parts.join(' - ');
+    }
+
+    function findGalonRejectOption(item, produk, kode) {
+        const normalizedItem = (item || '').trim();
+        const normalizedProduk = (produk || '').trim();
+        const normalizedKode = (kode || '').trim();
+
+        for (let i = 0; i < galonRejectOptions.length; i++) {
+            const option = galonRejectOptions[i] || {};
+            if (
+                (option.item || '') === normalizedItem &&
+                (option.kode_warna || '') === normalizedProduk &&
+                (option.kode_barang || '') === normalizedKode
+            ) {
+                return String(i);
+            }
+        }
+
+        return '';
+    }
+
+    function findGalonRejectOptionByLabel(label) {
+        const normalizedLabel = (label || '').trim();
+
+        if (!normalizedLabel) {
+            return null;
+        }
+
+        for (let i = 0; i < galonRejectOptions.length; i++) {
+            const option = galonRejectOptions[i] || {};
+
+            if (buildGalonRejectLabel(option) === normalizedLabel) {
+                return {
+                    index: String(i),
+                    option: option,
+                };
+            }
+        }
+
+        return null;
+    }
+
+    function applyGalonRejectSelection(displayId, keyId, itemId, produkId, kodeId, strict) {
+        const displayField = document.getElementById(displayId);
+        const keyField = document.getElementById(keyId);
+        const itemField = document.getElementById(itemId);
+        const produkField = document.getElementById(produkId);
+        const kodeField = document.getElementById(kodeId);
+
+        if (!displayField || !keyField || !itemField || !produkField || !kodeField) {
+            return;
+        }
+
+        const matched = findGalonRejectOptionByLabel(displayField.value);
+
+        if (!matched) {
+            if (strict) {
+                keyField.value = '';
+                itemField.value = '';
+                produkField.value = '';
+                kodeField.value = '';
+                displayField.setCustomValidity(displayField.value.trim() ? 'Pilih item dari daftar yang tersedia' : '');
+            }
+
+            return;
+        }
+
+        const option = matched.option || {};
+        keyField.value = matched.index;
+        itemField.value = option.item || '';
+        produkField.value = option.kode_warna || '';
+        kodeField.value = option.kode_barang || '';
+        displayField.value = buildGalonRejectLabel(option);
+        displayField.setCustomValidity('');
+    }
+
+    const itemKeyDisplay = document.getElementById('item_key_display');
+    const editItemKeyDisplay = document.getElementById('edit_item_key_display');
+
+    if (itemKeyDisplay) {
+        itemKeyDisplay.addEventListener('input', function() {
+            const keyField = document.getElementById('item_key');
+            const itemField = document.getElementById('nama_galon_reject');
+            const produkField = document.getElementById('produk');
+            const kodeField = document.getElementById('kode');
+
+            if (keyField) {
+                keyField.value = '';
+            }
+
+            if (itemField) {
+                itemField.value = '';
+            }
+
+            if (produkField) {
+                produkField.value = '';
+            }
+
+            if (kodeField) {
+                kodeField.value = '';
+            }
+
+            itemKeyDisplay.setCustomValidity('');
+        });
+
+        itemKeyDisplay.addEventListener('change', function() {
+            applyGalonRejectSelection('item_key_display', 'item_key', 'nama_galon_reject', 'produk', 'kode', true);
+        });
+    }
+
+    if (editItemKeyDisplay) {
+        editItemKeyDisplay.addEventListener('input', function() {
+            const keyField = document.getElementById('edit_item_key');
+            if (keyField) {
+                keyField.value = '__custom__';
+            }
+            editItemKeyDisplay.setCustomValidity('');
+        });
+
+        editItemKeyDisplay.addEventListener('change', function() {
+            applyGalonRejectSelection('edit_item_key_display', 'edit_item_key', 'edit_nama_galon_reject', 'edit_produk', 'edit_kode', false);
+        });
+    }
+
     function setEditModal(button) {
         var id = button.getAttribute('data-id') || '';
         var produk = button.getAttribute('data-produk') || '';
@@ -470,6 +677,9 @@ $formatDateTime = static function ($value): string {
         var spk = button.getAttribute('data-spk') || '';
         var shif = button.getAttribute('data-shif') || '';
         var action = button.getAttribute('data-action') || "<?= site_url('gudang/galon_reject/update') ?>";
+        var itemKey = findGalonRejectOption(nama, produk, kode);
+        var editDisplay = document.getElementById('edit_item_key_display');
+        var editKey = document.getElementById('edit_item_key');
 
         document.getElementById('edit_id').value = id;
         document.getElementById('edit_produk').value = produk;
@@ -482,6 +692,26 @@ $formatDateTime = static function ($value): string {
         document.getElementById('edit_no_spk').value = spk;
         document.getElementById('edit_shif').value = shif;
         document.getElementById('formEdit').setAttribute('action', action);
+
+        if (itemKey !== '') {
+            if (editDisplay) {
+                editDisplay.value = buildGalonRejectLabel(galonRejectOptions[itemKey] || {});
+            }
+            if (editKey) {
+                editKey.value = itemKey;
+            }
+            if (editDisplay) {
+                editDisplay.setCustomValidity('');
+            }
+        } else {
+            if (editDisplay) {
+                editDisplay.value = buildGalonRejectLabel({ item: nama, kode_warna: produk, kode_barang: kode });
+                editDisplay.setCustomValidity('');
+            }
+            if (editKey) {
+                editKey.value = '__custom__';
+            }
+        }
     }
 
     function setDeleteModal(button) {
@@ -496,20 +726,75 @@ $formatDateTime = static function ($value): string {
 
     $(function() {
         var addModal = document.getElementById('addDataModal');
+        var addForm = document.querySelector('form[action="<?= base_url('gudang/galon_reject/tambahData') ?>"]');
 
         if (addModal) {
             $(addModal).on('shown.bs.modal', function() {
-                var noSpkInput = document.getElementById('no_spk');
-                if (noSpkInput) {
-                    noSpkInput.focus();
+                var displayInput = document.getElementById('item_key_display');
+                if (displayInput) {
+                    displayInput.value = '';
+                    displayInput.setCustomValidity('');
+                    displayInput.focus();
                 }
             });
 
             $(addModal).on('hidden.bs.modal', function() {
-                document.querySelector('form[action="<?= base_url('gudang/galon_reject/tambahData') ?>"]').reset();
+                if (addForm) {
+                    addForm.reset();
+                }
+                var keyField = document.getElementById('item_key');
+                var itemField = document.getElementById('nama_galon_reject');
+                var produkField = document.getElementById('produk');
+                var kodeField = document.getElementById('kode');
+                var displayInput = document.getElementById('item_key_display');
+
+                if (keyField) keyField.value = '';
+                if (itemField) itemField.value = '';
+                if (produkField) produkField.value = '';
+                if (kodeField) kodeField.value = '';
+                if (displayInput) displayInput.setCustomValidity('');
+            });
+        }
+
+        var editModal = document.getElementById('editDataModal');
+        var editForm = document.getElementById('formEdit');
+        if (editModal) {
+            $(editModal).on('shown.bs.modal', function() {
+                var displayInput = document.getElementById('edit_item_key_display');
+                if (displayInput) {
+                    displayInput.focus();
+                    displayInput.select();
+                }
+            });
+
+            $(editModal).on('hidden.bs.modal', function() {
+                if (editForm) {
+                    editForm.reset();
+                }
+                var displayInput = document.getElementById('edit_item_key_display');
+                if (displayInput) {
+                    displayInput.setCustomValidity('');
+                }
+            });
+        }
+
+        if (addForm && itemKeyDisplay) {
+            addForm.addEventListener('submit', function(event) {
+                applyGalonRejectSelection('item_key_display', 'item_key', 'nama_galon_reject', 'produk', 'kode', true);
+
+                if (!document.getElementById('item_key').value) {
+                    event.preventDefault();
+                    itemKeyDisplay.reportValidity();
+                }
+            });
+        }
+
+        if (editForm && editItemKeyDisplay) {
+            editForm.addEventListener('submit', function() {
+                applyGalonRejectSelection('edit_item_key_display', 'edit_item_key', 'edit_nama_galon_reject', 'edit_produk', 'edit_kode', false);
             });
         }
     });
 </script>
-
+<?= view('shared/spk_produksi_autofill') ?>
 <?= $this->endSection() ?>

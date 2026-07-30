@@ -6,6 +6,8 @@ use CodeIgniter\Database\Migration;
 
 class CreateGalonRejectTable extends Migration
 {
+    protected $DBGroup = 'gudang';
+
     public function up()
     {
         $this->forge->addField([

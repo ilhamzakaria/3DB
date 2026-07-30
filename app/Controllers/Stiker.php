@@ -52,14 +52,92 @@ class Stiker extends BaseController
             ->orderBy('created_at', 'DESC')
             ->findAll();
 
+        $allOptions = $this->getCatalog();
+        $products = [];
+        $stikerOptions = [];
+
+        foreach ($allOptions as $opt) {
+            $prod = $opt['produk'];
+            
+            if (!in_array($prod, $products, true)) {
+                $products[] = $prod;
+            }
+            
+            $stikerOptions[$prod][] = [
+                'item' => $opt['item'],
+                'kode_barang' => $opt['kode_barang'],
+                'label' => $opt['label'],
+            ];
+        }
+
         return view(self::VIEW_PATH, [
             'title' => 'Stiker',
             'data_list' => $data_list,
+            'stiker_catalog' => $allOptions,
+            'stiker_products' => $products,
+            'stiker_options' => $stikerOptions,
             'q' => $q,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'status_options' => self::STATUS_OPTIONS,
         ]);
+    }
+
+    private function getCatalog(): array
+    {
+        $path = ROOTPATH . 'catatan/catatan.md';
+        if (!is_file($path)) {
+            return [];
+        }
+
+        $rows = [];
+        $produk = '';
+
+        foreach (file($path, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+            $rawLine = trim($line);
+
+            if ($rawLine === '' || str_starts_with($rawLine, '#') || str_starts_with($rawLine, '---')) {
+                continue;
+            }
+
+            if (preg_match('/^produk\s*:\s*(.+)$/i', $rawLine, $matches)) {
+                $produk = trim($matches[1]);
+                continue;
+            }
+
+            if (stripos($rawLine, 'kode barang') !== false || stripos($rawLine, 'kode brang') !== false) {
+                continue;
+            }
+
+            $kodeBarang = '';
+            $item = '';
+
+            if (preg_match('/^(\d+)\s+(.+)$/u', $rawLine, $matches)) {
+                $kodeBarang = trim($matches[1]);
+                $item = trim($matches[2]);
+            } else {
+                $item = trim($rawLine);
+            }
+
+            if ($produk === '' || $item === '') {
+                continue;
+            }
+
+            $rows[] = [
+                'produk'        => $produk,
+                'kode_barang'   => $kodeBarang,
+                'item'          => $item,
+                'label'         => $kodeBarang !== '' ? $kodeBarang . ' - ' . $item : $item,
+            ];
+        }
+
+        $unique = [];
+        foreach ($rows as $row) {
+            $key = implode('|', [$row['produk'], $row['kode_barang'], $row['item']]);
+            $unique[$key] = $row;
+        }
+
+        return array_values($unique);
     }
 
     public function tambahData()

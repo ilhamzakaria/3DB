@@ -422,7 +422,7 @@
 
     .btn-close {
         position: absolute;
-        top: 50%;
+        top: 25%;
         right: 1.25rem;
         transform: translateY(-50%);
         box-sizing: content-box;
@@ -440,5 +440,40 @@
 
     .btn-close:hover {
         opacity: 0.8;
+    }
+
+    /* SPK status badges — shown under the SPK number in the table */
+    .badge-spk-selesai {
+        display: inline-block;
+        padding: 0.22em 0.6em;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        background: rgba(40, 167, 69, 0.12);
+        color: #1a7a32;
+        border: 1px solid rgba(40, 167, 69, 0.25);
+        white-space: nowrap;
+    }
+
+    .badge-spk-ongoing {
+        display: inline-block;
+        padding: 0.22em 0.6em;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        background: rgba(255, 159, 28, 0.1);
+        color: #9a5e00;
+        border: 1px solid rgba(255, 159, 28, 0.25);
+        white-space: nowrap;
+    }
+
+    /* Subtle green-tinted row background for completed SPKs */
+    tr.spk-selesai-row > td {
+        background-color: rgba(40, 167, 69, 0.035) !important;
+    }
+    tr.spk-selesai-row:hover > td {
+        background-color: rgba(40, 167, 69, 0.065) !important;
     }
 </style>

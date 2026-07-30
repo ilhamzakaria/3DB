@@ -9,14 +9,124 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+                <style>
+                    .bg-primary-light { background-color: #cfe2ff; }
+                    .form-control:focus, .form-select:focus {
+                        border-color: #80bdff;
+                        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+                    }
+                    .card {
+                        border-radius: 12px !important;
+                        transition: box-shadow 0.3s ease;
+                    }
+                    .card:hover {
+                        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+                    }
+                    .card-header {
+                        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+                    }
+                    .table tbody tr:hover {
+                        background-color: rgba(0, 123, 255, 0.05);
+                    }
+                    .section-title {
+                        font-size: 1.1rem;
+                        font-weight: 600;
+                        color: #2c3e50;
+                        margin-bottom: 1.5rem;
+                        padding-bottom: 0.75rem;
+                        border-bottom: 2px solid #e9ecef;
+                    }
+                    .fw-600 {
+                        font-weight: 600 !important;
+                    }
+                </style>
                 <form id="formAddLaporan" action="<?= base_url('produksi/simpan') ?>" method="POST" enctype="multipart/form-data">
                     <?= csrf_field() ?>
-                    <?= view('produksi/partials/form_fields') ?>
+                    <input type="hidden" name="submit_type" id="submit_type" value="save">
+                    <?= view('produksi/partials/form_fields', [
+                        'spk_list'           => $spk_list,
+                        'context_mesin_slug' => $context_mesin_slug ?? '',
+                    ]) ?>
                 </form>
+
+                <script>
+                    // Update Shift dropdown with tercapai status when SPK changes
+                    function updateShiftOptions() {
+                        const spkSelect = document.querySelector('.nomor_spk');
+                        const shiftSelect = document.querySelector('#shift_select');
+                        
+                        if (!spkSelect || !shiftSelect) return;
+                        
+                        const selectedSpkOption = spkSelect.selectedOptions[0];
+                        if (!selectedSpkOption || !selectedSpkOption.value) {
+                            // Reset all shift options when no SPK selected
+                            Array.from(shiftSelect.options).forEach(opt => {
+                                if (opt.value) opt.textContent = opt.value === '1' ? 'Shift 1' : opt.value === '2' ? 'Shift 2' : 'Shift 3';
+                            });
+                            return;
+                        }
+                        
+                        // Get is_completed from data attribute
+                        const isCompleted = selectedSpkOption.dataset.isCompleted === '1';
+                        
+                        // Update shift option labels
+                        Array.from(shiftSelect.options).forEach(opt => {
+                            if (opt.value) {
+                                const baseLabel = opt.value === '1' ? 'Shift 1' : opt.value === '2' ? 'Shift 2' : 'Shift 3';
+                                opt.textContent = isCompleted ? baseLabel + ' ✓ TERCAPAI' : baseLabel;
+                                opt.dataset.isCompleted = isCompleted ? '1' : '0';
+                            }
+                        });
+                    }
+                    
+                    // Update tercapai hidden field when shift is selected
+                    function updateTercapaiField() {
+                        const shiftSelect = document.querySelector('#shift_select');
+                        const tercapaiHidden = document.querySelector('.tercapai_hidden');
+                        
+                        if (!shiftSelect || !tercapaiHidden) return;
+                        
+                        const selectedOption = shiftSelect.selectedOptions[0];
+                        if (selectedOption && selectedOption.dataset.isCompleted) {
+                            tercapaiHidden.value = selectedOption.dataset.isCompleted;
+                        }
+                    }
+                    
+                    // Initialize on modal open
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const spkSelect = document.querySelector('.nomor_spk');
+                        const shiftSelect = document.querySelector('#shift_select');
+                        
+                        if (spkSelect) spkSelect.addEventListener('change', function() {
+                            updateShiftOptions();
+                            updateTercapaiField();
+                        });
+                        
+                        if (shiftSelect) {
+                            shiftSelect.addEventListener('change', updateTercapaiField);
+                            
+                            // If shift already has a value (edit mode), trigger change event to load TTD
+                            const modal = document.getElementById('addDataModal');
+                            if (modal) {
+                                modal.addEventListener('shown.bs.modal', function() {
+                                    if (shiftSelect.value) {
+                                        // Trigger change event to load TTD via scripts.php handler
+                                        shiftSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                    }
+                                });
+                            }
+                        }
+                        
+                        // Initial check
+                        updateShiftOptions();
+                        updateTercapaiField();
+                    });
+                </script>
             </div>
             <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
                 <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" form="formAddLaporan" class="btn btn-primary px-5 shadow-sm">Simpan Laporan</button>
+                <button type="submit" form="formAddLaporan" class="btn btn-outline-primary px-4 shadow-sm" onclick="document.getElementById('submit_type').value='save_and_add'">Simpan & Tambah Lagi</button>
+                <button type="submit" form="formAddLaporan" class="btn btn-primary px-5 shadow-sm" onclick="document.getElementById('submit_type').value='save'">Simpan Laporan</button>
             </div>
         </div>
     </div>

@@ -9,6 +9,33 @@ class Masterbatch extends BaseController
     private const INDEX_ROUTE = '/gudang/masterbatch';
     private const VIEW_PATH = 'gudang/masterbatch';
     private const STATUS_OPTIONS = ['menggiling', 'bahan_masuk', 'bahan_keluar'];
+    private const PRODUK_OPTIONS = [
+        'BAHAN PENOLONG',
+    ];
+    private const TIPE_OPTIONS = [
+        'Master Batch',
+    ];
+    private const ITEM_OPTIONS = [
+        'Master Batch' => [
+            'Renol Blue PC-C7216R',
+            'Renol Blue PC-D8997',
+            'Renol Violet PC-D87226 MG',
+            'Plast Trans Blue MFPC 15023',
+            'Plast Trans Violet MFPC 15999 (A)',
+            'Plast Green MFPE 20564-22',
+            'Lucent Blue 0878-BL LM5300729',
+            'Lucent Blue 1761 (A)-BL LM5201494',
+            'Lucent Red 0157-BL LM3300115',
+            'Lucent Green 1749-BL LM6301490',
+            'Lucent Green 5771-BL',
+            'Lucent Blue 6019 BL LM5305779',
+            'Lucent Blue 6172 (A) LM5106030',
+            'Lucent Blue 6420 (A) SWS',
+            'Lucent Green 2221-BL LM6301973',
+            'Lucent Violet 6407 BL',
+            'Finolene Green GSE-1407',
+        ],
+    ];
 
     protected $MMasterbatch;
 
@@ -27,6 +54,7 @@ class Masterbatch extends BaseController
         if ($q !== '') {
             $query = $query->groupStart()
                 ->orLike('produk', $q)
+                ->orLike('tipe', $q)
                 ->orLike('nama_masterbatch', $q)
                 ->orLike('status', $q)
                 ->orLike('kode', $q)
@@ -45,7 +73,10 @@ class Masterbatch extends BaseController
             'title' => 'Masterbatch',
             'masterbatch' => $masterbatch,
             'q' => $q,
+            'produk_options' => self::PRODUK_OPTIONS,
             'status_options' => self::STATUS_OPTIONS,
+            'tipe_options' => self::TIPE_OPTIONS,
+            'item_options' => self::ITEM_OPTIONS,
         ]);
     }
 
@@ -61,8 +92,12 @@ class Masterbatch extends BaseController
         }
 
         $data = [
-            'produk' => $this->request->getPost('produk'),
-            'nama_masterbatch' => $this->request->getPost('nama_masterbatch'),
+            'produk' => $this->normalizeProduk($this->request->getPost('produk')),
+            'tipe' => $this->normalizeTipe($this->request->getPost('tipe')),
+            'nama_masterbatch' => $this->normalizeItem(
+                $this->request->getPost('tipe'),
+                $this->request->getPost('nama_masterbatch')
+            ),
             'status' => $this->normalizeStatus($this->request->getPost('status')),
             'kode' => trim((string) $this->request->getPost('kode')),
             'jumlah' => trim((string) $this->request->getPost('jumlah')),
@@ -110,8 +145,12 @@ class Masterbatch extends BaseController
         }
 
         $data = [
-            'produk' => $this->request->getPost('produk'),
-            'nama_masterbatch' => $this->request->getPost('nama_masterbatch'),
+            'produk' => $this->normalizeProduk($this->request->getPost('produk')),
+            'tipe' => $this->normalizeTipe($this->request->getPost('tipe')),
+            'nama_masterbatch' => $this->normalizeItem(
+                $this->request->getPost('tipe'),
+                $this->request->getPost('nama_masterbatch')
+            ),
             'status' => $this->normalizeStatus($this->request->getPost('status')),
             'kode' => trim((string) $this->request->getPost('kode')),
             'jumlah' => trim((string) $this->request->getPost('jumlah')),
@@ -156,5 +195,40 @@ class Masterbatch extends BaseController
         }
 
         return $status;
+    }
+
+    private function normalizeTipe(?string $tipe): string
+    {
+        $tipe = trim((string) $tipe);
+
+        if ($tipe === '') {
+            return self::TIPE_OPTIONS[0];
+        }
+
+        return $tipe;
+    }
+
+    private function normalizeProduk(?string $produk): string
+    {
+        $produk = trim((string) $produk);
+
+        if ($produk === '') {
+            return self::PRODUK_OPTIONS[0];
+        }
+
+        return $produk;
+    }
+
+    private function normalizeItem(?string $tipe, ?string $item): string
+    {
+        $tipe = $this->normalizeTipe($tipe);
+        $item = trim((string) $item);
+        $options = self::ITEM_OPTIONS[$tipe] ?? [];
+
+        if ($item === '') {
+            return $options[0] ?? '';
+        }
+
+        return $item;
     }
 }

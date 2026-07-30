@@ -98,6 +98,7 @@ class Admin extends BaseController
                 }
             }
         }
+    }
 
     public function delete($id)
     {

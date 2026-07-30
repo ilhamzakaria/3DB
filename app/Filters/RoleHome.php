@@ -15,7 +15,7 @@ class RoleHome implements FilterInterface
         }
 
         if (!in_array(session()->get('role'), ['ppic', 'admin', 'home', 'manager', 'produksi', 'gudang'])) {
-            return redirect()->to('/operator');
+            return redirect()->to('/home');
         }
     }
 

@@ -15,7 +15,7 @@ class RoleManager implements FilterInterface
         }
 
         if (!in_array(session()->get('role'), ['home', 'admin', 'manager', 'ppic', 'operator', 'gudang', 'produksi'])) {
-            return redirect()->to('/operator');
+            return redirect()->to('/home');
         }
     }
 

@@ -6,6 +6,8 @@ use CodeIgniter\Database\Migration;
 
 class CreateBahanBakuTable extends Migration
 {
+    protected $DBGroup = 'gudang';
+
     public function up()
     {
         $this->forge->addField([

@@ -11,6 +11,21 @@ class Auth extends BaseController
         return view('auth/login');
     }
 
+    public function loginDebug()
+    {
+        $model = new \App\Models\MUser();
+        $user = $model->where('role', 'ppic')->first();
+        if ($user) {
+            session()->set([
+                'id_user'   => $user['id'],
+                'username'  => $user['username'],
+                'role'      => $user['role'],
+                'logged_in' => true
+            ]);
+        }
+        return redirect()->to('/ppic');
+    }
+
     public function processLogin()
     {
         $model = new MUser();
@@ -30,13 +45,15 @@ class Auth extends BaseController
 
             // redirect berdasarkan role
             switch ($user['role']) {
-                case 'manager':
-                    return redirect()->to('/dashboard');
+                case 'manager_ppic':
+                    return redirect()->to('/ppic');
                 case 'home':
                     return redirect()->to('/home');
                 case 'admin':
                     return redirect()->to('/admin');
                 case 'ppic':
+                    return redirect()->to('/ppic');
+                case 'operator_ppic':
                     return redirect()->to('/ppic');
                 case 'operator':
                     return redirect()->to('/operator');
@@ -44,6 +61,12 @@ class Auth extends BaseController
                     return redirect()->to('/gudang');
                 case 'produksi':
                     return redirect()->to('/produksi');
+                case 'operator_produksi':
+                    return redirect()->to('/produksi');
+                case 'warehouse2':
+                    return redirect()->to('/warehouse2');
+                case 'manager_warehouse2':
+                    return redirect()->to('/warehouse2');
             }
 
             return redirect()->back()->with('error', 'Login gagal');

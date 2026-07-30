@@ -6,6 +6,8 @@ use CodeIgniter\Database\Migration;
 
 class CreateMasterbatchTable extends Migration
 {
+    protected $DBGroup = 'gudang';
+
     public function up()
     {
         $this->forge->addField([
@@ -16,6 +18,11 @@ class CreateMasterbatchTable extends Migration
                 'auto_increment' => true,
             ],
             'produk' => [
+                'type'       => 'VARCHAR',
+                'constraint' => '255',
+                'null'       => true,
+            ],
+            'tipe' => [
                 'type'       => 'VARCHAR',
                 'constraint' => '255',
                 'null'       => true,

@@ -77,8 +77,54 @@
                         </div>
 
                         <div class="col-md-4">
+                            <label class="filter-section-title">Jumlah</label>
+                            <input type="text" class="form-control" name="jumlah" id="edit_jumlah" placeholder="0">
+                        </div>
+
+                        <div class="col-md-4">
                             <label class="filter-section-title">Tanggal</label>
                             <input type="date" class="form-control" name="tanggal" id="edit_tanggal">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="filter-section-title">Status</label>
+                            <select class="form-select" name="status" id="edit_status">
+                                <option value="">-- Pilih Status --</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Ganti Packing">Ganti Packing</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Target Awal (Mulai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['target_awal'] ?? null) ? 'is-invalid' : '' ?>" name="target_awal" id="edit_target_awal">
+                            <?php if (session()->getFlashdata('errors')['target_awal'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['target_awal'] ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Target Akhir (Selesai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['target_akhir'] ?? null) ? 'is-invalid' : '' ?>" name="target_akhir" id="edit_target_akhir">
+                            <?php if (session()->getFlashdata('errors')['target_akhir'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['target_akhir'] ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Realisasi Awal (Aktual Mulai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['realisasi_awal'] ?? null) ? 'is-invalid' : '' ?>" name="realisasi_awal" id="edit_realisasi_awal">
+                            <?php if (session()->getFlashdata('errors')['realisasi_awal'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['realisasi_awal'] ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="filter-section-title">Realisasi Akhir (Aktual Selesai)</label>
+                            <input type="datetime-local" class="form-control <?= (session()->getFlashdata('errors')['realisasi_akhir'] ?? null) ? 'is-invalid' : '' ?>" name="realisasi_akhir" id="edit_realisasi_akhir">
+                            <?php if (session()->getFlashdata('errors')['realisasi_akhir'] ?? null): ?>
+                                <div class="invalid-feedback d-block"><?= session()->getFlashdata('errors')['realisasi_akhir'] ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="col-md-12">

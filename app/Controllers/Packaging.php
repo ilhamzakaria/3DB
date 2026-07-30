@@ -9,7 +9,25 @@ class Packaging extends BaseController
     private const INDEX_ROUTE = '/gudang/packaging';
     private const VIEW_PATH = 'gudang/packaging';
     private const STATUS_OPTIONS = ['menggiling', 'bahan_masuk', 'bahan_keluar'];
+    private const PRODUK_OPTIONS = ['BARANG PACKAGING / KEMASAN'];
     private const JENIS_OPTIONS = ['box', 'karung', 'plastik'];
+    private const ITEM_OPTIONS = [
+        'box' => [
+            'Kardus 692x417x503, Cap Galon',
+            'Kardus 600X400X300 Cap 5 Gallon, Single',
+            'Kardus 600X400X300 Cap 5 Gallon, Single (Return)',
+            'Kardus 578 x 540 x 541 Cap 5 Gallon, Single Wall',
+            'Kardus 720x550x425 Cap 5 Gallon, Single',
+        ],
+        'karung' => [
+            'Karung 90x130, Karung Cap Gallon',
+        ],
+        'plastik' => [
+            'PE 50x003x85',
+            'PE 60x115x008',
+            'PE 135 X 110 X 0.03',
+        ],
+    ];
 
     protected $MPackaging;
 
@@ -29,6 +47,7 @@ class Packaging extends BaseController
         if ($q !== '') {
             $query = $query->groupStart()
                 ->orLike('produk', $q)
+                ->orLike('jenis_packaging', $q)
                 ->orLike('nama_packaging', $q)
                 ->orLike('status', $q)
                 ->orLike('kode', $q)
@@ -52,8 +71,10 @@ class Packaging extends BaseController
             'packaging' => $packaging,
             'q' => $q,
             'jenis_filter' => $jenis,
+            'produk_options' => self::PRODUK_OPTIONS,
             'status_options' => self::STATUS_OPTIONS,
             'jenis_options' => self::JENIS_OPTIONS,
+            'item_options' => self::ITEM_OPTIONS,
         ]);
     }
 
@@ -69,9 +90,12 @@ class Packaging extends BaseController
         }
 
         $data = [
-            'produk' => $this->request->getPost('produk'),
-            'nama_packaging' => $this->request->getPost('nama_packaging'),
+            'produk' => $this->normalizeProduk($this->request->getPost('produk')),
             'jenis_packaging' => $this->request->getPost('jenis_packaging'),
+            'nama_packaging' => $this->normalizeItem(
+                $this->request->getPost('jenis_packaging'),
+                $this->request->getPost('nama_packaging')
+            ),
             'status' => $this->normalizeStatus($this->request->getPost('status')),
             'kode' => trim((string) $this->request->getPost('kode')),
             'jumlah' => trim((string) $this->request->getPost('jumlah')),
@@ -119,9 +143,12 @@ class Packaging extends BaseController
         }
 
         $data = [
-            'produk' => $this->request->getPost('produk'),
-            'nama_packaging' => $this->request->getPost('nama_packaging'),
+            'produk' => $this->normalizeProduk($this->request->getPost('produk')),
             'jenis_packaging' => $this->request->getPost('jenis_packaging'),
+            'nama_packaging' => $this->normalizeItem(
+                $this->request->getPost('jenis_packaging'),
+                $this->request->getPost('nama_packaging')
+            ),
             'status' => $this->normalizeStatus($this->request->getPost('status')),
             'kode' => trim((string) $this->request->getPost('kode')),
             'jumlah' => trim((string) $this->request->getPost('jumlah')),
@@ -166,5 +193,40 @@ class Packaging extends BaseController
         }
 
         return $status;
+    }
+
+    private function normalizeProduk(?string $produk): string
+    {
+        $produk = trim((string) $produk);
+
+        if ($produk === '') {
+            return self::PRODUK_OPTIONS[0];
+        }
+
+        return $produk;
+    }
+
+    private function normalizeItem(?string $jenis, ?string $item): string
+    {
+        $jenis = $this->normalizeJenis($jenis);
+        $item = trim((string) $item);
+        $options = self::ITEM_OPTIONS[$jenis] ?? [];
+
+        if ($item === '') {
+            return $options[0] ?? '';
+        }
+
+        return $item;
+    }
+
+    private function normalizeJenis(?string $jenis): string
+    {
+        $jenis = trim((string) $jenis);
+
+        if ($jenis === '') {
+            return self::JENIS_OPTIONS[0];
+        }
+
+        return $jenis;
     }
 }

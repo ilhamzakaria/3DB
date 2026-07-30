@@ -1,52 +1,77 @@
 <?php
 $isEdit = isset($header);
 $prefix = $isEdit ? 'edit_' : '';
+
+// On a mesin sub-page the controller passes context_mesin_slug so the
+// add form is pre-locked to that mesin (SPK list is already filtered).
+$contextMesinSlug  = $context_mesin_slug ?? '';
+$contextMesinLabel = '';
+if ($contextMesinSlug !== '' && !$isEdit) {
+    $mesinLabelsMap = \App\Controllers\Produksi::mesinLabels();
+    $contextMesinLabel = $mesinLabelsMap[$contextMesinSlug] ?? '';
+}
 ?>
 
 <div class="section-title"><i class="fas fa-info-circle"></i> Informasi Utama</div>
 <div class="row g-3 mb-4">
     <!-- Row 1 -->
     <div class="col-md-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <label class="form-label mb-0">Nomor SPK</label>
-            <div class="form-check form-switch ms-2">
-                <?php 
-                $isNewSpk = false;
-                if ($isEdit) {
-                    $isNewSpk = true;
-                    foreach ($spk_list as $s) {
-                        if ($s['no_spk'] == $header['nomor_spk']) {
-                            $isNewSpk = false;
-                            break;
-                        }
-                    }
+        <label class="form-label mb-2">Nomor SPK</label>
+        <select name="nomor_spk" class="form-select select2 nomor_spk" required data-is-edit="<?= $isEdit ? '1' : '0' ?>">
+            <option value="">-- Pilih SPK --</option>
+            <?php foreach ($spk_list as $spk): 
+                $selesaiByPpic  = (int)($spk['selesai_spk'] ?? 0) === 1;
+                $isCompleted    = $selesaiByPpic;
+                $isDisabled     = $isCompleted ? 'disabled' : '';
+                $disabledText   = $selesaiByPpic
+                    ? ' ✓ Selesai'
+                    : '';
+                $isSelectedOption = ($isEdit && $spk['no_spk'] == $header['nomor_spk']) ? true : false;
+                
+                // Format display: SPK + Mesin + Produk
+                $displayText = $spk['no_spk'];
+                if (!empty($spk['nama_mesin'])) {
+                    $displayText .= ' | ' . $spk['nama_mesin'];
                 }
-                ?>
-                <input class="form-check-input check_spk_baru" type="checkbox" id="<?= $prefix ?>check_spk_baru" style="cursor: pointer;" <?= $isNewSpk ? 'checked' : '' ?>>
-                <label class="form-check-label text-xs fw-bold text-muted" for="<?= $prefix ?>check_spk_baru" style="cursor: pointer;">BARU</label>
-            </div>
-        </div>
-        <div class="spk_select_wrapper" style="<?= $isNewSpk ? 'display:none;' : '' ?>">
-            <select name="<?= $isNewSpk ? '' : 'nomor_spk' ?>" class="form-select select2 nomor_spk" <?= $isNewSpk ? '' : 'required' ?>>
-                <option value="">-- Pilih SPK --</option>
-                <?php foreach ($spk_list as $spk): ?>
-                    <option value="<?= $spk['no_spk'] ?>" data-mesin="<?= $spk['nama_mesin'] ?>" data-produk="<?= $spk['nama_produk'] ?>" <?= ($isEdit && $spk['no_spk'] == $header['nomor_spk']) ? 'selected' : '' ?>>
-                        <?= $spk['no_spk'] ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="spk_input_wrapper" style="<?= $isNewSpk ? '' : 'display:none;' ?>">
-            <input type="text" name="<?= $isNewSpk ? 'nomor_spk' : '' ?>" class="form-control nomor_spk_baru" placeholder="Input SPK Baru" value="<?= $isNewSpk ? esc($header['nomor_spk']) : '' ?>">
-        </div>
+                if (!empty($spk['nama_produk'])) {
+                    $displayText .= ' | ' . $spk['nama_produk'];
+                }
+                $displayText .= $disabledText;
+            ?>
+                <option value="<?= $spk['no_spk'] ?>" 
+                    data-mesin="<?= esc($spk['nama_mesin']) ?>" 
+                    data-produk="<?= esc($spk['nama_produk']) ?>" 
+                    data-grade="<?= esc($spk['grade']) ?>" 
+                    data-warna="<?= esc($spk['warna']) ?>" 
+                    data-nomor-mesin="<?= esc($spk['nomor_mesin']) ?>" 
+                    data-operator="<?= esc($spk['operator']) ?>" 
+                    data-targett="<?= esc($spk['targett']) ?>" 
+                    data-shif="<?= esc($spk['shif'] ?? '') ?>" 
+                    data-packing="<?= esc($spk['packing'] ?? '') ?>"
+                    data-is-completed="<?= ($spk['is_completed'] ?? false) ? '1' : '0' ?>"
+                    <?= $isDisabled ?>
+                    <?= $isSelectedOption ? 'selected' : '' ?>>
+                    <?= esc($displayText) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
     </div>
     <div class="col-md-3">
-        <label class="form-label">Nama Mesin</label>
-        <input type="text" name="nama_mesin" class="form-control nama_mesin" placeholder="Auto-filled" value="<?= $isEdit ? esc($header['nama_mesin']) : '' ?>">
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Nama Produksi</label>
-        <input type="text" name="nama_produksi" class="form-control nama_produksi" placeholder="Auto-filled" value="<?= $isEdit ? esc($header['nama_produksi']) : '' ?>">
+        <label class="form-label">Nama Produk</label>
+        <input type="text" class="form-control nama_produk" placeholder="Auto-filled" disabled value="<?= $isEdit ? esc($header['nama_produk']) : '' ?>">
+        <input type="hidden" name="nama_produk" class="nama_produk_hidden" value="<?= $isEdit ? esc($header['nama_produk']) : '' ?>">
+        <?php if ($contextMesinLabel !== ''): ?>
+            <input type="hidden" name="nama_mesin" class="nama_mesin" value="<?= esc($contextMesinLabel) ?>">
+            <small class="d-flex align-items-center gap-1 mt-1">
+                <span class="badge bg-primary" style="font-size:.7rem;">
+                    <i class="fas fa-cog me-1"></i><?= esc($contextMesinLabel) ?>
+                </span>
+            </small>
+        <?php else: ?>
+            <input type="hidden" name="nama_mesin" class="nama_mesin" value="<?= $isEdit ? esc($header['nama_mesin']) : '' ?>">
+        <?php endif; ?>
+        <!-- Debug: Show SPK list count -->
+        <small class="text-muted d-block mt-1">SPK Data: <?= count($spk_list) ?> items</small>
     </div>
     <div class="col-md-3">
         <label class="form-label">Batch Number</label>
@@ -54,15 +79,21 @@ $prefix = $isEdit ? 'edit_' : '';
     </div>
     
     <!-- Row 2 -->
-    <div class="col-md-2">
+    <div class="col-md-3">
         <label class="form-label">Shift</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="fas fa-clock text-muted"></i></span>
-            <select name="shift" class="form-select shift border-start-0">
-                <option value="1" <?= ($isEdit && $header['shift'] == '1') ? 'selected' : '' ?>>1</option>
-                <option value="2" <?= ($isEdit && $header['shift'] == '2') ? 'selected' : '' ?>>2</option>
-                <option value="3" <?= ($isEdit && $header['shift'] == '3') ? 'selected' : '' ?>>3</option>
+            <select class="form-select shift border-start-0 shift-selector" id="shift_select"
+                <?= $isEdit ? 'data-is-edit="1"' : '' ?>
+                data-saved-shift="<?= $isEdit && isset($header['shift']) ? esc($header['shift']) : '' ?>"
+                data-saved-tercapai="<?= $isEdit && isset($header['tercapai']) ? esc($header['tercapai']) : '0' ?>">
+                <option value="">-- Pilih Shift --</option>
+                <option value="1">Shift 1</option>
+                <option value="2">Shift 2</option>
+                <option value="3">Shift 3</option>
             </select>
+            <input type="hidden" name="shift" class="shift_hidden" value="<?= $isEdit ? trim(esc($header['shift'] ?? '')) : '' ?>">
+            <input type="hidden" name="tercapai" class="tercapai_hidden" value="<?= $isEdit ? trim(esc($header['tercapai'] ?? '0')) : '0' ?>">
         </div>
     </div>
     <div class="col-md-2">
@@ -71,15 +102,18 @@ $prefix = $isEdit ? 'edit_' : '';
     </div>
     <div class="col-md-2">
         <label class="form-label">No. Mesin</label>
-        <input type="text" name="nomor_mesin" class="form-control nomor_mesin" placeholder="M#" value="<?= $isEdit ? esc($header['nomor_mesin']) : '' ?>">
+        <input type="text" class="form-control nomor_mesin" placeholder="M#" disabled value="<?= $isEdit ? esc($header['nomor_mesin']) : '' ?>">
+        <input type="hidden" name="nomor_mesin" class="nomor_mesin_hidden" value="<?= $isEdit ? esc($header['nomor_mesin']) : '' ?>">
     </div>
     <div class="col-md-3">
         <label class="form-label">Packing</label>
-        <input type="text" name="packing" class="form-control packing" placeholder="Tipe Packing" value="<?= $isEdit ? esc($header['packing']) : '' ?>">
+        <input type="text" class="form-control packing" placeholder="Tipe Packing" disabled value="<?= $isEdit ? esc($header['packing']) : '' ?>">
+        <input type="hidden" name="packing" class="packing_hidden" value="<?= $isEdit ? esc($header['packing']) : '' ?>">
     </div>
     <div class="col-md-3">
         <label class="form-label">Tanggal</label>
-        <input type="date" name="tanggal" class="form-control" value="<?= $isEdit ? $header['tanggal'] : date('Y-m-d') ?>">
+        <input type="date" class="form-control" disabled value="<?= $isEdit ? $header['tanggal'] : date('Y-m-d') ?>">
+        <input type="hidden" name="tanggal" class="tanggal_hidden" value="<?= $isEdit ? $header['tanggal'] : date('Y-m-d') ?>">
     </div>
     
     <!-- Row 3 -->
@@ -92,7 +126,8 @@ $prefix = $isEdit ? 'edit_' : '';
     </div>
     <div class="col-md-2">
         <label class="form-label">Target (pcs)</label>
-        <input type="number" name="target" class="form-control target" placeholder="0" value="<?= $isEdit ? esc($header['target']) : '' ?>">
+        <input type="number" class="form-control target" placeholder="0" disabled value="<?= $isEdit ? esc($header['target']) : '' ?>">
+        <input type="hidden" name="target" class="target_hidden" value="<?= $isEdit ? esc($header['target']) : '' ?>">
     </div>
     <div class="col-md-2">
         <label class="form-label">Isi</label>
@@ -102,116 +137,317 @@ $prefix = $isEdit ? 'edit_' : '';
         <label class="form-label">Operator</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="fas fa-user text-muted"></i></span>
-            <input type="text" name="operator" class="form-control operator border-start-0" placeholder="Nama Operator" value="<?= $isEdit ? esc($header['operator']) : '' ?>">
+            <input type="text" class="form-control operator border-start-0" placeholder="Nama Operator" disabled value="<?= $isEdit ? esc($header['operator']) : esc(session('username') ?? '') ?>">
+            <input type="hidden" name="operator" class="operator_hidden" value="<?= $isEdit ? esc($header['operator']) : esc(session('username') ?? '') ?>">
         </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-7">
-        <div class="section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-clock"></i> Data Produksi Per Jam</span>
-            <div class="input-group input-group-sm" style="width: auto;">
-                <select class="form-select select_jam" style="width: 110px; border-radius: 8px 0 0 8px !important;">
-                    <option value="">-- Jam --</option>
-                    <?php 
-                    $hours = ['06-07','07-08','08-09','09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20','20-21','21-22','22-23','23-00','00-01','01-02','02-03','03-04','04-05','05-06'];
-                    foreach ($hours as $h): ?>
-                        <option value="<?= $h ?>"><?= $h ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="button" class="btn btn-primary btn_add_jam_row" style="border-radius: 0 8px 8px 0 !important;">
-                    <i class="fas fa-plus"></i>
-                </button>
-            </div>
-        </div>
-        <div class="table-responsive border rounded-lg bg-light shadow-sm" style="max-height: 300px; overflow-y: auto; border-radius: 12px !important;">
-            <table class="table table-sm table_jam_form mb-0">
-                <thead class="bg-white sticky-top">
-                    <tr class="text-xs text-muted text-uppercase">
-                        <th class="px-3 py-2" width="120">Rentang Jam</th>
-                        <th class="py-2">Hasil Produksi (Box/Pack)</th>
-                        <th class="text-center py-2" width="60">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if ($isEdit && isset($jams)): ?>
-                        <?php foreach ($jams as $idx => $jam): ?>
-                            <tr data-jam="<?= $jam['rentang_jam'] ?>">
-                                <td class="px-3" width="100">
-                                    <input type="text" name="jam_data[<?= $idx ?>][rentang_jam]" value="<?= $jam['rentang_jam'] ?>" class="form-control-plaintext text-center font-weight-bold" readonly style="width: 80px;">
-                                </td>
-                                <td><input type="number" name="jam_data[<?= $idx ?>][hasil_produksi]" value="<?= $jam['hasil_produksi'] ?>" class="form-control form-control-sm jam-hasil text-center" required placeholder="0"></td>
-                                <td class="text-center" width="50">
-                                    <button type="button" class="btn btn-link btn-sm text-danger remove-jam" title="Hapus" style="text-decoration: none; font-size: 1.2rem;">×</button>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-                <tfoot class="bg-white sticky-bottom border-top">
-                    <tr class="font-weight-bold">
-                        <td class="px-3 py-2 text-primary">TOTAL HASIL</td>
-                        <?php 
-                        $totalHasil = 0;
-                        if ($isEdit && isset($jams)) {
-                            foreach ($jams as $j) $totalHasil += $j['hasil_produksi'];
-                        }
-                        ?>
-                        <td class="py-2 text-primary grand_total_hasil_display"><?= $totalHasil ?></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-    <div class="col-md-5">
-        <div class="section-title d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-exclamation-triangle"></i> Kualitas & Reject</span>
-            <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn_open_reject_modal" data-bs-toggle="modal" data-bs-target="#modalReject" data-target-storage="<?= $prefix ?>reject_storage">
-                <i class="fas fa-plus me-1"></i> Input Reject
-            </button>
-        </div>
-        <div class="p-4 border rounded-lg bg-light shadow-sm" style="border-radius: 12px !important;">
-            <div class="row g-3">
-                <div class="col-6">
-                    <label class="form-label text-xs fw-bold text-success mb-1 uppercase">HASIL BAGUS</label>
-                    <div class="input-group">
-                        <input type="number" name="grand_total_bagus" class="form-control grand_total_bagus bg-white font-weight-bold text-success border-success" readonly style="font-size: 1.1rem;" value="<?= $isEdit ? $header['grand_total_bagus'] : '' ?>">
-                        <span class="input-group-text bg-success text-white small">pcs</span>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <label class="form-label text-xs fw-bold text-danger mb-1 uppercase">TOTAL REJECT</label>
-                    <div class="input-group">
-                        <input type="number" name="grand_total_reject" class="form-control grand_total_reject bg-white font-weight-bold text-danger border-danger" readonly style="font-size: 1.1rem;" value="<?= $isEdit ? $header['grand_total_reject'] : '' ?>">
-                        <span class="input-group-text bg-danger text-white small">pcs</span>
-                    </div>
-                    <div class="reject_storage" id="<?= $prefix ?>reject_storage">
-                        <?php if ($isEdit && isset($rejects)): ?>
-                            <?php foreach ($rejects as $r): ?>
-                                <input type="hidden" name="rejects[<?= $r['jenis_reject'] ?>]" value="<?= $r['jumlah'] ?>" data-type="<?= $r['jenis_reject'] ?>">
+<!-- 2x2 Grid Layout -->
+<div class="row g-4 mb-4">
+    <!-- Grid 1: Data Produksi Per Jam (Top Left) -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; height: 100%;">
+            <!-- Card Header -->
+            <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 text-dark fw-600">
+                        <i class="fas fa-clock text-primary me-2"></i> Data Produksi Per Jam
+                    </h6>
+                    <div class="input-group input-group-sm" style="width: fit-content;">
+                        <select class="form-select select_jam form-select-sm" style="border-radius: 6px 0 0 6px; font-size: 0.875rem;">
+                            <option value="">-- Pilih Jam --</option>
+                            <?php 
+                            $hours = ['06-07','07-08','08-09','09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19','19-20','20-21','21-22','22-23','23-00','00-01','01-02','02-03','03-04','04-05','05-06'];
+                            foreach ($hours as $h): ?>
+                                <option value="<?= $h ?>"><?= $h ?></option>
                             <?php endforeach; ?>
-                        <?php endif; ?>
+                        </select>
+                        <button type="button" class="btn btn-primary btn-sm btn_add_jam_row" style="border-radius: 0 6px 6px 0;">
+                            <i class="fas fa-plus me-1"></i> Tambah
+                        </button>
                     </div>
                 </div>
-                <div class="col-4">
-                    <label class="form-label text-xs fw-bold text-muted mb-1 uppercase">SISA PO</label>
-                    <input type="number" name="sisa_po" class="form-control sisa_po shadow-sm" placeholder="0" value="<?= $isEdit ? $header['sisa_po'] : '' ?>">
+            </div>
+            
+            <!-- Card Body with Table -->
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-sm table_jam_form mb-0 align-middle">
+                        <thead class="bg-light sticky-top">
+                            <tr>
+                                <th class="px-4 py-3 text-muted fw-600" style="font-size: 0.85rem; letter-spacing: 0.5px;">JAM</th>
+                                <th class="px-4 py-3 text-muted fw-600" style="font-size: 0.85rem; letter-spacing: 0.5px;">HASIL</th>
+                                <th class="text-center px-4 py-3 text-muted fw-600" style="font-size: 0.85rem; letter-spacing: 0.5px; width: 50px;">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($isEdit && isset($jams)): ?>
+                                <?php foreach ($jams as $idx => $jam): ?>
+                                    <tr data-jam="<?= $jam['rentang_jam'] ?>" class="border-bottom" style="transition: background-color 0.2s;">
+                                        <td class="px-4 py-3">
+                                            <span class="badge bg-primary-light text-primary fw-600" style="font-size: 0.85rem;"><?= $jam['rentang_jam'] ?></span>
+                                            <input type="hidden" name="jam_data[<?= $idx ?>][rentang_jam]" value="<?= esc($jam['rentang_jam']) ?>">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="number" 
+                                                name="jam_data[<?= $idx ?>][hasil_produksi]" 
+                                                value="<?= $jam['hasil_produksi'] ?>" 
+                                                class="form-control form-control-sm jam-hasil" 
+                                                required 
+                                                placeholder="0"
+                                                style="border-radius: 6px; border: 1px solid #dee2e6;">
+                                        </td>
+                                        <td class="text-center px-4 py-3">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-jam" title="Hapus" style="border-radius: 50%; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                        <tfoot class="bg-light sticky-bottom border-top">
+                            <tr>
+                                <td class="px-4 py-2 fw-600 text-primary" style="font-size: 0.9rem;">TOTAL</td>
+                                <td class="px-4 py-2">
+                                    <div class="fw-600 text-primary" style="font-size: 1rem;">
+                                        <?php 
+                                        $totalHasil = 0;
+                                        if ($isEdit && isset($jams)) {
+                                            foreach ($jams as $j) $totalHasil += $j['hasil_produksi'];
+                                        }
+                                        ?>
+                                        <span class="grand_total_hasil_display"><?= $totalHasil ?></span>
+                                    </div>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
-                <div class="col-4">
-                    <label class="form-label text-xs fw-bold text-muted mb-1 uppercase">HOLD</label>
-                    <input type="number" name="hold" class="form-control hold shadow-sm" placeholder="0" value="<?= $isEdit ? $header['hold'] : '' ?>">
-                </div>
-                <div class="col-4">
-                    <label class="form-label text-xs fw-bold text-muted mb-1 uppercase">GUMPALAN</label>
-                    <input type="number" name="gumpalan" class="form-control gumpalan shadow-sm" placeholder="0" value="<?= $isEdit ? $header['gumpalan'] : '' ?>">
-                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Grid 2: Ringkasan Hasil Produksi (Top Right) -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; height: 100%;">
+            <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                <h6 class="mb-0 text-dark fw-600">
+                    <i class="fas fa-chart-bar text-success me-2"></i> Ringkasan Hasil Produksi
+                </h6>
+            </div>
+            
+            <div class="card-body px-4 py-4">
+                <div class="row g-3">
+                    <!-- Total Bagus -->
+                    <div class="col-12">
+                        <label class="form-label mb-2 text-muted fw-600" style="font-size: 0.875rem;">
+                            <i class="fas fa-check-circle text-success me-1"></i> Total Bagus
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <!-- display only -->
+                            <input type="number"
+                                class="form-control grand_total_bagus bg-white fw-600 text-success"
+                                disabled
+                                style="font-size: 1.1rem; border: 2px solid #28a745; border-radius: 6px 0 0 6px;"
+                                value="<?= $isEdit ? $header['grand_total_bagus'] : '0' ?>">
+                            <!-- hidden input yang benar-benar disubmit -->
+                            <input type="hidden" name="grand_total_bagus" class="grand_total_bagus_hidden" value="<?= $isEdit ? $header['grand_total_bagus'] : '0' ?>">
+                            <span class="input-group-text bg-success text-white fw-600" style="border-radius: 0 6px 6px 0; font-size: 0.85rem;">pcs</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Reject -->
+                    <div class="col-12">
+                        <label class="form-label mb-2 text-muted fw-600" style="font-size: 0.875rem;">
+                            <i class="fas fa-times-circle text-danger me-1"></i> Total Reject
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <!-- display only -->
+                            <input type="number"
+                                class="form-control grand_total_reject bg-white fw-600 text-danger"
+                                disabled
+                                style="font-size: 1.1rem; border: 2px solid #dc3545; border-radius: 6px 0 0 6px;"
+                                value="<?= $isEdit ? $header['grand_total_reject'] : '0' ?>">
+                            <!-- hidden input yang benar-benar disubmit -->
+                            <input type="hidden" name="grand_total_reject" class="grand_total_reject_hidden" value="<?= $isEdit ? $header['grand_total_reject'] : '0' ?>">
+                            <span class="input-group-text bg-danger text-white fw-600" style="border-radius: 0 6px 6px 0; font-size: 0.85rem;">pcs</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Bottom Row -->
+<div class="row g-4 mb-4">
+    <!-- Grid 3: Detail Jenis Reject (Bottom Left) -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; height: 100%;">
+            <!-- Card Header -->
+            <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 text-dark fw-600">
+                        <i class="fas fa-list text-danger me-2"></i> Detail Jenis Reject
+                    </h6>
+                    <button type="button" class="btn btn-danger btn-sm rounded-pill btn-add-reject-row-inline" id="btn_add_reject_row_inline" title="Tambah baris reject">
+                        <i class="fas fa-plus me-1"></i> Tambah
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card Body with Table -->
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-sm table-hover mb-0 align-middle" id="table_reject_inline">
+                        <thead class="bg-light sticky-top">
+                            <tr>
+                                <th class="px-4 py-3 text-muted fw-600" style="font-size: 0.85rem; letter-spacing: 0.5px;">JENIS REJECT</th>
+                                <th class="px-4 py-3 text-muted fw-600 text-center" style="font-size: 0.85rem; letter-spacing: 0.5px; width: 140px;">JUMLAH (PCS)</th>
+                                <th class="text-center px-4 py-3 text-muted fw-600" style="font-size: 0.85rem; letter-spacing: 0.5px; width: 60px;">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reject_tbody">
+                            <?php if ($isEdit && isset($rejects) && !empty($rejects)): ?>
+                                <?php foreach ($rejects as $idx => $reject): ?>
+                                    <tr class="reject-row border-bottom" data-reject-type="<?= esc($reject['jenis_reject']) ?>" style="transition: background-color 0.2s;">
+                                        <td class="px-4 py-3">
+                                            <select name="rejects[<?= $idx ?>][jenis_reject]" 
+                                                class="form-select form-select-sm reject-type" 
+                                                style="border-radius: 6px; border: 1px solid #dee2e6; font-size: 0.875rem;"
+                                                required>
+                                                <option value="">-- Pilih Jenis Reject --</option>
+                                                <option value="start up" <?= ($reject['jenis_reject'] == 'start up') ? 'selected' : '' ?>>Start Up</option>
+                                                <option value="karantina" <?= ($reject['jenis_reject'] == 'karantina') ? 'selected' : '' ?>>Karantina</option>
+                                                <option value="trial" <?= ($reject['jenis_reject'] == 'trial') ? 'selected' : '' ?>>Trial</option>
+                                                <option value="camera" <?= ($reject['jenis_reject'] == 'camera') ? 'selected' : '' ?>>Camera</option>
+                                                <option value="bottom putih" <?= ($reject['jenis_reject'] == 'bottom putih') ? 'selected' : '' ?>>Bottom Putih</option>
+                                                <option value="oval" <?= ($reject['jenis_reject'] == 'oval') ? 'selected' : '' ?>>Oval</option>
+                                                <option value="flashing" <?= ($reject['jenis_reject'] == 'flashing') ? 'selected' : '' ?>>Flashing</option>
+                                                <option value="short shoot" <?= ($reject['jenis_reject'] == 'short shoot') ? 'selected' : '' ?>>Short Shoot</option>
+                                                <option value="kotor" <?= ($reject['jenis_reject'] == 'kotor') ? 'selected' : '' ?>>Kotor</option>
+                                                <option value="beda warna" <?= ($reject['jenis_reject'] == 'beda warna') ? 'selected' : '' ?>>Beda Warna</option>
+                                                <option value="sampling qc" <?= ($reject['jenis_reject'] == 'sampling qc') ? 'selected' : '' ?>>Sampling QC</option>
+                                                <option value="kontaminasi" <?= ($reject['jenis_reject'] == 'kontaminasi') ? 'selected' : '' ?>>Kontaminasi</option>
+                                                <option value="black spot" <?= ($reject['jenis_reject'] == 'black spot') ? 'selected' : '' ?>>Black Spot</option>
+                                                <option value="gosong" <?= ($reject['jenis_reject'] == 'gosong') ? 'selected' : '' ?>>Gosong</option>
+                                                <option value="struktur tidak standard" <?= ($reject['jenis_reject'] == 'struktur tidak standard') ? 'selected' : '' ?>>Struktur Tidak Standard</option>
+                                                <option value="inject poin tidak standard" <?= ($reject['jenis_reject'] == 'inject poin tidak standard') ? 'selected' : '' ?>>Inject Poin Tidak Standard</option>
+                                                <option value="bolong" <?= ($reject['jenis_reject'] == 'bolong') ? 'selected' : '' ?>>Bolong</option>
+                                                <option value="bubble" <?= ($reject['jenis_reject'] == 'bubble') ? 'selected' : '' ?>>Bubble</option>
+                                                <option value="berair" <?= ($reject['jenis_reject'] == 'berair') ? 'selected' : '' ?>>Berair</option>
+                                                <option value="neck panjang" <?= ($reject['jenis_reject'] == 'neck panjang') ? 'selected' : '' ?>>Neck Panjang</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input type="number" 
+                                                name="rejects[<?= $idx ?>][jumlah]" 
+                                                class="form-control form-control-sm text-center reject-jumlah" 
+                                                value="<?= $reject['jumlah'] ?>"
+                                                placeholder="0"
+                                                min="0"
+                                                max="99999"
+                                                style="border-radius: 6px; border: 1px solid #dee2e6; font-weight: 600; font-size: 0.9rem; padding: 0.5rem;"
+                                                required>
+                                        </td>
+                                        <td class="text-center px-4 py-3">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-reject" title="Hapus" style="border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                        <tfoot class="bg-light sticky-bottom border-top">
+                            <tr>
+                                <td class="px-4 py-2 fw-600 text-danger" style="font-size: 0.9rem;">TOTAL</td>
+                                <td class="px-4 py-2 text-center">
+                                    <span id="reject_total" class="badge bg-danger" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">0</span>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <?php if (!$isEdit || empty($rejects)): ?>
+                    <div class="p-3 text-center" style="background-color: #f8f9fa; font-size: 0.85rem;">
+                        <i class="fas fa-inbox text-muted" style="font-size: 1.5rem; opacity: 0.5; display: block; margin-bottom: 8px;"></i>
+                        <small class="text-muted d-block">Belum ada data reject</small>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid 4: Sisa PO, Hold, Gumpalan (Bottom Right) -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; height: 100%;">
+            <div class="card-header bg-white border-0 pt-4 pb-3 px-4">
+                <h6 class="mb-0 text-dark fw-600">
+                    <i class="fas fa-boxes text-info me-2"></i> Status Produksi
+                </h6>
+            </div>
+            
+            <div class="card-body px-4 py-4">
+                <div class="row g-3">
+                    <!-- Sisa PO -->
+                    <div class="col-12">
+                        <label class="form-label text-muted fw-600 mb-2" style="font-size: 0.875rem;">
+                            <i class="fas fa-list text-warning me-1"></i> Sisa PO
+                        </label>
+                        <input type="number" 
+                            name="sisa_po" 
+                            class="form-control form-control-lg sisa_po" 
+                            placeholder="0"
+                            style="border-radius: 8px; border: 1px solid #dee2e6; font-size: 1.05rem; font-weight: 600;"
+                            value="<?= $isEdit ? $header['sisa_po'] : '' ?>">
+                    </div>
+
+                    <!-- Hold -->
+                    <div class="col-12">
+                        <label class="form-label text-muted fw-600 mb-2" style="font-size: 0.875rem;">
+                            <i class="fas fa-pause-circle text-info me-1"></i> Hold
+                        </label>
+                        <input type="number" 
+                            name="hold" 
+                            class="form-control form-control-lg hold" 
+                            placeholder="0"
+                            style="border-radius: 8px; border: 1px solid #dee2e6; font-size: 1.05rem; font-weight: 600;"
+                            value="<?= $isEdit ? $header['hold'] : '' ?>">
+                    </div>
+
+                    <!-- Gumpalan -->
+                    <div class="col-12">
+                        <label class="form-label text-muted fw-600 mb-2" style="font-size: 0.875rem;">
+                            <i class="fas fa-cube text-secondary me-1"></i> Gumpalan
+                        </label>
+                        <input type="number" 
+                            name="gumpalan" 
+                            class="form-control form-control-lg gumpalan" 
+                            placeholder="0"
+                            style="border-radius: 8px; border: 1px solid #dee2e6; font-size: 1.05rem; font-weight: 600;"
+                            value="<?= $isEdit ? $header['gumpalan'] : '' ?>">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Kualitas & Reject Section (Regular Form) -->
+<?= view('produksi/partials/kualitas_reject_section', [
+    'header' => $header ?? null,
+    'rejects' => $rejects ?? [],
+    'isEdit' => isset($header),
+    'prefix' => isset($header) ? 'edit_' : ''
+]) ?>
 
 <div class="section-title"><i class="fas fa-boxes"></i> Material, Colorant & Packaging</div>
 <div class="row g-4 mb-4">
@@ -307,10 +543,30 @@ $prefix = $isEdit ? 'edit_' : '';
             </tr>
         </thead>
         <tbody>
-            <?php if ($isEdit && isset($downtimes)): ?>
+            <?php 
+            $dtReasons = [
+                'DT1' => 'Improvement', 'DT2' => 'PLN Off', 'DT3' => 'Change Product', 'DT4' => 'Planned Maintenance', 
+                'DT5' => 'Trial Produk', 'DT6' => 'Trial mould dan emboss', 'DT7' => 'Bencana Alam', 'DT8' => 'Hari libur dan istirahat',
+                'DT10' => 'Sanitasi', 'DT11' => 'Warm up', 'DT12' => 'Stop msn atas permint khusus', 'DT13' => 'Quality Inspection',
+                'DT14' => 'Kerusakan Mesin Utama', 'DT15' => 'Kerusakan Utility', 'DT16' => 'Kerusakan Tools', 'DT17' => 'Alarm karena Error',
+                'DT18' => 'Alarm karena kesalahan proses', 'DT20' => 'Salah memasukan material', 'DT21' => 'Material tidak tersedia',
+                'DT22' => 'Man power tidak mencukupi', 'DT23' => 'Tidak ada tmpt Menyimpan produk', 'DT24' => 'Product Tidak Standar',
+                'DT25' => 'Material tidak standar', 'DT26' => 'Coloran tidak standar', 'DT27' => 'No Order', 'DT28' => 'Cleaning Mold',
+                'DT29' => 'Cleaning Tooling', 'DT30' => 'Cleaning Mesin dan Tools', 'DT31' => 'Kegagalan Design Produk', 'DT32' => 'Ketiadaan kelengkapan kerja'
+            ];
+            if ($isEdit && isset($downtimes)): ?>
                 <?php foreach ($downtimes as $idx => $dt): ?>
                     <tr>
-                        <td class="px-3"><input type="text" name="downtimes[<?= $idx ?>][alasan]" value="<?= esc($dt['alasan_downtime']) ?>" class="form-control form-control-sm"></td>
+                        <td class="px-3">
+                            <select name="downtimes[<?= $idx ?>][alasan]" class="form-select form-select-sm">
+                                <option value="">-- Pilih Alasan --</option>
+                                <?php foreach ($dtReasons as $code => $desc): 
+                                    $val = "$code - $desc";
+                                ?>
+                                    <option value="<?= $val ?>" <?= ($dt['alasan_downtime'] == $val) ? 'selected' : '' ?>><?= $val ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
                         <td><input type="datetime-local" name="downtimes[<?= $idx ?>][mulai]" value="<?= str_replace(' ', 'T', substr($dt['waktu_mulai'], 0, 16)) ?>" class="form-control form-control-sm dt-mulai"></td>
                         <td><input type="datetime-local" name="downtimes[<?= $idx ?>][selesai]" value="<?= str_replace(' ', 'T', substr($dt['waktu_selesai'], 0, 16)) ?>" class="form-control form-control-sm dt-selesai"></td>
                         <td><input type="number" name="downtimes[<?= $idx ?>][durasi]" value="<?= $dt['durasi_menit'] ?>" class="form-control form-control-sm dt-durasi"></td>
@@ -322,34 +578,28 @@ $prefix = $isEdit ? 'edit_' : '';
     </table>
 </div>
 
-<div class="section-title"><i class="fas fa-comment-alt"></i> Catatan & Tanda Tangan</div>
+<div class="section-title"><i class="fas fa-comment-alt"></i> Catatan & Tanda Tangan Operator</div>
 <div class="row g-4 mb-4">
     <div class="col-md-5">
         <label class="form-label text-xs fw-bold text-muted mb-2 uppercase">Catatan Produksi</label>
         <textarea name="catatan" class="form-control shadow-sm" rows="6" placeholder="Masukkan catatan atau kendala produksi di sini..." style="border-radius: 12px;"><?= $isEdit ? esc($header['catatan']) : '' ?></textarea>
     </div>
     <div class="col-md-7">
-        <label class="form-label text-xs fw-bold text-muted mb-2 uppercase">Verifikasi Tanda Tangan</label>
-        <div class="row g-2">
-            <?php 
-            $labels = ['Shift 1', 'Shift 2', 'Shift 3', 'Supervisor'];
-            $fields = ['ttd_shift_1', 'ttd_shift_2', 'ttd_shift_3', 'ttd_spv'];
-            foreach ($fields as $idx => $f): 
-            ?>
-            <div class="col-3 text-center">
-                <div class="signature-box shadow-sm bg-white border" style="border-radius: 15px; padding: 12px;" onclick="this.querySelector('input').click()">
-                    <div class="mb-2" style="height: 60px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 10px;">
-                        <?php if ($isEdit && !empty($header[$f])): ?>
-                            <img class="signature-preview img-fluid" style="max-height: 50px;" src="<?= base_url('uploads/ttd/' . $header[$f]) ?>">
-                        <?php else: ?>
-                            <img class="signature-preview img-fluid" style="max-height: 50px;" src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Ctext x='50' y='25' font-family='sans-serif' font-size='8' fill='%23a3aed1' text-anchor='middle' dominant-baseline='middle'%3EKLIK UNTUK UPLOAD%3C/text%3E%3C/svg%3E">
-                        <?php endif; ?>
-                    </div>
-                    <input type="file" name="<?= $f ?>" class="d-none sig-input" onchange="previewSig(this)">
-                    <div class="text-xs font-weight-bold text-uppercase mt-1"><?= $labels[$idx] ?></div>
+        <label class="form-label text-xs fw-bold text-muted mb-2 uppercase">
+            <i class="fas fa-signature me-1"></i>Tanda Tangan Operator (Auto-filled)
+        </label>
+        <div class="p-3 border rounded-lg bg-white shadow-sm" style="border-radius: 12px !important; min-height: 120px;">
+            <div class="auto-ttd-container" style="height: 80px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px; margin-bottom: 12px; position: relative;">
+                <img id="auto-ttd-preview" class="img-fluid" style="max-height: 70px; display: none;" alt="Tanda Tangan">
+                <div id="auto-ttd-placeholder" style="text-align: center; color: #999;">
+                    <i class="fas fa-pen-fancy" style="font-size: 1.5rem; margin-bottom: 5px; display: block;"></i>
+                    <small>Tanda tangan akan muncul otomatis</small>
                 </div>
             </div>
-            <?php endforeach; ?>
+            <input type="hidden" name="auto_user_ttd" id="auto-user-ttd" value="<?= $isEdit && isset($header['auto_user_ttd']) ? esc($header['auto_user_ttd']) : '' ?>">
+            <small class="text-muted d-block text-center">
+                <i class="fas fa-info-circle me-1"></i>Diambil dari profil user berdasarkan shift yang dipilih
+            </small>
         </div>
     </div>
 </div>

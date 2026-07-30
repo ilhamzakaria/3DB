@@ -16,10 +16,21 @@ foreach ($downtimes as $dt) {
             <table class="table table-sm table-borderless">
                 <tr><td width="150" class="text-muted">No. SPK</td><td class="fw-bold"><?= esc($header['nomor_spk']) ?></td></tr>
                 <tr><td class="text-muted">Mesin</td><td><?= esc($header['nama_mesin']) ?> (M#<?= esc($header['nomor_mesin']) ?>)</td></tr>
-                <tr><td class="text-muted">Produk</td><td><?= esc($header['nama_produksi']) ?></td></tr>
+                <tr><td class="text-muted">Produk</td><td><?= esc($header['nama_produk']) ?></td></tr>
                 <tr><td class="text-muted">Batch</td><td><?= esc($header['batch_number'] ?: '-') ?></td></tr>
                 <tr><td class="text-muted">Tanggal</td><td><?= date('d M Y', strtotime($header['tanggal'])) ?></td></tr>
-                <tr><td class="text-muted">Shift / Grup</td><td>Shift <?= $header['shift'] ?> / <?= esc($header['grup'] ?: '-') ?></td></tr>
+                <tr><td class="text-muted">Shift / Grup</td><td><?php 
+                    $shiftRaw = (string)($header['shift'] ?? '');
+                    if ($shiftRaw === '' || $shiftRaw === '0' || $shiftRaw === null) {
+                        $shiftDisplay = '-';
+                    } elseif (strpos($shiftRaw, 'extra_') === 0) {
+                        $shiftNum = str_replace('extra_', '', $shiftRaw);
+                        $shiftDisplay = 'Extra Shift ' . $shiftNum;
+                    } else {
+                        $shiftDisplay = 'Shift ' . $shiftRaw;
+                    }
+                    echo $shiftDisplay;
+                ?> / <?= esc($header['grup'] ?: '-') ?></td></tr>
                 <tr><td class="text-muted">Operator</td><td><?= esc($header['operator']) ?></td></tr>
             </table>
         </div>
@@ -169,6 +180,54 @@ foreach ($downtimes as $dt) {
                         <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-signature me-2 text-info"></i> Tanda Tangan Operator</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-user-check text-primary me-2"></i>
+                            <span class="fw-bold small">Operator <?php 
+                                $shiftRaw2 = (string)($header['shift'] ?? '');
+                                if ($shiftRaw2 === '' || $shiftRaw2 === '0') {
+                                    $shiftLabel = '-';
+                                } elseif (strpos($shiftRaw2, 'extra_') === 0) {
+                                    $shiftLabel = 'Extra Shift ' . str_replace('extra_', '', $shiftRaw2);
+                                } else {
+                                    $shiftLabel = 'Shift ' . $shiftRaw2;
+                                }
+                                echo $shiftLabel;
+                            ?></span>
+                            <span class="badge bg-primary ms-2 small">Auto-filled</span>
+                        </div>
+                        <div class="ttd-preview-container" style="height: 80px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 8px; border: 1px solid #dee2e6;">
+                            <?php if (!empty($header['auto_user_ttd'])): ?>
+                                <?php
+                                    $ttdPath = $header['auto_user_ttd'];
+                                    // Nilai di DB sudah include "uploads/ttd/...", jadi cukup base_url() saja
+                                    $ttdUrl = base_url($ttdPath);
+                                ?>
+                                <img src="<?= $ttdUrl ?>" class="img-fluid" style="max-height: 70px;" alt="TTD Operator"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div class="text-muted text-center small" style="display:none;">
+                                    <i class="fas fa-exclamation-circle mb-1 d-block text-warning"></i>
+                                    File TTD tidak ditemukan
+                                </div>
+                            <?php else: ?>
+                                <div class="text-muted text-center small">
+                                    <i class="fas fa-pen-fancy mb-1 d-block"></i>
+                                    TTD tidak tersedia
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <small class="text-muted d-block mt-2 text-center">
+                            <i class="fas fa-info-circle me-1"></i>Diambil otomatis dari profil operator berdasarkan shift
+                        </small>
+                    </div>
+                </div>
             </div>
         </div>
 

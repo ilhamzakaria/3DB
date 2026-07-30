@@ -11,6 +11,7 @@ class MMasterbatch extends BaseGudangModel
 
     protected $allowedFields = [
         'produk',
+        'tipe',
         'nama_masterbatch',
         'status',
         'kode',

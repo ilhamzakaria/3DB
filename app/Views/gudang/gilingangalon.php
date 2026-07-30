@@ -170,11 +170,15 @@ $formatDate = static function ($value): string {
                                 <td><span class="badge <?= esc($statusBadges[$item['status']] ?? 'badge-secondary') ?>"><?= esc($statusLabels[$item['status']] ?? $item['status']) ?></span></td>
                                 <td><?= esc($item['kode'] ?? '-') ?></td>
                                 <td><?= esc($item['jumlah'] ?? '-') ?></td>
-                                <td><?= esc($item['nomor_lot'] ?? '-') ?></td>
-                                <td><?= esc($item['no_spk'] ?? '-') ?></td>
-                                <td><?= esc($item['shif'] ?? '-') ?></td>
-                                <td>
-                                    <?php if (in_array(session()->get('role'), ['gudang', 'admin'], true)) : ?>
+<td><?= esc($item['nomor_lot'] ?? '-') ?></td>
+                                 <td>
+                                     <button type="button" class="btn btn-sm btn-link btn-spk-produksi-autofill p-0" data-spk="<?= esc($item['no_spk'] ?? '') ?>" style="text-decoration: none; color: #4361ee;">
+                                         <?= esc($item['no_spk'] ?? '-') ?>
+                                     </button>
+                                 </td>
+                                 <td><?= esc($item['shif'] ?? '-') ?></td>
+                                 <td>
+                                     <?php if (in_array(session()->get('role'), ['gudang', 'admin'], true)) : ?>
                                         <div class="d-flex gap-1 justify-content-center">
                                             <button type="button" class="btn btn-warning btn-sm" onclick="setEditModal(<?= htmlspecialchars(json_encode($item)) ?>)" data-toggle="modal" data-target="#editDataModal"><i class="fas fa-edit"></i></button>
                                             <button type="button" class="btn btn-danger btn-sm ml-1" onclick="setDeleteModal(<?= $item['id'] ?>, '<?= esc($item['nama_gilingan']) ?>')" data-toggle="modal" data-target="#modalDelete"><i class="fas fa-trash"></i></button>
@@ -371,5 +375,5 @@ $formatDate = static function ($value): string {
         $('#formDelete').attr('action', '<?= base_url('gudang/gilingan_galon/delete') ?>/' + id);
     }
 </script>
-
+<?= view('shared/spk_produksi_autofill') ?>
 <?= $this->endSection() ?>

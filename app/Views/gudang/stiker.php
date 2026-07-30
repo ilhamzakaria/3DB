@@ -69,6 +69,21 @@ $formatDate = static function ($value): string {
             <div class="alert alert-success alert-dismissible fade show"><?= session()->getFlashdata('success') ?><button type="button" class="close" data-dismiss="alert">&times;</button></div>
         <?php endif; ?>
 
+        <?php if (!empty($stiker_catalog)) : ?>
+            <div class="mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                    <label class="mb-0 small font-weight-bold text-muted">Dropdown data dari catatan.md</label>
+                    <small class="text-muted"><?= count($stiker_catalog) ?> item</small>
+                </div>
+                <select class="form-control form-control-sm">
+                    <option value="">-- Pilih item untuk melihat daftar catatan --</option>
+                    <?php foreach ($stiker_catalog as $catalog) : ?>
+                        <option value="<?= esc($catalog['item']) ?>"><?= esc($catalog['label']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        <?php endif; ?>
+
         <div class="table-responsive">
             <table class="table table-bordered text-center" width="100%" cellspacing="0">
                 <thead>
@@ -95,11 +110,15 @@ $formatDate = static function ($value): string {
                                 <td><span class="badge <?= esc($statusBadges[$item['status']] ?? 'badge-secondary') ?>"><?= esc($statusLabels[$item['status']] ?? $item['status']) ?></span></td>
                                 <td><?= esc($item['kode'] ?? '-') ?></td>
                                 <td><?= esc($item['jumlah'] ?? '-') ?></td>
-                                <td><?= esc($item['nomor_lot'] ?? '-') ?></td>
-                                <td><?= esc($item['no_spk'] ?? '-') ?></td>
-                                <td><?= esc($item['shif'] ?? '-') ?></td>
-                                <td>
-                                    <?php if (in_array(session()->get('role'), ['gudang', 'admin'], true)) : ?>
+                                 <td><?= esc($item['nomor_lot'] ?? '-') ?></td>
+                                 <td>
+                                     <button type="button" class="btn btn-sm btn-link btn-spk-produksi-autofill p-0" data-spk="<?= esc($item['no_spk'] ?? '') ?>" style="text-decoration: none; color: #4361ee;">
+                                         <?= esc($item['no_spk'] ?? '-') ?>
+                                     </button>
+                                 </td>
+                                 <td><?= esc($item['shif'] ?? '-') ?></td>
+                                 <td>
+                                     <?php if (in_array(session()->get('role'), ['gudang', 'admin'], true)) : ?>
                                         <div class="d-flex gap-1 justify-content-center">
                                             <button type="button" class="btn btn-warning btn-sm" onclick="setEditModal(<?= htmlspecialchars(json_encode($item)) ?>)" data-toggle="modal" data-target="#editDataModal"><i class="fas fa-edit"></i></button>
                                             <button type="button" class="btn btn-danger btn-sm ml-1" onclick="setDeleteModal(<?= $item['id'] ?>, '<?= esc($item['nama_stiker']) ?>')" data-toggle="modal" data-target="#modalDelete"><i class="fas fa-trash"></i></button>
@@ -126,12 +145,32 @@ $formatDate = static function ($value): string {
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6"><div class="form-group"><label>Tanggal</label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" required></div></div>
+                        <div class="col-md-6"><div class="form-group"><label>Tanggal</label><input type="date" class="form-control" id="tanggal" name="tanggal" value="<?= date('Y-m-d') ?>" required></div></div>
                         <div class="col-md-6"><div class="form-group"><label>No SPK</label><input type="number" class="form-control" name="no_spk"></div></div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6"><div class="form-group"><label>Produk</label><input type="text" class="form-control" name="produk"></div></div>
-                        <div class="col-md-6"><div class="form-group"><label>Nama Item</label><input type="text" class="form-control" name="nama_stiker" required></div></div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Produk <span class="text-danger">*</span></label>
+                                <select class="form-control select2-stiker" id="produk" name="produk" required style="width: 100%;">
+                                    <option value="">-- Pilih Produk --</option>
+                                    <?php foreach (($stiker_products ?? []) as $index => $prod) : ?>
+                                        <option value="<?= esc($prod) ?>" <?= $index === 0 ? 'selected' : '' ?>><?= esc($prod) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nama Item <span class="text-danger">*</span></label>
+                                <select class="form-control select2-stiker" id="nama_stiker" name="nama_stiker" required style="width: 100%;">
+                                    <option value="">-- Pilih Nama Item --</option>
+                                    <?php foreach (($stiker_catalog ?? []) as $catalog) : ?>
+                                        <option value="<?= esc($catalog['item']) ?>"><?= esc($catalog['label']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Status</label>
@@ -140,7 +179,7 @@ $formatDate = static function ($value): string {
                         </select>
                     </div>
                     <div class="row">
-                        <div class="col-md-4"><div class="form-group"><label>Kode</label><input type="text" class="form-control" name="kode"></div></div>
+                        <div class="col-md-4"><div class="form-group"><label>Kode</label><input type="text" class="form-control" id="kode" name="kode"></div></div>
                         <div class="col-md-4"><div class="form-group"><label>Jumlah</label><input type="text" class="form-control" name="jumlah"></div></div>
                         <div class="col-md-4"><div class="form-group"><label>Shift</label><input type="text" class="form-control" name="shif"></div></div>
                     </div>
@@ -164,8 +203,25 @@ $formatDate = static function ($value): string {
                         <div class="col-md-6"><div class="form-group"><label>No SPK</label><input type="number" class="form-control" name="no_spk" id="edit_spk"></div></div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6"><div class="form-group"><label>Produk</label><input type="text" class="form-control" name="produk" id="edit_produk"></div></div>
-                        <div class="col-md-6"><div class="form-group"><label>Nama Item</label><input type="text" class="form-control" name="nama_stiker" id="edit_nama" required></div></div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Produk <span class="text-danger">*</span></label>
+                                <select class="form-control select2-stiker" id="edit_produk" name="produk" required style="width: 100%;">
+                                    <option value="">-- Pilih Produk --</option>
+                                    <?php foreach (($stiker_products ?? []) as $prod) : ?>
+                                        <option value="<?= esc($prod) ?>"><?= esc($prod) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nama Item <span class="text-danger">*</span></label>
+                                <select class="form-control select2-stiker" id="edit_nama" name="nama_stiker" required style="width: 100%;">
+                                    <option value="">-- Pilih Nama Item --</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Status</label>
@@ -235,24 +291,166 @@ $formatDate = static function ($value): string {
         }
     }
 
+    var stikerData = <?= json_encode($stiker_options ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+
+    function getItemSelectId(prefix) {
+        return prefix ? prefix + 'nama' : 'nama_stiker';
+    }
+
+    function populateItems(prefix, selectedValue = '') {
+        var produkSelect = document.getElementById(prefix + 'produk');
+        var itemSelect = document.getElementById(getItemSelectId(prefix));
+        var $itemSelect = window.jQuery ? window.jQuery(itemSelect) : null;
+        
+        if (!itemSelect) {
+            return;
+        }
+
+        itemSelect.innerHTML = '<option value="">-- Pilih Nama Item --</option>';
+        
+        if (produkSelect && produkSelect.value && stikerData[produkSelect.value]) {
+            stikerData[produkSelect.value].forEach(function(opt) {
+                var option = document.createElement('option');
+                option.value = opt.item;
+                option.textContent = opt.label || (opt.kode_barang ? opt.kode_barang + ' - ' + opt.item : opt.item);
+                if (opt.item === selectedValue) {
+                    option.selected = true;
+                }
+                itemSelect.appendChild(option);
+            });
+        } else {
+            itemSelect.innerHTML = '<option value="">-- Pilih Produk Terlebih Dahulu --</option>';
+        }
+
+        if ($itemSelect && typeof window.jQuery.fn.select2 === 'function') {
+            $itemSelect.trigger('change.select2');
+        }
+    }
+
+    function autoFillKode(prefix) {
+        var produkSelect = document.getElementById(prefix + 'produk');
+        var itemSelect = document.getElementById(getItemSelectId(prefix));
+        var kodeInput = document.getElementById(prefix + 'kode');
+        
+        if (produkSelect && itemSelect && produkSelect.value && stikerData[produkSelect.value]) {
+            var selectedItem = itemSelect.value;
+            var match = stikerData[produkSelect.value].find(function(opt) {
+                return opt.item === selectedItem;
+            });
+            if (match) {
+                if (kodeInput) kodeInput.value = match.kode_barang || '';
+                return;
+            }
+        }
+        
+        if (kodeInput) kodeInput.value = '';
+    }
+
+    document.getElementById('produk').addEventListener('change', function() {
+        populateItems('', '');
+        autoFillKode('');
+    });
+
+    document.getElementById('nama_stiker').addEventListener('change', function() {
+        autoFillKode('');
+    });
+
+    document.getElementById('edit_produk').addEventListener('change', function() {
+        populateItems('edit_', '');
+        autoFillKode('edit_');
+    });
+
+    document.getElementById('edit_nama').addEventListener('change', function() {
+        autoFillKode('edit_');
+    });
+
     function setEditModal(data) {
         $('#edit_id').val(data.id);
         $('#edit_tanggal').val(data.tanggal);
         $('#edit_spk').val(data.no_spk);
         $('#edit_produk').val(data.produk);
-        $('#edit_nama').val(data.nama_stiker);
+        
+        populateItems('edit_', data.nama_stiker);
+        
         $('#edit_status').val(data.status);
         $('#edit_kode').val(data.kode);
         $('#edit_jumlah').val(data.jumlah);
         $('#edit_shif').val(data.shif);
         $('#edit_lot').val(data.nomor_lot);
         $('#formEdit').attr('action', '<?= base_url('gudang/stiker/update') ?>/' + data.id);
+
+        if (window.jQuery && typeof window.jQuery.fn.select2 === 'function') {
+            window.jQuery('#edit_produk').trigger('change.select2');
+            window.jQuery('#edit_nama').trigger('change.select2');
+        }
     }
+
     function setDeleteModal(id, nama) {
         $('#delete_id').val(id);
-        $('#delete_message').text('Hapus stiker "' + nama + '"?');
         $('#formDelete').attr('action', '<?= base_url('gudang/stiker/delete') ?>/' + id);
+        $('#delete_message').text('Yakin ingin menghapus stiker "' + nama + '"?');
     }
-</script>
 
+    function initSelect2Stiker(modalSelector) {
+        if (!window.jQuery || typeof window.jQuery.fn.select2 !== 'function') {
+            return;
+        }
+
+        var $modal = window.jQuery(modalSelector);
+
+        if (!$modal.length) {
+            return;
+        }
+
+        $modal.find('select.select2-stiker').each(function() {
+            var $select = window.jQuery(this);
+
+            if ($select.hasClass('select2-hidden-accessible')) {
+                $select.select2('destroy');
+            }
+
+            $select.select2({
+                width: '100%',
+                dropdownParent: $modal,
+                minimumResultsForSearch: 0
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var addModal = document.getElementById('addDataModal');
+        var editModal = document.getElementById('editDataModal');
+
+        populateItems('', '');
+        populateItems('edit_', '');
+
+        if (addModal && window.jQuery) {
+            window.jQuery(addModal).on('shown.bs.modal', function() {
+                initSelect2Stiker('#addDataModal');
+            });
+
+            window.jQuery(addModal).on('hidden.bs.modal', function() {
+                var addForm = document.querySelector('form[action="<?= base_url('gudang/stiker/tambahData') ?>"]');
+                if (addForm) {
+                    addForm.reset();
+                }
+                var tanggalInput = document.getElementById('tanggal');
+                if (tanggalInput) {
+                    tanggalInput.value = '<?= date('Y-m-d') ?>';
+                }
+                populateItems('', '');
+                if (window.jQuery && typeof window.jQuery.fn.select2 === 'function') {
+                    window.jQuery('#produk').trigger('change.select2');
+                }
+            });
+        }
+
+        if (editModal && window.jQuery) {
+            window.jQuery(editModal).on('shown.bs.modal', function() {
+                initSelect2Stiker('#editDataModal');
+            });
+        }
+    });
+</script>
+<?= view('shared/spk_produksi_autofill') ?>
 <?= $this->endSection() ?>

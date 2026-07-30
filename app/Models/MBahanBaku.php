@@ -11,6 +11,7 @@ class MBahanBaku extends BaseGudangModel
 
     protected $allowedFields = [
         'produk',
+        'tipe',
         'nama_bahan',
         'status',
         'kode',

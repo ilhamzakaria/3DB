@@ -20,6 +20,9 @@
     <script src="<?= base_url('assets/js/sb-admin-2.min.js') ?>"></script>
 <?php endif; ?>
 
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
 <?php if (session('logged_in') && in_array(session('role'), ['ppic','produksi','gudang','admin','manager'])): ?>
 <script>
 (function(){

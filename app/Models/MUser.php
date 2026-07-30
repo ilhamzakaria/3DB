@@ -7,5 +7,5 @@ use CodeIgniter\Model;
 class MUser extends BaseMasterModel
 {
     protected $table = 'users';
-    protected $allowedFields = ['username', 'password', 'role'];
+    protected $allowedFields = ['username', 'password', 'role', 'foto_profile', 'tanda_tangan'];
 }

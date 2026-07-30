@@ -32,6 +32,8 @@
 
         $searchValue = $q ?? '';
         ?>
+
+        <?= view('ppic/partials/mesin_menu_list', ['current_machine' => $current_machine ?? '']) ?>
         
         <?= view('ppic/partials/toolbar', [
             'filter' => $filter,
@@ -75,12 +77,13 @@
 
 <!-- Trash Modal -->
 <div class="modal fade" id="trashModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
                 <h5 class="modal-title font-weight-bold text-secondary">
                     <i class="fas fa-trash-alt mr-2"></i> Tempat Sampah PPIC
                 </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0">
                 <div class="table-responsive">
@@ -98,6 +101,10 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+            </div>
             <div class="modal-footer border-0 p-3">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 10px;">Tutup</button>
             </div>
@@ -108,8 +115,7 @@
 <!-- Filter Drawer -->
 <div class="offcanvas offcanvas-end filter-drawer" tabindex="-1" id="ppicFilterDrawer">
     <div class="offcanvas-header border-bottom">
-        <h5 class="offcanvas-title font-weight-bold">Custom Filter</h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <h5 class="offcanvas-title font-weight-bold">Custom Filter</h5>        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-4">
         <form action="<?= base_url('ppic') ?>" method="get">

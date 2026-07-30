@@ -34,11 +34,18 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'auth'          => \App\Filters\AuthFilter::class,
         'manager'       => \App\Filters\RoleManager::class,
         'admin'         => \App\Filters\RoleAdmin::class,
         'home'          => \App\Filters\RoleHome::class,
         'ppic'          => \App\Filters\RolePpic::class,
-
+        'gudang'        => \App\Filters\RoleGudang::class,
+        'managerPpic'               => \App\Filters\RoleManagerPpic::class,
+        'operatorReadOnly'          => \App\Filters\RoleOperatorReadOnly::class,
+        'managerProduksi'           => \App\Filters\RoleManagerProduksi::class,
+        'managerWarehouse2'         => \App\Filters\RoleManagerWarehouse2::class,
+        'readOnlyProduksi'          => \App\Filters\RoleReadOnlyProduksi::class,
+        'readOnlyWarehouse2'        => \App\Filters\RoleReadOnlyWarehouse2::class,
 
     ];
 
@@ -57,7 +64,7 @@ class Filters extends BaseFilters
      */
     public array $required = [
         'before' => [
-            'forcehttps', // Force Global Secure Requests
+            // 'forcehttps', // Disabled: site uses HTTP, enabling this causes redirect loop/blocked form
             'pagecache',  // Web Page Caching
         ],
         'after' => [
@@ -80,7 +87,134 @@ class Filters extends BaseFilters
         'before' => [
             'csrf' => [
                 'except' => [
-                    'pesan/sendMessage'
+                    // Chat & Profile
+                    'pesan/sendMessage',
+                    'profile/upload-foto',
+                    'profile/upload-ttd',
+                    'profile/auto-upload-ttd',
+
+                    // Auth
+                    'login',
+
+                    // Produksi module
+                    'produksi/simpan',
+                    'produksi/update/*',
+                    'produksi/delete/*',
+                    'produksi/restore/*',
+                    'produksi/delete_permanent/*',
+
+                    // Operator
+                    'operator/tambahData',
+                    'operator/update/*',
+                    'operator/delete/*',
+
+                    // Gudang
+                    'gudang/tambahData',
+                    'gudang/update/*',
+                    'gudang/delete/*',
+
+                    // Gudang sub-modules
+                    'gudang/bahan_baku/tambahData',
+                    'gudang/bahan_baku/update',
+                    'gudang/bahan_baku/update/*',
+                    'gudang/bahan_baku/delete/*',
+                    'gudang/pengiriman/tambahData',
+                    'gudang/pengiriman/update',
+                    'gudang/pengiriman/update/*',
+                    'gudang/pengiriman/delete/*',
+                    'gudang/bam/tambahData',
+                    'gudang/bam/update',
+                    'gudang/bam/update/*',
+                    'gudang/bam/delete/*',
+                    'gudang/finish_good/tambahData',
+                    'gudang/finish_good/update',
+                    'gudang/finish_good/update/*',
+                    'gudang/finish_good/delete/*',
+                    'gudang/packaging/tambahData',
+                    'gudang/packaging/update',
+                    'gudang/packaging/update/*',
+                    'gudang/packaging/delete/*',
+                    'gudang/masterbatch/tambahData',
+                    'gudang/masterbatch/update',
+                    'gudang/masterbatch/update/*',
+                    'gudang/masterbatch/delete/*',
+                    'gudang/galon_reject/tambahData',
+                    'gudang/galon_reject/update',
+                    'gudang/galon_reject/update/*',
+                    'gudang/galon_reject/delete/*',
+                    'gudang/gilingan_galon/tambahData',
+                    'gudang/gilingan_galon/update/*',
+                    'gudang/gilingan_galon/delete/*',
+                    'gudang/stiker/tambahData',
+                    'gudang/stiker/update/*',
+                    'gudang/stiker/delete/*',
+                    'gudang/reject_produksi/tambahData',
+                    'gudang/reject_produksi/update/*',
+                    'gudang/reject_produksi/delete/*',
+                    'gudang/mesin_*/tambahData',
+                    'gudang/mesin_*/update/*',
+                    'gudang/mesin_*/delete/*',
+
+                    // PPIC
+                    'ppic/tambahData',
+                    'ppic/update',
+                    'ppic/update/*',
+                    'ppic/delete/*',
+                    'ppic/createUser',
+                    'ppic/finish_good/*/tambah',
+                    'ppic/finish_good/*/update/*',
+                    'ppic/finish_good/*/delete/*',
+                    'ppic/mesin_*/tambahData',
+                    'ppic/mesin_*/update/*',
+                    'ppic/mesin_*/delete/*',
+
+                    // Admin
+                    'admin/tambahData',
+                    'admin/update/*',
+                    'admin/delete/*',
+
+                    // Laporan legacy
+                    'laporan/tambahData',
+                    'laporan/update/*',
+                    'laporan/delete/*',
+
+                    // Bahan baku legacy
+                    'bahan_baku/tambahData',
+                    'bahan_baku/update',
+                    'bahan_baku/update/*',
+                    'bahan_baku/delete/*',
+
+                    // Pengiriman legacy
+                    'pengiriman/tambahData',
+                    'pengiriman/update',
+                    'pengiriman/update/*',
+                    'pengiriman/delete/*',
+
+                    // Finish good legacy
+                    'finish_good/tambahData',
+                    'finish_good/update',
+                    'finish_good/update/*',
+                    'finish_good/delete/*',
+
+                    // Warehouse2
+                    'warehouse2/store-pemasok',
+                    'warehouse2/update-status-pemasok/*',
+                    'warehouse2/delete-pemasok/*',
+                    'warehouse2/store-produksi',
+                    'warehouse2/update-produksi/*',
+                    'warehouse2/update-status-produksi/*',
+                    'warehouse2/delete-produksi/*',
+                    'warehouse2/store-pembeli',
+                    'warehouse2/update-pembeli/*',
+                    'warehouse2/update-status-pembeli/*',
+                    'warehouse2/delete-pembeli/*',
+                    'warehouse2/store-masuk-produksi',
+                    'warehouse2/delete-masuk-produksi/*',
+                    'warehouse2/store-orowarehouse',
+                    'warehouse2/update-orowarehouse/*',
+                    'warehouse2/delete-orowarehouse/*',
+                    'warehouse2/restore-orowarehouse/*',
+                    'warehouse2/delete-permanent-orowarehouse/*',
                 ]
             ],
         ],

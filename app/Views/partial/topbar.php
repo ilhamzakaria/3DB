@@ -56,7 +56,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link topbar-menu-link <?= uri_string() == 'ppic' ? 'active' : '' ?>" href="<?= base_url('ppic') ?>">
+                        <a class="nav-link topbar-menu-link <?= (uri_string() == 'ppic' || str_starts_with(uri_string(), 'ppic/')) ? 'active' : '' ?>" href="<?= base_url('ppic') ?>">
                             PPIC
                         </a>
                     </li>
@@ -65,9 +65,14 @@
                             Produksi
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a class="nav-link topbar-menu-link <?= (uri_string() == 'gudang' || str_starts_with(uri_string(), 'gudang/')) ? 'active' : '' ?>" href="<?= base_url('gudang') ?>">
                             Gudang
+                        </a>
+                    </li> -->
+                    <li class="nav-item">
+                        <a class="nav-link topbar-menu-link <?= (uri_string() == 'warehouse2' || str_starts_with(uri_string(), 'warehouse2/')) ? 'active' : '' ?>" href="<?= base_url('warehouse2') ?>">
+                            Warehouse
                         </a>
                     </li>
                     <li class="nav-item">
@@ -102,7 +107,7 @@
 
                         <div class="dropdown-menu dropdown-menu-right dropdown-menu-end shadow border-0 animated--grow-in" style="border-radius: 15px; margin-top: 10px;">
                             <div class="dropdown-header text-xs text-uppercase font-weight-bold text-muted">User Menu</div>
-                            <a class="dropdown-item py-2" href="#">
+                            <a class="dropdown-item py-2" href="<?= base_url('profile') ?>">
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Profile
                             </a>
