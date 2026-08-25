@@ -83,7 +83,9 @@ class Export extends BaseController
         $shift   = $this->request->getGet('shift');
         $tanggal = $this->request->getGet('tanggal');
         $filter  = $this->request->getGet('filter');
-        $mesin   = $this->request->getGet('mesin'); // slug, e.g. "becum", "ips1"
+        $mesin   = $this->request->getGet('mesin');
+        $startDate = $this->request->getGet('start_date');
+        $endDate = $this->request->getGet('end_date');
 
         // Map slug → display label stored in nama_mesin column
         $mesinLabels = \App\Controllers\Produksi::mesinLabels();
@@ -103,6 +105,15 @@ class Export extends BaseController
             $query->where('tanggal >=', date('Y-m-d', strtotime('-7 days')));
         } elseif ($filter === 'month') {
             $query->where('tanggal >=', date('Y-m-d', strtotime('-30 days')));
+        }
+
+        // Date range filtering
+        if (!empty($startDate) && !empty($endDate)) {
+            if ($endDate < $startDate) {
+                [$startDate, $endDate] = [$endDate, $startDate];
+            }
+            $query->where('tanggal >=', $startDate);
+            $query->where('tanggal <=', $endDate);
         }
 
         if ($q) {
@@ -126,20 +137,25 @@ class Export extends BaseController
                              ->orderBy('id', 'DESC')
                              ->findAll();
 
+        $headers = [
+            'Tanggal', 'Shift', 'Grup', 'No. SPK', 'Nama Mesin', 'No Mesin', 'Nama Produk', 
+            'Batch Number', 'Packing', 'Cycle Time', 'Target/shift', 'isi', 'Operator', 
+            // tabel jam produksi
+            'Rentang Jam', 'Hasil Produksi', 'Total Bagus', 'Sisa PO', 'Hold', 'Gumpalan', 'Total Reject',
+            // produksi downtime
+            'Alasan Downtime', 'Durasi (Menit)', 'Total Downtime',
+            // produksi material
+            'Merek/Kode Material', 'Pemakaian Material', 'Lot A', 'Lot B', 'Lot C', 'Lot D',
+            // produksi colorant
+            'Kode Colorant', 'Nomor Lot Colorant', 'Pemakaian Colorant',
+            // produksi packaging
+            'Box', 'Ukuran Box', 'Plastik', 'Ukuran Plastik', 'Karung', 'Ukuran Karung',
+            'Catatan'
+        ];
+
         if (empty($headersData)) {
-            $headers = [
-                'Tanggal', 'Shift', 'Grup', 'No. SPK', 'Nama Mesin', 'No Mesin', 'Nama Produk', 
-                'Batch Number', 'Packing', 'Cycle Time', 'Target/shift', 'isi', 'Operator', 
-                'Rentang Jam', 'Hasil Produksi', 'Total Bagus', 'Sisa PO', 'Hold', 'Gumpalan', 'Total Reject',
-                'Alasan Downtime', 'Durasi (Menit)', 'Total Downtime',
-                'Merek/Kode Material', 'Pemakaian Material', 'Lot A', 'Lot B', 'Lot C', 'Lot D',
-                'Kode Colorant', 'Nomor Lot Colorant', 'Pemakaian Colorant',
-                'Box', 'Ukuran Box', 'Plastik', 'Ukuran Plastik', 'Karung', 'Ukuran Karung',
-                'Catatan'
-            ];
-            $filename = 'produksi' . ($mesinLabel ? '-' . strtolower(str_replace(' ', '_', $mesinLabel)) : '') . '-' . date('Y-m-d');
-            $excel = new \App\Libraries\ExcelExport();
-            return $excel->export($filename, $headers, []);
+            $filename = 'produksi' . ($mesinLabel ? '-' . strtolower(str_replace(' ', '_', $mesinLabel)) : '') . '-' . date('Y-m-d-His');
+            return $this->exportAsExcel($filename, $headers, []);
         }
 
         $headerIds = array_column($headersData, 'id');
@@ -182,22 +198,6 @@ class Export extends BaseController
         foreach ($packagings as $pack) {
             $packagingsGrouped[$pack['produksi_header_id']][] = $pack;
         }
-
-        $headers = [
-            'Tanggal', 'Shift', 'Grup', 'No. SPK', 'Nama Mesin', 'No Mesin', 'Nama Produk', 
-            'Batch Number', 'Packing', 'Cycle Time', 'Target/shift', 'isi', 'Operator', 
-            // tabel jam produksi
-            'Rentang Jam', 'Hasil Produksi', 'Total Bagus', 'Sisa PO', 'Hold', 'Gumpalan', 'Total Reject',
-            // produksi downtime
-            'Alasan Downtime', 'Durasi (Menit)', 'Total Downtime',
-            // produksi material
-            'Merek/Kode Material', 'Pemakaian Material', 'Lot A', 'Lot B', 'Lot C', 'Lot D',
-            // produksi colorant
-            'Kode Colorant', 'Nomor Lot Colorant', 'Pemakaian Colorant',
-            // produksi packaging
-            'Box', 'Ukuran Box', 'Plastik', 'Ukuran Plastik', 'Karung', 'Ukuran Karung',
-            'Catatan'
-        ];
 
         $exportData = [];
         foreach ($headersData as $h) {
@@ -268,9 +268,53 @@ class Export extends BaseController
             }
         }
 
-        $filename = 'produksi' . ($mesinLabel ? '-' . strtolower(str_replace(' ', '_', $mesinLabel)) : '') . '-' . date('Y-m-d');
-        $excel = new \App\Libraries\ExcelExport();
-        return $excel->export($filename, $headers, $exportData);
+        $filename = 'produksi' . ($mesinLabel ? '-' . strtolower(str_replace(' ', '_', $mesinLabel)) : '') . '-' . date('Y-m-d-His');
+        return $this->exportAsExcel($filename, $headers, $exportData);
+    }
+
+    /**
+     * Export as Excel (HTML table format - works everywhere without library)
+     */
+    private function exportAsExcel($filename, $headers, $data)
+    {
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment; filename="' . $filename . '.xls"');
+        header('Cache-Control: max-age=0');
+        
+        // Start HTML table
+        echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+        echo '<head>';
+        echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">';
+        echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+        echo '<x:Name>Produksi</x:Name>';
+        echo '<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>';
+        echo '</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+        echo '</head>';
+        echo '<body>';
+        echo '<table border="1">';
+        
+        // Header row
+        echo '<thead><tr style="background-color: #4361EE; color: #FFFFFF; font-weight: bold;">';
+        foreach ($headers as $header) {
+            echo '<th>' . htmlspecialchars($header, ENT_QUOTES, 'UTF-8') . '</th>';
+        }
+        echo '</tr></thead>';
+        
+        // Data rows
+        echo '<tbody>';
+        foreach ($data as $row) {
+            echo '<tr>';
+            foreach ($row as $cell) {
+                echo '<td>' . htmlspecialchars($cell, ENT_QUOTES, 'UTF-8') . '</td>';
+            }
+            echo '</tr>';
+        }
+        echo '</tbody>';
+        
+        echo '</table>';
+        echo '</body>';
+        echo '</html>';
+        exit();
     }
 
     // =========================

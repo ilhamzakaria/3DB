@@ -15,7 +15,7 @@ class MesinBecum extends BaseController
     use MesinModuleTrait, MesinBrandManagementTrait, MesinKomposisiManagementTrait;
 
     private const VIEW_PATH = 'gudang/mesinbecum';
-    private const STATUS_OPTIONS = ['menggiling', 'bahan_masuk', 'bahan_keluar', 'Ganti packing'];
+    private const STATUS_OPTIONS = ['menggiling', 'bahan_masuk', 'bahan_keluar', 'Ganti packing', 'Ganti Die'];
 
     private const BECUM_PRODUCTS = ['Gallon'];
     private const BECUM_GRADES = [

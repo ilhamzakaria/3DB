@@ -8,12 +8,14 @@ $statusLabels = [
     'menggiling' => 'Menggiling',
     'bahan_masuk' => 'Bahan Masuk',
     'bahan_keluar' => 'Bahan Keluar',
+    'Ganti Die' => 'Ganti Die',
 ];
 
 $statusBadges = [
     'menggiling' => 'badge-warning',
     'bahan_masuk' => 'badge-success',
     'bahan_keluar' => 'badge-info',
+    'Ganti Die' => 'badge-secondary',
 ];
 
 $formatDate = static function ($value): string {
@@ -88,7 +90,7 @@ $formatDate = static function ($value): string {
                 <a href="<?= base_url($export_url ?? 'export/mesin_becum') ?><?= (!empty($q) || !empty($start_date) || !empty($end_date)) ? '?' . http_build_query(array_filter(['q' => $q ?? '', 'start_date' => $start_date ?? '', 'end_date' => $end_date ?? ''])) : '' ?>" class="btn btn-outline-success btn-sm px-3 ml-2">
                     <i class="fas fa-file-excel mr-1"></i> Export Excel
                 </a>
-                <button class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#trashModalMesin" onclick="loadTrashMesin()">
+                <button class="btn btn-outline-secondary btn-sm ml-2" data-toggle="modal" data-target="#trashModalMesin" onclick="loadTrashMesin()">
                     <i class="fas fa-trash-restore"></i> Sampah
                 </button>
             </div>
@@ -294,7 +296,7 @@ $formatDate = static function ($value): string {
                                 <td><?= esc($item['realisasi_shift3'] ?? '-') ?></td>
                                 <?php endif; ?>
                                 <td><?= esc($item['berat'] ?? '-') ?></td>
-                                <td class="text-left" style="max-width:150px;white-space:normal;"><?= esc($item['revisi'] ?? '-') ?></td>
+                                <td class="text-left" style="min-width:350px;white-space:normal;"><?= esc($item['revisi'] ?? '-') ?></td>
                                 <td><?= esc($item['total_spk'] ?? '-') ?></td>
                                 <td><?= esc($item['packing'] ?? '-') ?></td>
                                 <td><?= esc($item['keterangan'] ?? '-') ?></td>
@@ -390,7 +392,7 @@ $formatDate = static function ($value): string {
             <div class="col-md-2"><div class="form-group"><label>Tanggal <span class="text-danger">*</span></label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" required></div></div>
             <div class="col-md-2"><div class="form-group"><label>No. SPK</label><input type="number" class="form-control" name="no_spk"></div></div>
             <div class="col-md-2"><div class="form-group"><label>No Mesin</label><input type="text" class="form-control" name="nomor_mesin" placeholder="B.02"></div></div>
-            <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option><option value="Ganti Packing">Ganti Packing</option></select></div></div>
+            <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="ganti mould ln">Ganti Mould LN</option><option value="ganti mould sn">Ganti Mould SN</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option><option value="Ganti Die">Ganti Die</option><option value="ganti packing">GANTI PACKING</option><option value="Ganti Packing">Ganti Packing</option></select></div></div>
             <div class="col-md-2"><div class="form-group"><label>Jam Awal</label><input type="time" class="form-control" name="jam_awal"></div></div>
             <div class="col-md-2"><div class="form-group"><label>Jam Akhir</label><input type="time" class="form-control" name="jam_akhir"></div></div>
           </div>
@@ -524,7 +526,7 @@ $formatDate = static function ($value): string {
             <div class="col-md-2"><div class="form-group"><label>Tanggal <span class="text-danger">*</span></label><input type="date" class="form-control" name="tanggal" id="edit_tanggal" required></div></div>
             <div class="col-md-2"><div class="form-group"><label>No. SPK</label><input type="number" class="form-control" name="no_spk" id="edit_spk"></div></div>
             <div class="col-md-2"><div class="form-group"><label>No Mesin</label><input type="text" class="form-control" name="nomor_mesin" id="edit_nomor_mesin" placeholder="B.02"></div></div>
-            <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status" id="edit_status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option><option value="Ganti packing">Ganti packing</option></select></div></div>
+            <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status" id="edit_status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="ganti mould ln">Ganti Mould LN</option><option value="ganti mould sn">Ganti Mould SN</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option><option value="Ganti Die">Ganti Die</option><option value="ganti packing">GANTI PACKING</option><option value="Ganti packing">Ganti packing</option></select></div></div>
             <div class="col-md-2"><div class="form-group"><label>Jam Awal</label><input type="time" class="form-control" name="jam_awal" id="edit_jam_awal"></div></div>
             <div class="col-md-2"><div class="form-group"><label>Jam Akhir</label><input type="time" class="form-control" name="jam_akhir" id="edit_jam_akhir"></div></div>
           </div>
