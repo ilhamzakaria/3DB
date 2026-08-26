@@ -14,8 +14,8 @@ if ($contextMesinSlug !== '' && !$isEdit) {
 
 <div class="section-title"><i class="fas fa-info-circle"></i> Informasi Utama</div>
 <div class="row g-3 mb-4">
-    <!-- Row 1 -->
-    <div class="col-md-3">
+    <!-- Row 1: 4 fields per row -->
+    <div class="col-lg-3 col-md-6">
         <label class="form-label mb-2">Nomor SPK</label>
         <select name="nomor_spk" class="form-select select2 nomor_spk" required data-is-edit="<?= $isEdit ? '1' : '0' ?>">
             <option value="">-- Pilih SPK --</option>
@@ -23,12 +23,9 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                 $selesaiByPpic  = (int)($spk['selesai_spk'] ?? 0) === 1;
                 $isCompleted    = $selesaiByPpic;
                 $isDisabled     = $isCompleted ? 'disabled' : '';
-                $disabledText   = $selesaiByPpic
-                    ? ' ✓ Selesai'
-                    : '';
+                $disabledText   = $selesaiByPpic ? ' ✓ Selesai' : '';
                 $isSelectedOption = ($isEdit && $spk['no_spk'] == $header['nomor_spk']) ? true : false;
                 
-                // Format display: SPK + Mesin + Produk
                 $displayText = $spk['no_spk'];
                 if (!empty($spk['nama_mesin'])) {
                     $displayText .= ' | ' . $spk['nama_mesin'];
@@ -41,6 +38,7 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                 <option value="<?= $spk['no_spk'] ?>" 
                     data-mesin="<?= esc($spk['nama_mesin']) ?>" 
                     data-produk="<?= esc($spk['nama_produk']) ?>" 
+                    data-brand="<?= esc($spk['brand']) ?>"
                     data-grade="<?= esc($spk['grade']) ?>" 
                     data-warna="<?= esc($spk['warna']) ?>" 
                     data-nomor-mesin="<?= esc($spk['nomor_mesin']) ?>" 
@@ -48,6 +46,7 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                     data-targett="<?= esc($spk['targett']) ?>" 
                     data-shif="<?= esc($spk['shif'] ?? '') ?>" 
                     data-packing="<?= esc($spk['packing'] ?? '') ?>"
+                    data-total-spk="<?= esc($spk['total_spk'] ?? '') ?>"
                     data-is-completed="<?= ($spk['is_completed'] ?? false) ? '1' : '0' ?>"
                     <?= $isDisabled ?>
                     <?= $isSelectedOption ? 'selected' : '' ?>>
@@ -55,10 +54,12 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                 </option>
             <?php endforeach; ?>
         </select>
+        <small class="text-muted d-block mt-1">SPK Data: <?= count($spk_list) ?> items</small>
     </div>
-    <div class="col-md-3">
-        <label class="form-label">Nama Produk</label>
-        <input type="text" class="form-control nama_produk" placeholder="Auto-filled" disabled value="<?= $isEdit ? esc($header['nama_produk']) : '' ?>">
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Nama Produk</label>
+        <input type="text" class="form-control nama_produk" placeholder="Nama Produk" value="<?= $isEdit ? esc($header['nama_produk']) : '' ?>">
         <input type="hidden" name="nama_produk" class="nama_produk_hidden" value="<?= $isEdit ? esc($header['nama_produk']) : '' ?>">
         <?php if ($contextMesinLabel !== ''): ?>
             <input type="hidden" name="nama_mesin" class="nama_mesin" value="<?= esc($contextMesinLabel) ?>">
@@ -70,17 +71,15 @@ if ($contextMesinSlug !== '' && !$isEdit) {
         <?php else: ?>
             <input type="hidden" name="nama_mesin" class="nama_mesin" value="<?= $isEdit ? esc($header['nama_mesin']) : '' ?>">
         <?php endif; ?>
-        <!-- Debug: Show SPK list count -->
-        <small class="text-muted d-block mt-1">SPK Data: <?= count($spk_list) ?> items</small>
     </div>
-    <div class="col-md-3">
-        <label class="form-label">Batch Number</label>
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Batch Number</label>
         <input type="text" name="batch_number" class="form-control batch_number" placeholder="No. Batch" value="<?= $isEdit ? esc($header['batch_number']) : '' ?>">
     </div>
-    
-    <!-- Row 2 -->
-    <div class="col-md-3">
-        <label class="form-label">Shift</label>
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Shift</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="fas fa-clock text-muted"></i></span>
             <select class="form-select shift border-start-0 shift-selector" id="shift_select"
@@ -96,49 +95,77 @@ if ($contextMesinSlug !== '' && !$isEdit) {
             <input type="hidden" name="tercapai" class="tercapai_hidden" value="<?= $isEdit ? trim(esc($header['tercapai'] ?? '0')) : '0' ?>">
         </div>
     </div>
-    <div class="col-md-2">
-        <label class="form-label">Grup</label>
-        <input type="text" name="grup" class="form-control grup" placeholder="Grup" value="<?= $isEdit ? esc($header['grup']) : '' ?>">
+
+    <!-- Row 2: Brand, Warna, Grade, No. Mesin -->
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Brand</label>
+        <input type="text" class="form-control brand" placeholder="Auto-filled" disabled value="<?= $isEdit ? esc($header['brand'] ?? '') : '' ?>">
+        <input type="hidden" name="brand" class="brand_hidden" value="<?= $isEdit ? esc($header['brand'] ?? '') : '' ?>">
     </div>
-    <div class="col-md-2">
-        <label class="form-label">No. Mesin</label>
-        <input type="text" class="form-control nomor_mesin" placeholder="M#" disabled value="<?= $isEdit ? esc($header['nomor_mesin']) : '' ?>">
-        <input type="hidden" name="nomor_mesin" class="nomor_mesin_hidden" value="<?= $isEdit ? esc($header['nomor_mesin']) : '' ?>">
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Warna</label>
+        <input type="text" class="form-control warna" placeholder="Auto-filled" disabled value="<?= $isEdit ? esc($header['warna'] ?? '') : '' ?>">
+        <input type="hidden" name="warna" class="warna_hidden" value="<?= $isEdit ? esc($header['warna'] ?? '') : '' ?>">
     </div>
-    <div class="col-md-3">
-        <label class="form-label">Packing</label>
-        <input type="text" class="form-control packing" placeholder="Tipe Packing" disabled value="<?= $isEdit ? esc($header['packing']) : '' ?>">
-        <input type="hidden" name="packing" class="packing_hidden" value="<?= $isEdit ? esc($header['packing']) : '' ?>">
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Grade</label>
+        <input type="text" class="form-control grade" placeholder="Auto-filled" disabled value="<?= $isEdit ? esc($header['grade'] ?? '') : '' ?>">
+        <input type="hidden" name="grade" class="grade_hidden" value="<?= $isEdit ? esc($header['grade'] ?? '') : '' ?>">
     </div>
-    <div class="col-md-3">
-        <label class="form-label">Tanggal</label>
-        <input type="date" class="form-control" disabled value="<?= $isEdit ? $header['tanggal'] : date('Y-m-d') ?>">
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">No. Mesin</label>
+        <input type="text" class="form-control nomor_mesin" placeholder="M#" disabled value="<?= $isEdit ? esc($header['nomor_mesin'] ?? '') : '' ?>">
+        <input type="hidden" name="nomor_mesin" class="nomor_mesin_hidden" value="<?= $isEdit ? esc($header['nomor_mesin'] ?? '') : '' ?>">
+    </div>
+
+    <!-- Row 3: Packing, Tanggal, Cycle Time, Target -->
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Packing</label>
+        <input type="text" class="form-control packing" placeholder="Tipe Packing" disabled value="<?= $isEdit ? esc($header['packing'] ?? '') : '' ?>">
+        <input type="hidden" name="packing" class="packing_hidden" value="<?= $isEdit ? esc($header['packing'] ?? '') : '' ?>">
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Tanggal</label>
+        <input type="date" class="form-control tanggal_input" value="<?= $isEdit ? $header['tanggal'] : date('Y-m-d') ?>">
         <input type="hidden" name="tanggal" class="tanggal_hidden" value="<?= $isEdit ? $header['tanggal'] : date('Y-m-d') ?>">
     </div>
-    
-    <!-- Row 3 -->
-    <div class="col-md-2">
-        <label class="form-label">Cycle Time (sec)</label>
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Cycle Time (sec)</label>
         <div class="input-group">
-            <input type="text" name="cycle_time" class="form-control cycle_time" placeholder="0.00" value="<?= $isEdit ? esc($header['cycle_time']) : '' ?>">
+            <input type="number" name="cycle_time" class="form-control cycle_time" placeholder="0.00" step="0.01" value="<?= $isEdit ? esc($header['cycle_time'] ?? '') : '' ?>">
             <span class="input-group-text bg-light small">s</span>
         </div>
     </div>
-    <div class="col-md-2">
-        <label class="form-label">Target (pcs)</label>
-        <input type="number" class="form-control target" placeholder="0" disabled value="<?= $isEdit ? esc($header['target']) : '' ?>">
-        <input type="hidden" name="target" class="target_hidden" value="<?= $isEdit ? esc($header['target']) : '' ?>">
+
+    <div class="col-lg-3 col-md-6">
+        <label class="form-label mb-2">Target (pcs)</label>
+        <input type="number" class="form-control target" placeholder="0" disabled value="<?= $isEdit ? esc($header['target'] ?? '') : '' ?>">
+        <input type="hidden" name="target" class="target_hidden" value="<?= $isEdit ? esc($header['target'] ?? '') : '' ?>">
     </div>
-    <div class="col-md-2">
-        <label class="form-label">Isi</label>
-        <input type="number" name="isi" class="form-control isi" placeholder="0" value="<?= $isEdit ? esc($header['isi']) : '' ?>">
+
+    <div class="col-lg-3 col-md-4">
+        <label class="form-label mb-2">Total SPK</label>
+        <input type="number" class="form-control total_spk" placeholder="0" disabled value="<?= $isEdit ? esc($header['total_spk'] ?? '') : '' ?>">
+        <input type="hidden" name="total_spk" class="total_spk_hidden" value="<?= $isEdit ? esc($header['total_spk'] ?? '') : '' ?>">
     </div>
-    <div class="col-md-6">
-        <label class="form-label">Operator</label>
+
+    <!-- Row 4: Isi, Operator - same line -->
+    <div class="col-lg-3 col-md-4">
+        <label class="form-label mb-2">Isi</label>
+        <input type="number" name="isi" class="form-control isi" placeholder="0" value="<?= $isEdit ? esc($header['isi'] ?? '') : '' ?>">
+    </div>
+
+    <div class="col-lg-6 col-md-4">
+        <label class="form-label mb-2">Operator</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="fas fa-user text-muted"></i></span>
-            <input type="text" class="form-control operator border-start-0" placeholder="Nama Operator" disabled value="<?= $isEdit ? esc($header['operator']) : esc(session('username') ?? '') ?>">
-            <input type="hidden" name="operator" class="operator_hidden" value="<?= $isEdit ? esc($header['operator']) : esc(session('username') ?? '') ?>">
+            <input type="text" class="form-control operator border-start-0" placeholder="Nama Operator" disabled value="<?= $isEdit ? esc($header['operator'] ?? esc(session('username') ?? '')) : esc(session('username') ?? '') ?>">
+            <input type="hidden" name="operator" class="operator_hidden" value="<?= $isEdit ? esc($header['operator'] ?? esc(session('username') ?? '')) : esc(session('username') ?? '') ?>">
         </div>
     </div>
 </div>
@@ -247,14 +274,12 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                             <i class="fas fa-check-circle text-success me-1"></i> Total Bagus
                         </label>
                         <div class="input-group input-group-sm">
-                            <!-- display only -->
                             <input type="number"
                                 class="form-control grand_total_bagus bg-white fw-600 text-success"
                                 disabled
                                 style="font-size: 1.1rem; border: 2px solid #28a745; border-radius: 6px 0 0 6px;"
-                                value="<?= $isEdit ? $header['grand_total_bagus'] : '0' ?>">
-                            <!-- hidden input yang benar-benar disubmit -->
-                            <input type="hidden" name="grand_total_bagus" class="grand_total_bagus_hidden" value="<?= $isEdit ? $header['grand_total_bagus'] : '0' ?>">
+                                value="<?= $isEdit ? $header['grand_total_bagus'] ?? '0' : '0' ?>">
+                            <input type="hidden" name="grand_total_bagus" class="grand_total_bagus_hidden" value="<?= $isEdit ? $header['grand_total_bagus'] ?? '0' : '0' ?>">
                             <span class="input-group-text bg-success text-white fw-600" style="border-radius: 0 6px 6px 0; font-size: 0.85rem;">pcs</span>
                         </div>
                     </div>
@@ -265,14 +290,12 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                             <i class="fas fa-times-circle text-danger me-1"></i> Total Reject
                         </label>
                         <div class="input-group input-group-sm">
-                            <!-- display only -->
                             <input type="number"
                                 class="form-control grand_total_reject bg-white fw-600 text-danger"
                                 disabled
                                 style="font-size: 1.1rem; border: 2px solid #dc3545; border-radius: 6px 0 0 6px;"
-                                value="<?= $isEdit ? $header['grand_total_reject'] : '0' ?>">
-                            <!-- hidden input yang benar-benar disubmit -->
-                            <input type="hidden" name="grand_total_reject" class="grand_total_reject_hidden" value="<?= $isEdit ? $header['grand_total_reject'] : '0' ?>">
+                                value="<?= $isEdit ? $header['grand_total_reject'] ?? '0' : '0' ?>">
+                            <input type="hidden" name="grand_total_reject" class="grand_total_reject_hidden" value="<?= $isEdit ? $header['grand_total_reject'] ?? '0' : '0' ?>">
                             <span class="input-group-text bg-danger text-white fw-600" style="border-radius: 0 6px 6px 0; font-size: 0.85rem;">pcs</span>
                         </div>
                     </div>
@@ -320,26 +343,13 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                                                 style="border-radius: 6px; border: 1px solid #dee2e6; font-size: 0.875rem;"
                                                 required>
                                                 <option value="">-- Pilih Jenis Reject --</option>
-                                                <option value="start up" <?= ($reject['jenis_reject'] == 'start up') ? 'selected' : '' ?>>Start Up</option>
-                                                <option value="karantina" <?= ($reject['jenis_reject'] == 'karantina') ? 'selected' : '' ?>>Karantina</option>
-                                                <option value="trial" <?= ($reject['jenis_reject'] == 'trial') ? 'selected' : '' ?>>Trial</option>
-                                                <option value="camera" <?= ($reject['jenis_reject'] == 'camera') ? 'selected' : '' ?>>Camera</option>
-                                                <option value="bottom putih" <?= ($reject['jenis_reject'] == 'bottom putih') ? 'selected' : '' ?>>Bottom Putih</option>
-                                                <option value="oval" <?= ($reject['jenis_reject'] == 'oval') ? 'selected' : '' ?>>Oval</option>
-                                                <option value="flashing" <?= ($reject['jenis_reject'] == 'flashing') ? 'selected' : '' ?>>Flashing</option>
-                                                <option value="short shoot" <?= ($reject['jenis_reject'] == 'short shoot') ? 'selected' : '' ?>>Short Shoot</option>
-                                                <option value="kotor" <?= ($reject['jenis_reject'] == 'kotor') ? 'selected' : '' ?>>Kotor</option>
-                                                <option value="beda warna" <?= ($reject['jenis_reject'] == 'beda warna') ? 'selected' : '' ?>>Beda Warna</option>
-                                                <option value="sampling qc" <?= ($reject['jenis_reject'] == 'sampling qc') ? 'selected' : '' ?>>Sampling QC</option>
-                                                <option value="kontaminasi" <?= ($reject['jenis_reject'] == 'kontaminasi') ? 'selected' : '' ?>>Kontaminasi</option>
-                                                <option value="black spot" <?= ($reject['jenis_reject'] == 'black spot') ? 'selected' : '' ?>>Black Spot</option>
-                                                <option value="gosong" <?= ($reject['jenis_reject'] == 'gosong') ? 'selected' : '' ?>>Gosong</option>
-                                                <option value="struktur tidak standard" <?= ($reject['jenis_reject'] == 'struktur tidak standard') ? 'selected' : '' ?>>Struktur Tidak Standard</option>
-                                                <option value="inject poin tidak standard" <?= ($reject['jenis_reject'] == 'inject poin tidak standard') ? 'selected' : '' ?>>Inject Poin Tidak Standard</option>
-                                                <option value="bolong" <?= ($reject['jenis_reject'] == 'bolong') ? 'selected' : '' ?>>Bolong</option>
-                                                <option value="bubble" <?= ($reject['jenis_reject'] == 'bubble') ? 'selected' : '' ?>>Bubble</option>
-                                                <option value="berair" <?= ($reject['jenis_reject'] == 'berair') ? 'selected' : '' ?>>Berair</option>
-                                                <option value="neck panjang" <?= ($reject['jenis_reject'] == 'neck panjang') ? 'selected' : '' ?>>Neck Panjang</option>
+                                                <?php if (isset($reject_types) && !empty($reject_types)): ?>
+                                                    <?php foreach ($reject_types as $type): ?>
+                                                        <option value="<?= esc($type['nama_reject']) ?>" <?= ($reject['jenis_reject'] == $type['nama_reject']) ? 'selected' : '' ?>>
+                                                            <?= esc($type['nama_reject']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
                                             </select>
                                         </td>
                                         <td class="px-4 py-3">
@@ -402,11 +412,13 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                             <i class="fas fa-list text-warning me-1"></i> Sisa PO
                         </label>
                         <input type="number" 
-                            name="sisa_po" 
                             class="form-control form-control-lg sisa_po" 
                             placeholder="0"
+                            disabled
                             style="border-radius: 8px; border: 1px solid #dee2e6; font-size: 1.05rem; font-weight: 600;"
-                            value="<?= $isEdit ? $header['sisa_po'] : '' ?>">
+                            value="<?= $isEdit ? $header['sisa_po'] ?? '' : '' ?>">
+                        <input type="hidden" name="sisa_po" class="sisa_po_hidden" value="<?= $isEdit ? $header['sisa_po'] ?? '' : '' ?>">
+                        <small class="text-muted d-block mt-1">Auto-calculated: Total SPK - Total Bagus</small>
                     </div>
 
                     <!-- Hold -->
@@ -419,7 +431,7 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                             class="form-control form-control-lg hold" 
                             placeholder="0"
                             style="border-radius: 8px; border: 1px solid #dee2e6; font-size: 1.05rem; font-weight: 600;"
-                            value="<?= $isEdit ? $header['hold'] : '' ?>">
+                            value="<?= $isEdit ? $header['hold'] ?? '' : '' ?>">
                     </div>
 
                     <!-- Gumpalan -->
@@ -427,12 +439,15 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                         <label class="form-label text-muted fw-600 mb-2" style="font-size: 0.875rem;">
                             <i class="fas fa-cube text-secondary me-1"></i> Gumpalan
                         </label>
-                        <input type="number" 
+                        <input type="text" 
                             name="gumpalan" 
                             class="form-control form-control-lg gumpalan" 
-                            placeholder="0"
+                            placeholder="0.0"
+                            inputmode="decimal"
+                            pattern="[0-9]*\.?[0-9]*"
                             style="border-radius: 8px; border: 1px solid #dee2e6; font-size: 1.05rem; font-weight: 600;"
-                            value="<?= $isEdit ? $header['gumpalan'] : '' ?>">
+                            value="<?= $isEdit ? $header['gumpalan'] ?? '' : '' ?>">
+                        <small class="text-muted d-block mt-1">Contoh: 1.1, 1.2, 1.6, 2.5</small>
                     </div>
                 </div>
             </div>
@@ -498,7 +513,13 @@ if ($contextMesinSlug !== '' && !$isEdit) {
             <div class="mb-3">
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text bg-white border-end-0" style="width: 32px;"><i class="fas fa-vial text-info small"></i></span>
-                    <input type="number" name="plastik" placeholder="Plastik (pcs)" class="form-control border-start-0 plastik" value="<?= ($isEdit && $packaging) ? $packaging['plastik'] : '' ?>">
+                    <input type="number" name="plastik_bagus" placeholder="Plastik Bagus" class="form-control border-start-0 plastik_bagus" step="0.01" min="0" value="<?= ($isEdit && $packaging) ? ($packaging['plastik_bagus'] ?? '') : '' ?>">
+                    <span class="input-group-text bg-white">kg</span>
+                </div>
+                <div class="input-group input-group-sm mb-1">
+                    <span class="input-group-text bg-white border-end-0" style="width: 32px;"><i class="fas fa-vial text-danger small"></i></span>
+                    <input type="number" name="plastik_reject" placeholder="Plastik Reject" class="form-control border-start-0 plastik_reject" step="0.01" min="0" value="<?= ($isEdit && $packaging) ? ($packaging['plastik_reject'] ?? '') : '' ?>">
+                    <span class="input-group-text bg-white">kg</span>
                 </div>
                 <input type="text" name="plastik_ukuran" placeholder="Ukuran Plastik" class="form-control form-control-xs plastik_ukuran" value="<?= ($isEdit && $packaging) ? esc($packaging['plastik_ukuran']) : '' ?>" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
             </div>
@@ -507,18 +528,27 @@ if ($contextMesinSlug !== '' && !$isEdit) {
             <div class="mb-3">
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text bg-white border-end-0" style="width: 32px;"><i class="fas fa-box text-warning small"></i></span>
-                    <input type="number" name="box" placeholder="Box (pcs)" class="form-control border-start-0 box" value="<?= ($isEdit && $packaging) ? $packaging['box'] : '' ?>">
+                    <input type="text" name="box" placeholder="Box (pcs)" class="form-control border-start-0 box" value="<?= ($isEdit && $packaging) ? $packaging['box'] : '' ?>">
                 </div>
                 <input type="text" name="box_ukuran" placeholder="Ukuran Box" class="form-control form-control-xs box_ukuran" value="<?= ($isEdit && $packaging) ? esc($packaging['box_ukuran']) : '' ?>" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
             </div>
 
             <!-- Karung Section -->
-            <div class="mb-0">
+            <div class="mb-3">
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text bg-white border-end-0" style="width: 32px;"><i class="fas fa-archive text-secondary small"></i></span>
-                    <input type="number" name="karung" placeholder="Karung (pcs)" class="form-control border-start-0 karung" value="<?= ($isEdit && $packaging) ? $packaging['karung'] : '' ?>">
+                    <input type="text" name="karung" placeholder="Karung (pcs)" class="form-control border-start-0 karung" value="<?= ($isEdit && $packaging) ? $packaging['karung'] : '' ?>">
                 </div>
                 <input type="text" name="karung_ukuran" placeholder="Ukuran Karung" class="form-control form-control-xs karung_ukuran" value="<?= ($isEdit && $packaging) ? esc($packaging['karung_ukuran']) : '' ?>" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+            </div>
+
+            <!-- Nicktainer Section -->
+            <div class="mb-0">
+                <div class="input-group input-group-sm mb-1">
+                    <span class="input-group-text bg-white border-end-0" style="width: 32px;"><i class="fas fa-drum text-primary small"></i></span>
+                    <input type="text" name="nicktainer" placeholder="Nicktainer (pcs)" class="form-control border-start-0 nicktainer" value="<?= ($isEdit && $packaging) ? ($packaging['nicktainer'] ?? '') : '' ?>">
+                </div>
+                <input type="text" name="nicktainer_ukuran" placeholder="Ukuran Nicktainer" class="form-control form-control-xs nicktainer_ukuran" value="<?= ($isEdit && $packaging) ? esc($packaging['nicktainer_ukuran'] ?? '') : '' ?>" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
             </div>
 
             <!-- Hidden field for legacy support if needed -->
@@ -536,10 +566,12 @@ if ($contextMesinSlug !== '' && !$isEdit) {
         <thead class="bg-light">
             <tr class="text-xs">
                 <th class="px-3">Alasan</th>
+                <th>Problem</th>
+                <th>Action Plant</th>
                 <th>Mulai</th>
                 <th>Selesai</th>
-                <th width="80">Mnt</th>
-                <th width="40">#</th>
+                <th width="120">Mnt</th>
+                <th width="50">#</th>
             </tr>
         </thead>
         <tbody>
@@ -567,6 +599,8 @@ if ($contextMesinSlug !== '' && !$isEdit) {
                                 <?php endforeach; ?>
                             </select>
                         </td>
+                        <td><textarea name="downtimes[<?= $idx ?>][problem]" class="form-control form-control-sm" rows="2" placeholder="Problem..."><?= esc($dt['problem'] ?? '') ?></textarea></td>
+                        <td><textarea name="downtimes[<?= $idx ?>][action_plant]" class="form-control form-control-sm" rows="2" placeholder="Action Plant..."><?= esc($dt['action_plant'] ?? '') ?></textarea></td>
                         <td><input type="datetime-local" name="downtimes[<?= $idx ?>][mulai]" value="<?= str_replace(' ', 'T', substr($dt['waktu_mulai'], 0, 16)) ?>" class="form-control form-control-sm dt-mulai"></td>
                         <td><input type="datetime-local" name="downtimes[<?= $idx ?>][selesai]" value="<?= str_replace(' ', 'T', substr($dt['waktu_selesai'], 0, 16)) ?>" class="form-control form-control-sm dt-selesai"></td>
                         <td><input type="number" name="downtimes[<?= $idx ?>][durasi]" value="<?= $dt['durasi_menit'] ?>" class="form-control form-control-sm dt-durasi"></td>
@@ -582,7 +616,7 @@ if ($contextMesinSlug !== '' && !$isEdit) {
 <div class="row g-4 mb-4">
     <div class="col-md-5">
         <label class="form-label text-xs fw-bold text-muted mb-2 uppercase">Catatan Produksi</label>
-        <textarea name="catatan" class="form-control shadow-sm" rows="6" placeholder="Masukkan catatan atau kendala produksi di sini..." style="border-radius: 12px;"><?= $isEdit ? esc($header['catatan']) : '' ?></textarea>
+        <textarea name="catatan" class="form-control shadow-sm" rows="6" placeholder="Masukkan catatan atau kendala produksi di sini..." style="border-radius: 12px;"><?= $isEdit ? esc($header['catatan'] ?? '') : '' ?></textarea>
     </div>
     <div class="col-md-7">
         <label class="form-label text-xs fw-bold text-muted mb-2 uppercase">
@@ -602,4 +636,43 @@ if ($contextMesinSlug !== '' && !$isEdit) {
             </small>
         </div>
     </div>
+</div>
+
+
+<!-- Tambah Reject Type Modal (Inline Management) -->
+<div class="modal fade" id="tambahRejectTypeModal" tabindex="-1" role="dialog" style="z-index: 1070;">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-danger text-white py-2">
+        <h6 class="modal-title font-weight-bold mb-0">
+          <i class="fas fa-ban me-2"></i>Kelola Jenis Reject
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body pb-2">
+
+        <!-- Tambah baru -->
+        <div class="input-group input-group-sm mb-1">
+          <input type="text" id="rt_reject_type_name" class="form-control" placeholder="Contoh: Goresan, Warna Tidak Merata" maxlength="100" autocomplete="off">
+          <div class="input-group-append">
+            <button class="btn btn-danger btn-sm" type="button" id="rt_submit_btn" onclick="submitTambahRejectType()">
+              <i class="fas fa-plus me-1"></i>Tambah
+            </button>
+          </div>
+        </div>
+        <div id="rt_feedback" class="mt-1 small"></div>
+
+        <hr class="my-2">
+
+        <!-- Daftar jenis reject yang ada -->
+        <p class="small text-muted mb-1">Jenis reject yang sudah ada:</p>
+        <ul id="rt_reject_type_list" class="list-group list-group-flush" style="max-height: 240px; overflow-y: auto; font-size: 0.82rem;">
+          <li class="list-group-item text-muted small">Memuat...</li>
+        </ul>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
 </div>

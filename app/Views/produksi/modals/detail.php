@@ -37,7 +37,8 @@ foreach ($downtimes as $dt) {
         <div class="col-md-6">
             <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-chart-line me-2 text-success"></i> Kinerja Produksi</h6>
             <table class="table table-sm table-borderless">
-                <tr><td width="150" class="text-muted">Target</td><td><?= number_format($header['target']) ?> pcs</td></tr>
+                <tr><td width="150" class="text-muted">Total SPK</td><td><?= number_format($header['total_spk'] ?? 0) ?> pcs</td></tr>
+                <tr><td class="text-muted">Target</td><td><?= number_format($header['target']) ?> pcs</td></tr>
                 <tr><td class="text-muted">Isi</td><td><?= number_format($header['isi'] ?: 0) ?></td></tr>
                 <tr>
                     <td class="text-muted">Hasil Bagus</td>
@@ -47,6 +48,27 @@ foreach ($downtimes as $dt) {
                 <tr><td class="text-muted">Cycle Time</td><td><?= esc($header['cycle_time'] ?: '-') ?> s</td></tr>
                 <tr><td class="text-muted">Total Downtime</td><td class="text-danger fw-bold"><?= number_format($totalDuration) ?> min</td></tr>
             </table>
+        </div>
+
+        <div class="col-md-6">
+            <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-boxes me-2 text-info"></i> Status Produksi</h6>
+            <div class="d-flex gap-3">
+                <div class="flex-fill text-center p-2 bg-light rounded">
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Sisa PO</small>
+                    <div class="fw-bold text-info" style="font-size: 0.95rem;"><?= number_format($header['sisa_po'] ?: 0) ?></div>
+                    <small class="text-muted" style="font-size: 0.7rem;">pcs</small>
+                </div>
+                <div class="flex-fill text-center p-2 bg-light rounded">
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Hold</small>
+                    <div class="fw-bold text-warning" style="font-size: 0.95rem;"><?= number_format($header['hold'] ?: 0) ?></div>
+                    <small class="text-muted" style="font-size: 0.7rem;">pcs</small>
+                </div>
+                <div class="flex-fill text-center p-2 bg-light rounded">
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Gumpalan</small>
+                    <div class="fw-bold text-secondary" style="font-size: 0.95rem;"><?= number_format($header['gumpalan'] ?: 0, 2) ?></div>
+                    <small class="text-muted" style="font-size: 0.7rem;">kg</small>
+                </div>
+            </div>
         </div>
         
         <div class="col-md-12">
@@ -119,7 +141,8 @@ foreach ($downtimes as $dt) {
                     <div class="row g-1">
                         <div class="col-6">
                             <span class="badge bg-white text-dark border w-100 text-start font-weight-normal">
-                                <i class="fas fa-vial text-info me-1"></i> Plastik: <?= $packaging['plastik'] ?> pcs
+                                <i class="fas fa-vial text-info me-1"></i> Plastik Bagus: <?= $packaging['plastik_bagus'] ?? '-' ?> kg
+                                <br><i class="fas fa-vial text-danger me-1 ms-0"></i> Plastik Reject: <?= $packaging['plastik_reject'] ?? '-' ?> kg
                                 <br><small class="text-muted ms-4">Ukuran: <?= esc($packaging['plastik_ukuran'] ?: '-') ?></small>
                             </span>
                         </div>
@@ -135,6 +158,14 @@ foreach ($downtimes as $dt) {
                                 <br><small class="text-muted ms-4">Ukuran: <?= esc($packaging['karung_ukuran'] ?: '-') ?></small>
                             </span>
                         </div>
+                        <?php if (!empty($packaging['nicktainer'])): ?>
+                        <div class="col-6">
+                            <span class="badge bg-white text-dark border w-100 text-start font-weight-normal">
+                                <i class="fas fa-drum text-primary me-1"></i> Nicktainer: <?= $packaging['nicktainer'] ?> pcs
+                                <br><small class="text-muted ms-4">Ukuran: <?= esc($packaging['nicktainer_ukuran'] ?: '-') ?></small>
+                            </span>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <?php else: ?>
                         <p class="mb-0 small text-muted">Tidak ada data packaging</p>
@@ -151,14 +182,16 @@ foreach ($downtimes as $dt) {
                     <thead class="bg-light">
                         <tr>
                             <th>Alasan</th>
-                            <th class="text-center" width="180">Mulai</th>
-                            <th class="text-center" width="180">Selesai</th>
-                            <th class="text-center" width="120">Durasi (Mnt)</th>
+                            <th>Problem</th>
+                            <th>Action Plant</th>
+                            <th class="text-center" width="150">Mulai</th>
+                            <th class="text-center" width="150">Selesai</th>
+                            <th class="text-center" width="100">Durasi (Mnt)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($downtimes)): ?>
-                            <tr><td colspan="4" class="text-center text-muted">Tidak ada data downtime</td></tr>
+                            <tr><td colspan="6" class="text-center text-muted">Tidak ada data downtime</td></tr>
                         <?php else: ?>
                             <?php 
                             foreach ($downtimes as $dt): 
@@ -168,13 +201,15 @@ foreach ($downtimes as $dt) {
                             ?>
                                 <tr>
                                     <td><?= esc($dt['alasan_downtime']) ?></td>
-                                    <td class="text-center"><?= date('d M Y, H:i', $start) ?></td>
-                                    <td class="text-center"><?= date('d M Y, H:i', $end) ?></td>
+                                    <td><small><?= esc($dt['problem'] ?? '-') ?></small></td>
+                                    <td><small><?= esc($dt['action_plant'] ?? '-') ?></small></td>
+                                    <td class="text-center"><small><?= date('d M Y, H:i', $start) ?></small></td>
+                                    <td class="text-center"><small><?= date('d M Y, H:i', $end) ?></small></td>
                                     <td class="text-center text-danger fw-bold"><?= $duration ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             <tr class="table-light fw-bold">
-                                <td colspan="3" class="text-end text-uppercase small">Total Downtime</td>
+                                <td colspan="5" class="text-end text-uppercase small">Total Downtime</td>
                                 <td class="text-center text-danger"><?= $totalDuration ?> Menit</td>
                             </tr>
                         <?php endif; ?>

@@ -257,19 +257,7 @@
 $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'manager_warehouse2', 'operator_produksi']);
 ?>
 
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-0"><i class="fas fa-warehouse"></i> Warehouse 2</h2>
-            <p class="text-muted small mb-0">Manajemen inventori barang masuk dan keluar</p>
-        </div>
-        <?php if ($canEdit): ?>
-        <button type="button" class="btn btn-primary" id="btnTambahData">
-            <i class="fas fa-plus"></i> Tambah Data
-        </button>
-        <?php endif; ?>
-    </div>
+<div class="container-fluid">
 
     <!-- Tabs Navigation -->
     <div class="card mb-4">
@@ -308,17 +296,17 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     <!-- Left Group: Action Buttons -->
                     <div class="btn-group flex-wrap">
                         <?php if ($canEdit): ?>
-                        <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahPemasok">
-                            <i class="fas fa-plus me-1"></i> Tambah Data
-                        </button>
+                            <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahPemasok">
+                                <i class="fas fa-plus me-1"></i> Tambah Data
+                            </button>
                         <?php endif; ?>
                         <a href="<?= base_url('warehouse2/export-pemasok') ?>" id="exportPemasokLink" class="btn btn-outline-success btn-sm shadow-sm">
                             <i class="fas fa-file-excel me-1"></i> Export Excel
                         </a>
                         <?php if ($canEdit): ?>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_pemasok_trash" data-bs-toggle="modal" data-bs-target="#trashModalPemasok">
-                            <i class="fas fa-trash-restore me-1"></i> Sampah
-                        </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_pemasok_trash" data-bs-toggle="modal" data-bs-target="#trashModalPemasok">
+                                <i class="fas fa-trash-restore me-1"></i> Sampah
+                            </button>
                         <?php endif; ?>
                     </div>
 
@@ -350,20 +338,22 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                         <thead>
                             <tr>
                                 <th style="width: 90px;">Tanggal</th>
-                                <th style="width: 90px;">Nomor SPK</th>
+                                <th style="width: 90px;">Nomor Lot</th>
                                 <th style="width: 110px;">Pemasok</th>
                                 <th style="width: 80px;">Kode Barang</th>
                                 <th style="width: 110px;">Nama Barang</th>
                                 <th style="width: 70px;">Satuan</th>
                                 <th style="width: 80px;">Jumlah</th>
+                                <th style="width: 80px;">No PO</th>
                                 <th style="width: 100px;">No Surat Jalan</th>
+                                <th style="width: 150px;">Catatan</th>
                                 <th style="width: 80px;">Status</th>
                                 <th style="width: 90px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyPemasok">
                             <tr>
-                                <td colspan="10" class="empty-state">
+                                <td colspan="12" class="empty-state">
                                     <i class="fas fa-inbox"></i>
                                     <p>Belum ada data</p>
                                 </td>
@@ -406,17 +396,17 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     <!-- Left Group: Action Buttons -->
                     <div class="btn-group flex-wrap">
                         <?php if ($canEdit): ?>
-                        <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahProduksi" onclick="openProduksiForm()">
-                            <i class="fas fa-plus me-1"></i> Tambah Data
-                        </button>
+                            <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahProduksi" onclick="openProduksiForm()">
+                                <i class="fas fa-plus me-1"></i> Tambah Data
+                            </button>
                         <?php endif; ?>
                         <a href="<?= base_url('warehouse2/export-produksi') ?>" id="exportProduksiLink" class="btn btn-outline-success btn-sm shadow-sm">
                             <i class="fas fa-file-excel me-1"></i> Export Excel
                         </a>
                         <?php if ($canEdit): ?>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_produksi_trash" data-bs-toggle="modal" data-bs-target="#trashModalProduksi">
-                            <i class="fas fa-trash-restore me-1"></i> Sampah
-                        </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_produksi_trash" data-bs-toggle="modal" data-bs-target="#trashModalProduksi">
+                                <i class="fas fa-trash-restore me-1"></i> Sampah
+                            </button>
                         <?php endif; ?>
                     </div>
 
@@ -449,19 +439,21 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <tr>
                                 <th style="width: 90px;">Tanggal</th>
                                 <th style="width: 90px;">Nomor SPK</th>
+                                <th style="width: 90px;">Nomor Lot</th>
                                 <th style="width: 80px;">Kode Barang</th>
                                 <th style="width: 110px;">Nama Barang</th>
                                 <th style="width: 70px;">Satuan</th>
                                 <th style="width: 80px;">Keluar</th>
                                 <th style="width: 80px;">Terima</th>
                                 <th style="width: 110px;">Nama Penerima</th>
+                                <th style="width: 150px;">Catatan</th>
                                 <th style="width: 80px;">Status</th>
                                 <th style="width: 90px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyProduksi">
                             <tr>
-                                <td colspan="10" class="empty-state">
+                                <td colspan="12" class="empty-state">
                                     <i class="fas fa-inbox"></i>
                                     <p>Belum ada data</p>
                                 </td>
@@ -504,17 +496,17 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     <!-- Left Group: Action Buttons -->
                     <div class="btn-group flex-wrap">
                         <?php if ($canEdit): ?>
-                        <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahPembeli">
-                            <i class="fas fa-plus me-1"></i> Tambah Data
-                        </button>
+                            <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahPembeli">
+                                <i class="fas fa-plus me-1"></i> Tambah Data
+                            </button>
                         <?php endif; ?>
                         <a href="<?= base_url('warehouse2/export-pembeli') ?>" id="exportPembeliLink" class="btn btn-outline-success btn-sm shadow-sm">
                             <i class="fas fa-file-excel me-1"></i> Export Excel
                         </a>
                         <?php if ($canEdit): ?>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_pembeli_trash" data-bs-toggle="modal" data-bs-target="#trashModalPembeli">
-                            <i class="fas fa-trash-restore me-1"></i> Sampah
-                        </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_pembeli_trash" data-bs-toggle="modal" data-bs-target="#trashModalPembeli">
+                                <i class="fas fa-trash-restore me-1"></i> Sampah
+                            </button>
                         <?php endif; ?>
                     </div>
 
@@ -545,11 +537,15 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     <table class="table table-hover table-sm data-table" id="tablePembeli">
                         <thead>
                             <tr>
-                                <th style="width: 100px;">Tanggal</th>
-                                <th style="width: 100px;">Nomor SPK</th>
+                                <th style="width: 90px;">Tanggal</th>
+                                <th style="width: 100px;">Nomor Lot</th>
                                 <th style="width: 120px;">Pembeli</th>
+                                <th style="width: 80px;">Kode Barang</th>
                                 <th style="width: 100px;">Barang</th>
                                 <th style="width: 70px;">Jumlah</th>
+                                <th style="width: 100px;">No Invoice</th>
+                                <th style="width: 150px;">Alamat Pengiriman</th>
+                                <th style="width: 150px;">Catatan</th>
                                 <th style="width: 70px;">Status</th>
                                 <th style="width: 90px;">Aksi</th>
                             </tr>
@@ -600,17 +596,17 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                 <!-- Left Group: Action Buttons -->
                 <div class="btn-group flex-wrap">
                     <?php if ($canEdit): ?>
-                    <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahOrowarehouse">
-                        <i class="fas fa-plus me-1"></i> Tambah Laporan
-                    </button>
+                        <button type="button" class="btn btn-primary btn-sm shadow-sm" id="btnTambahOrowarehouse">
+                            <i class="fas fa-plus me-1"></i> Tambah Laporan
+                        </button>
                     <?php endif; ?>
                     <a href="<?= base_url('warehouse2/export-orowarehouse') ?>" id="exportOroLink" class="btn btn-outline-success btn-sm shadow-sm">
                         <i class="fas fa-file-excel me-1"></i> Export Excel
                     </a>
                     <?php if ($canEdit): ?>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_oro_trash" data-bs-toggle="modal" data-bs-target="#trashModalOro">
-                        <i class="fas fa-trash-restore me-1"></i> Sampah
-                    </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_open_oro_trash" data-bs-toggle="modal" data-bs-target="#trashModalOro">
+                            <i class="fas fa-trash-restore me-1"></i> Sampah
+                        </button>
                     <?php endif; ?>
                 </div>
 
@@ -670,6 +666,8 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                         <tr>
                             <th style="width: 80px;">Tanggal</th>
                             <th style="width: 60px;">SPK</th>
+                            <th style="width: 90px;">Nomor Lot</th>
+                            <th style="width: 90px;">Nomor Mesin</th>
                             <th style="width: 100px;">Produk</th>
                             <th style="width: 50px;">Shift</th>
                             <th style="width: 70px;">Grup</th>
@@ -1057,13 +1055,14 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             </div>
             <div class="modal-body">
                 <form id="formPemasok">
+                    <input type="hidden" id="pemasokEditId" value="">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Tanggal *</label>
                             <input type="date" class="form-control" id="tanggalPemasok" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Nomor SPK *</label>
+                            <label class="form-label">Nomor Lot *</label>
                             <input type="text" class="form-control" id="noDokumenPemasok" required>
                         </div>
                         <div class="col-md-6">
@@ -1139,10 +1138,14 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <input type="text" class="form-control" id="noDokumenProduksi" required>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">Nomor Lot</label>
+                            <input type="text" class="form-control" id="nomorLotProduksi">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Tanggal *</label>
                             <input type="date" class="form-control" id="tanggalProduksi" required>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label">Kode Barang *</label>
                             <input type="text" class="form-control" id="kodeBarangProduksi" required>
@@ -1203,7 +1206,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     <input type="hidden" id="pembeliEditId" value="">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nomor SPK *</label>
+                            <label class="form-label">Nomor Lot *</label>
                             <input type="text" class="form-control" id="noDokumenPembeli" required>
                         </div>
                         <div class="col-md-6">
@@ -1247,7 +1250,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <select class="form-select" id="statusPembeli" required>
                                 <option value="bahanmasuk">Bahan Masuk</option>
                                 <option value="bahankeluar">Bahan Keluar</option>
-                                
+
                             </select>
                         </div>
                     </div>
@@ -1280,7 +1283,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <label class="form-label">Tanggal *</label>
                             <input type="date" class="form-control" id="tanggalMasukProduksi" required>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label">Nama Produksi *</label>
                             <input type="text" class="form-control" id="namaProduksiMasuk" required>
@@ -1412,6 +1415,10 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <input type="text" class="form-control" id="oroNomorLot" placeholder="Masukkan nomor lot">
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">Nomor Mesin</label>
+                            <input type="text" class="form-control" id="oroNomorMesin" placeholder="Masukkan nomor mesin">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Packaging</label>
                             <input type="text" class="form-control" id="oroPackaging" placeholder="Terisi otomatis dari SPK" disabled>
                         </div>
@@ -1444,44 +1451,61 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
     const currentUsername = '<?= $currentUsername ?? 'System' ?>';
     let currentTab = 'pemasok';
 
+    // CSRF helpers for AJAX
+    function getCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) return meta.getAttribute('content');
+        const name = 'XSRF-TOKEN';
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        const csrfInput = document.querySelector('input[name="<?= csrf_token() ?>"]');
+        if (csrfInput) return csrfInput.value;
+        return null;
+    }
+
+    function getCsrfHashField() {
+        return '<?= csrf_header() ?>';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Tambah Data button click handler (for first 3 tabs)
         const btnTambahDataEl = document.getElementById('btnTambahData');
         if (btnTambahDataEl) {
-        btnTambahDataEl.addEventListener('click', function() {
-            const modals = {
-                'pemasok': 'modalPemasok',
-                'produksi': 'modalProduksi',
-                'pembeli': 'modalPembeli',
-                'masuk-produksi': 'modalOrowarehouse'
-            };
+            btnTambahDataEl.addEventListener('click', function() {
+                const modals = {
+                    'pemasok': 'modalPemasok',
+                    'produksi': 'modalProduksi',
+                    'pembeli': 'modalPembeli',
+                    'masuk-produksi': 'modalOrowarehouse'
+                };
 
-            // Reset form before opening modal
-            const formNames = {
-                'pemasok': 'formPemasok',
-                'produksi': 'formProduksi',
-                'pembeli': 'formPembeli',
-                'masuk-produksi': 'formOrowarehouse'
-            };
+                // Reset form before opening modal
+                const formNames = {
+                    'pemasok': 'formPemasok',
+                    'produksi': 'formProduksi',
+                    'pembeli': 'formPembeli',
+                    'masuk-produksi': 'formOrowarehouse'
+                };
 
-            const form = document.getElementById(formNames[currentTab]);
-            if (form) form.reset();
+                const form = document.getElementById(formNames[currentTab]);
+                if (form) form.reset();
 
-            // Reset orowarehouse modal to "Tambah" mode
-            if (currentTab === 'masuk-produksi') {
-                document.getElementById('oroId').value = '';
-                document.getElementById('modalOrowarehouseTitle').textContent = 'Tambah Barang Masuk dari Produksi';
-            }
+                // Reset orowarehouse modal to "Tambah" mode
+                if (currentTab === 'masuk-produksi') {
+                    document.getElementById('oroId').value = '';
+                    document.getElementById('modalOrowarehouseTitle').textContent = 'Tambah Barang Masuk dari Produksi';
+                }
 
-            // Show modal - use simple, reliable method
-            const modalId = modals[currentTab];
-            const modalElement = document.getElementById(modalId);
-            const modal = new bootstrap.Modal(modalElement, {
-                backdrop: 'static',
-                keyboard: false
+                // Show modal - use simple, reliable method
+                const modalId = modals[currentTab];
+                const modalElement = document.getElementById(modalId);
+                const modal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                modal.show();
             });
-            modal.show();
-        });
         } // end if (btnTambahDataEl)
 
         // Tambah buttons for each tab (new method)
@@ -1490,6 +1514,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             btnTambahPemasok.addEventListener('click', function() {
                 const form = document.getElementById('formPemasok');
                 if (form) form.reset();
+                document.getElementById('pemasokEditId').value = '';
                 const modalElement = document.getElementById('modalPemasok');
                 const modal = new bootstrap.Modal(modalElement, {
                     backdrop: 'static',
@@ -1523,7 +1548,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                 if (form) form.reset();
                 document.getElementById('oroId').value = '';
                 document.getElementById('modalOrowarehouseTitle').textContent = 'Tambah Barang Masuk dari Produksi';
-                
+
                 // Auto-fill operator field with current username
                 document.getElementById('oroOperator').value = currentUsername;
 
@@ -1751,105 +1776,18 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         return parseFloat(amount).toLocaleString('id-ID');
     }
 
-    function savePemasok() {
-        const form = document.getElementById('formPemasok');
-        if (!form.checkValidity()) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Form Belum Lengkap',
-                text: 'Mohon lengkapi semua field yang wajib diisi',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
-
-        const data = {
-            nomor_spk: document.getElementById('noDokumenPemasok').value,
-            tanggal: document.getElementById('tanggalPemasok').value,
-            nama_pemasok: document.getElementById('namaPemasok').value,
-            kode_barang: document.getElementById('kodeBarangPemasok').value,
-            nama_barang: document.getElementById('namaBarangPemasok').value,
-            satuan: document.getElementById('satuanPemasok').value,
-            jumlah: document.getElementById('jumlahPemasok').value,
-            harga_satuan: document.getElementById('hargaSatuanPemasok').value || 0,
-            no_po: document.getElementById('noPoPemasok').value,
-            no_surat_jalan: document.getElementById('noSuratJalanPemasok').value,
-            catatan: document.getElementById('catatanPemasok').value,
-            status: document.getElementById('statusPemasok').value,
-            total_harga: (parseFloat(document.getElementById('jumlahPemasok').value) * parseFloat(document.getElementById('hargaSatuanPemasok').value || 0))
-        };
-
-        fetch('<?= base_url('warehouse2/store-pemasok') ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => {
-                if (!response.ok && response.status !== 201) {
-                    return response.text().then(text => { throw new Error('Server error ' + response.status + ': ' + text.substring(0, 300)); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success || data.status === 'success') {
-                    // Close modal using simple, reliable method
-                    const modalEl = document.getElementById('modalPemasok');
-                    const closeBtn = modalEl.querySelector('[data-bs-dismiss="modal"]');
-                    if (closeBtn) closeBtn.click();
-
-                    // Small delay to ensure modal closes
-                    setTimeout(() => {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Data Berhasil Ditambahkan',
-                            text: 'Data barang masuk pemasok telah ditambahkan',
-                            confirmButtonColor: '#28a745',
-                            confirmButtonText: 'OK',
-                            timer: 3000,
-                            timerProgressBar: true,
-                            didOpen: (toast) => {
-                                toast.addEventListener('mouseenter', Swal.stopTimer)
-                                toast.addEventListener('mouseleave', Swal.resumeTimer)
-                            }
-                        });
-                        loadPemasokData(1);
-                    }, 300);
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal Menyimpan Data',
-                        text: data.message || 'Terjadi kesalahan saat menyimpan data',
-                        confirmButtonColor: '#dc3545',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal Menyimpan Data',
-                    text: 'Error: ' + error.message,
-                    confirmButtonColor: '#dc3545',
-                    confirmButtonText: 'OK'
-                });
-            });
-    }
+    // savePemasok: consolidated implementation exists later in the file.
 
     function openProduksiForm() {
         // Reset form
         document.getElementById('formProduksi').reset();
         document.getElementById('produksiEditId').value = '';
-        
+
         // Reset modal title
         document.getElementById('modalProduksiTitle').textContent = 'Tambah Barang Masuk Produksi';
-        
+
         const modalElement = document.getElementById('modalProduksi');
-        
+
         // Destroy existing instance to avoid backdrop stacking
         const existingModal = bootstrap.Modal.getInstance(modalElement);
         if (existingModal) {
@@ -1887,6 +1825,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
         const data = {
             nomor_spk: document.getElementById('noDokumenProduksi').value,
+            nomor_lot: document.getElementById('nomorLotProduksi').value || null,
             tanggal: document.getElementById('tanggalProduksi').value,
             kode_barang: document.getElementById('kodeBarangProduksi').value,
             nama_barang: document.getElementById('namaBarangProduksi').value,
@@ -1898,9 +1837,9 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             status: document.getElementById('statusProduksi').value
         };
 
-        const url = isEditMode 
-            ? `<?= base_url('warehouse2/update-produksi') ?>/${produksiId}`
-            : '<?= base_url('warehouse2/store-produksi') ?>';
+        const url = isEditMode ?
+            `<?= base_url('warehouse2/update-produksi') ?>/${produksiId}` :
+            '<?= base_url('warehouse2/store-produksi') ?>';
 
         fetch(url, {
                 method: 'POST',
@@ -1939,8 +1878,8 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     }, 300);
                 } else {
                     console.error('Validation errors:', data.errors);
-                    const errorText = data.errors ? 
-                        Object.values(data.errors).join('\n') : 
+                    const errorText = data.errors ?
+                        Object.values(data.errors).join('\n') :
                         (data.message || 'Terjadi kesalahan saat menyimpan data');
                     Swal.fire({
                         icon: 'error',
@@ -1971,13 +1910,18 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                 if ((result.success || result.status === 'success') && result.data && result.data.length > 0) {
                     const item = result.data.find(x => x.id == id);
                     if (!item) {
-                        Swal.fire({ icon: 'error', title: 'Error', text: 'Data tidak ditemukan' });
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Data tidak ditemukan'
+                        });
                         return;
                     }
 
                     // Populate form
                     document.getElementById('produksiEditId').value = item.id;
                     document.getElementById('noDokumenProduksi').value = item.nomor_spk || '';
+                    document.getElementById('nomorLotProduksi').value = item.nomor_lot || '';
                     document.getElementById('tanggalProduksi').value = item.tanggal ? item.tanggal.split(' ')[0] : '';
                     document.getElementById('kodeBarangProduksi').value = item.kode_barang || '';
                     document.getElementById('namaBarangProduksi').value = item.nama_barang || '';
@@ -2008,12 +1952,20 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     });
                     modal.show();
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Error', text: 'Data tidak ditemukan' });
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Data tidak ditemukan'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal memuat data' });
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal memuat data'
+                });
             });
     }
 
@@ -2021,10 +1973,10 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         // Reset form
         document.getElementById('formProduksi').reset();
         document.getElementById('produksiEditId').value = '';
-        
+
         // Reset modal title
         document.getElementById('modalProduksiTitle').textContent = 'Tambah Barang Masuk Produksi';
-        
+
         // Show modal
         const modalElement = document.getElementById('modalProduksi');
         const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement, {
@@ -2064,9 +2016,9 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             status: document.getElementById('statusPembeli').value
         };
 
-        const url = isEditMode 
-            ? `<?= base_url('warehouse2/update-pembeli') ?>/${pembeliId}`
-            : '<?= base_url('warehouse2/store-pembeli') ?>';
+        const url = isEditMode ?
+            `<?= base_url('warehouse2/update-pembeli') ?>/${pembeliId}` :
+            '<?= base_url('warehouse2/store-pembeli') ?>';
 
         fetch(url, {
                 method: 'POST',
@@ -2195,7 +2147,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
             // Populate form fields
             document.getElementById('pembeliEditId').value = item.id || '';
-            document.getElementById('noDokumenPembeli').value = item.nomor_spk || item.no_dokumen || '';
+            document.getElementById('noDokumenPembeli').value = item.nomor_lot || '';
             document.getElementById('tanggalPembeli').value = item.tanggal ? item.tanggal.split(' ')[0] : '';
             document.getElementById('namaPembeli').value = item.nama_pembeli || '';
             document.getElementById('kodeBarangPembeli').value = item.kode_barang || '';
@@ -2653,7 +2605,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         const tbody = document.getElementById('tbodyOrowarehouse');
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="13" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="15" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
             updateOrowarehouseTotals([], summary);
             return;
         }
@@ -2664,6 +2616,8 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             html += `<tr>
             <td>${formatDate(item.tanggal)}</td>
             <td><strong>${item.spk}</strong></td>
+            <td>${item.nomor_lot || '-'}</td>
+            <td>${item.nomor_mesin || '-'}</td>
             <td>${item.produk}</td>
             <td>${item.shift}</td>
             <td>${item.grup || '-'}</td>
@@ -2836,6 +2790,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             packaging: document.getElementById('oroPackaging').value || null,
             operator: operator,
             nomor_lot: document.getElementById('oroNomorLot').value || null,
+            nomor_mesin: document.getElementById('oroNomorMesin').value || null,
             status: status,
             catatan: document.getElementById('oroCatatan').value || null
         };
@@ -2979,14 +2934,14 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
     function loadPembeliData(page = 1) {
         const filters = getPembeliFilters();
         const perPage = document.getElementById('perPageSelectPembeli')?.value || 10;
-        
+
         let url = '<?= base_url('warehouse2/api/barang-keluar-pembeli') ?>';
         const params = new URLSearchParams({
             page: page,
             per_page: perPage,
             ...filters
         });
-        
+
         fetch(`${url}?${params.toString()}`)
             .then(response => response.json())
             .then(data => {
@@ -3003,21 +2958,25 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
      */
     function renderPembeliTable(data) {
         const tbody = document.getElementById('tbodyPembeli');
-        
+
         if (!data || data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
             return;
         }
-        
+
         let html = '';
         data.forEach(item => {
             const statusBadge = getStatusBadgeForPembeli(item.status);
             html += `<tr>
                 <td>${formatDateForPembeli(item.tanggal)}</td>
-                <td><strong>${item.nomor_spk}</strong></td>
+                <td><strong>${item.nomor_lot || '-'}</strong></td>
                 <td>${item.nama_pembeli}</td>
+                <td>${item.kode_barang || '-'}</td>
                 <td>${item.nama_barang}</td>
                 <td>${item.jumlah} ${item.satuan}</td>
+                <td>${item.no_invoice || '-'}</td>
+                <td>${item.alamat_pengiriman || '-'}</td>
+                <td>${item.catatan || '-'}</td>
                 <td>${statusBadge}</td>
                 <td>
                     ${canEdit ? `<div class="btn-group btn-group-sm">
@@ -3027,7 +2986,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                 </td>
             </tr>`;
         });
-        
+
         tbody.innerHTML = html;
     }
 
@@ -3037,7 +2996,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
     function updatePembeliPagination(pager) {
         document.getElementById('currentPageNumPembeli').textContent = pager.current_page;
         document.getElementById('totalPagesPembeli').textContent = pager.total_pages;
-        
+
         const prevBtn = document.getElementById('prevBtnPembeli');
         if (pager.has_prev) {
             prevBtn.classList.remove('disabled');
@@ -3048,7 +3007,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         } else {
             prevBtn.classList.add('disabled');
         }
-        
+
         const nextBtn = document.getElementById('nextBtnPembeli');
         if (pager.has_next) {
             nextBtn.classList.remove('disabled');
@@ -3204,6 +3163,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         // Always use current username as operator, not from database
         document.getElementById('oroOperator').value = currentUsername;
         document.getElementById('oroNomorLot').value = item.nomor_lot || '';
+        document.getElementById('oroNomorMesin').value = item.nomor_mesin || '';
         document.getElementById('oroStatus').value = item.status || 'bahan masuk';
         document.getElementById('oroCatatan').value = item.catatan || '';
 
@@ -3366,73 +3326,129 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                 }
             });
         }
+
+        // Handle modal title update untuk Pemasok tab (Edit vs Tambah)
+        const modalPemasokEl = document.getElementById('modalPemasok');
+        if (modalPemasokEl) {
+            modalPemasokEl.addEventListener('show.bs.modal', function() {
+                const pemasokEditId = document.getElementById('pemasokEditId').value;
+                const modalTitle = modalPemasokEl.querySelector('.modal-title');
+                if (pemasokEditId) {
+                    // Mode Edit
+                    modalTitle.textContent = 'Edit Barang Masuk Pemasok';
+                } else {
+                    // Mode Tambah
+                    modalTitle.textContent = 'Tambah Barang Masuk Pemasok';
+                }
+            });
+        }
+
+        // Handle modal title update untuk Pembeli tab (Edit vs Tambah)
+        const modalPembeliEl = document.getElementById('modalPembeli');
+        if (modalPembeliEl) {
+            modalPembeliEl.addEventListener('show.bs.modal', function() {
+                const pembeliEditId = document.getElementById('pembeliEditId').value;
+                const modalTitle = modalPembeliEl.querySelector('.modal-title');
+                if (pembeliEditId) {
+                    // Mode Edit
+                    modalTitle.textContent = 'Edit Barang Keluar Pembeli';
+                } else {
+                    // Mode Tambah
+                    modalTitle.textContent = 'Tambah Barang Keluar Pembeli';
+                }
+            });
+        }
+
+        // Handle modal title update untuk Produksi tab (Edit vs Tambah)
+        const modalProduksiEl = document.getElementById('modalProduksi');
+        if (modalProduksiEl) {
+            modalProduksiEl.addEventListener('show.bs.modal', function() {
+                const produksiEditId = document.getElementById('produksiEditId').value;
+                const modalTitle = modalProduksiEl.querySelector('.modal-title');
+                if (produksiEditId) {
+                    // Mode Edit
+                    modalTitle.textContent = 'Edit Barang Masuk Produksi';
+                } else {
+                    // Mode Tambah
+                    modalTitle.textContent = 'Tambah Barang Masuk Produksi';
+                }
+            });
+        }
     });
 </script>
 
 <!-- Inline pagination functions (PHP base_url needs to be processed) -->
 <script>
-// ============ PEMASOK TAB FUNCTIONS ============
+    // ============ PEMASOK TAB FUNCTIONS ============
 
-let currentPemasokPage = 1;
+    let currentPemasokPage = 1;
 
-function initPemasokTab() {
-    loadPemasokData(1);
-    setupPemasokEventListeners();
-}
-
-function loadPemasokData(page = 1) {
-    currentPemasokPage = page;
-    
-    const filters = {
-        page: page,
-        per_page: document.getElementById('perPageSelectPemasok').value || 10,
-        tanggal_dari: document.getElementById('pemasokFilterTanggalDari').value || '',
-        tanggal_sampai: document.getElementById('pemasokFilterTanggalSampai').value || '',
-        status: document.getElementById('pemasokFilterStatus').value || '',
-        nama_pemasok: document.getElementById('pemasokFilterNamaPemasok').value || '',
-        search: document.getElementById('pemasokSearchQuery').value || ''
-    };
-
-    const url = new URL('<?= base_url('warehouse2/api/barang-masuk-pemasok') ?>');
-    Object.keys(filters).forEach(key => {
-        if (filters[key]) url.searchParams.append(key, filters[key]);
-    });
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success || data.status === 'success') {
-                renderPemasokTable(data.data);
-                updatePemasokPagination(data.pager || { current_page: 1, total_pages: 1, has_prev: false, has_next: false });
-            }
-        })
-        .catch(error => console.error('Error loading pemasok data:', error));
-}
-
-function renderPemasokTable(data) {
-    const tbody = document.getElementById('tbodyPemasok');
-    
-    if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
-        return;
+    function initPemasokTab() {
+        loadPemasokData(1);
+        setupPemasokEventListeners();
     }
 
-    let html = '';
-    data.forEach(item => {
-        const statusColor = item.status === 'bahanmasuk' ? 'success' : (item.status === 'bahankeluar' ? 'warning' : 'danger');
-        const statusLabel = item.status === 'bahanmasuk' ? 'Bahan Masuk' : (item.status === 'bahankeluar' ? 'Bahan Keluar' : item.status);
-        const actionButtons = canEdit ? 
-            `<button class="btn btn-outline-danger btn-sm" onclick="deletePemasokRecord(${item.id})"><i class="fas fa-trash"></i></button>` :
-            '';
-        html += `<tr>
+    function loadPemasokData(page = 1) {
+        currentPemasokPage = page;
+
+        const filters = {
+            page: page,
+            per_page: document.getElementById('perPageSelectPemasok').value || 10,
+            tanggal_dari: document.getElementById('pemasokFilterTanggalDari').value || '',
+            tanggal_sampai: document.getElementById('pemasokFilterTanggalSampai').value || '',
+            status: document.getElementById('pemasokFilterStatus').value || '',
+            nama_pemasok: document.getElementById('pemasokFilterNamaPemasok').value || '',
+            search: document.getElementById('pemasokSearchQuery').value || ''
+        };
+
+        const url = new URL('<?= base_url('warehouse2/api/barang-masuk-pemasok') ?>');
+        Object.keys(filters).forEach(key => {
+            if (filters[key]) url.searchParams.append(key, filters[key]);
+        });
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success || data.status === 'success') {
+                    renderPemasokTable(data.data);
+                    updatePemasokPagination(data.pager || {
+                        current_page: 1,
+                        total_pages: 1,
+                        has_prev: false,
+                        has_next: false
+                    });
+                }
+            })
+            .catch(error => console.error('Error loading pemasok data:', error));
+    }
+
+    function renderPemasokTable(data) {
+        const tbody = document.getElementById('tbodyPemasok');
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
+            return;
+        }
+
+        let html = '';
+        data.forEach(item => {
+            const statusColor = item.status === 'bahanmasuk' ? 'success' : (item.status === 'bahankeluar' ? 'warning' : 'danger');
+            const statusLabel = item.status === 'bahanmasuk' ? 'Bahan Masuk' : (item.status === 'bahankeluar' ? 'Bahan Keluar' : item.status);
+            const actionButtons = canEdit ?
+                `<button class="btn btn-outline-primary btn-sm me-1" onclick="editPemasok(${item.id})" title="Edit"><i class="fas fa-edit"></i></button>
+             <button class="btn btn-outline-danger btn-sm" onclick="deletePemasokRecord(${item.id})" title="Hapus"><i class="fas fa-trash"></i></button>` :
+                '';
+            html += `<tr>
             <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
-            <td><strong>${item.nomor_spk || item.no_dokumen || '-'}</strong></td>
+            <td><strong>${item.nomor_lot || '-'}</strong></td>
             <td>${item.nama_pemasok}</td>
             <td>${item.kode_barang || '-'}</td>
             <td>${item.nama_barang}</td>
             <td>${item.satuan || '-'}</td>
             <td>${parseInt(item.jumlah || 0).toLocaleString('id-ID')}</td>
+            <td>${item.no_po || '-'}</td>
             <td>${item.no_surat_jalan || '-'}</td>
+            <td>${item.catatan || '-'}</td>
             <td><span class="badge bg-${statusColor}">${statusLabel}</span></td>
             <td>
                 <div class="btn-group btn-group-sm">
@@ -3440,174 +3456,197 @@ function renderPemasokTable(data) {
                 </div>
             </td>
         </tr>`;
-    });
-    
-    tbody.innerHTML = html;
-}
-
-function updatePemasokPagination(pager) {
-    document.getElementById('currentPageNumPemasok').textContent = pager.current_page || 1;
-    document.getElementById('totalPagesPemasok').textContent = pager.total_pages || 1;
-
-    const prevBtn = document.getElementById('prevBtnPemasok');
-    if (pager.has_prev) {
-        prevBtn.classList.remove('disabled');
-        prevBtn.querySelector('a').onclick = (e) => {
-            e.preventDefault();
-            loadPemasokData(pager.current_page - 1);
-        };
-    } else {
-        prevBtn.classList.add('disabled');
-    }
-
-    const nextBtn = document.getElementById('nextBtnPemasok');
-    if (pager.has_next) {
-        nextBtn.classList.remove('disabled');
-        nextBtn.querySelector('a').onclick = (e) => {
-            e.preventDefault();
-            loadPemasokData(pager.current_page + 1);
-        };
-    } else {
-        nextBtn.classList.add('disabled');
-    }
-}
-
-function applyPemasokCustomFilter() {
-    loadPemasokData(1);
-    updatePemasokFilterCount();
-    const offcanvas = document.getElementById('pemasokCustomFilterDrawer');
-    const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvas);
-    if (offcanvasInstance) offcanvasInstance.hide();
-}
-
-function resetPemasokCustomFilter() {
-    document.getElementById('pemasokFilterTanggalDari').value = '';
-    document.getElementById('pemasokFilterTanggalSampai').value = '';
-    document.getElementById('pemasokFilterStatus').value = '';
-    document.getElementById('pemasokFilterNamaPemasok').value = '';
-    document.getElementById('pemasokSearchQuery').value = '';
-    updatePemasokFilterCount();
-    loadPemasokData(1);
-}
-
-function updatePemasokFilterCount() {
-    let count = 0;
-    if (document.getElementById('pemasokFilterTanggalDari').value) count++;
-    if (document.getElementById('pemasokFilterTanggalSampai').value) count++;
-    if (document.getElementById('pemasokFilterStatus').value) count++;
-    if (document.getElementById('pemasokFilterNamaPemasok').value) count++;
-
-    const badge = document.getElementById('pemasokFilterCount');
-    if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'inline-block';
-    } else {
-        badge.style.display = 'none';
-    }
-}
-
-function deletePemasokRecord(id) {
-    Swal.fire({
-        icon: 'question', title: 'Hapus Data?', text: 'Apakah Anda yakin?',
-        showCancelButton: true, confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Ya, Hapus', cancelButtonText: 'Batal'
-    }).then(result => {
-        if (!result.isConfirmed) return;
-        fetch(`<?= base_url('warehouse2/delete-pemasok') ?>/${id}`, {
-            method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === 'success' || data.success) {
-                Swal.fire({ icon: 'success', title: 'Berhasil', timer: 1500 });
-                loadPemasokData(currentPemasokPage);
-            } else {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
-            }
         });
-    });
-}
 
-function setupPemasokEventListeners() {
-    const perPageSelect = document.getElementById('perPageSelectPemasok');
-    if (perPageSelect && !perPageSelect.dataset.bound) {
-        perPageSelect.dataset.bound = '1';
-        perPageSelect.addEventListener('change', () => loadPemasokData(1));
+        tbody.innerHTML = html;
     }
 
-    const searchForm = document.getElementById('pemasokSearchForm');
-    if (searchForm && !searchForm.dataset.bound) {
-        searchForm.dataset.bound = '1';
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            loadPemasokData(1);
+    function updatePemasokPagination(pager) {
+        document.getElementById('currentPageNumPemasok').textContent = pager.current_page || 1;
+        document.getElementById('totalPagesPemasok').textContent = pager.total_pages || 1;
+
+        const prevBtn = document.getElementById('prevBtnPemasok');
+        if (pager.has_prev) {
+            prevBtn.classList.remove('disabled');
+            prevBtn.querySelector('a').onclick = (e) => {
+                e.preventDefault();
+                loadPemasokData(pager.current_page - 1);
+            };
+        } else {
+            prevBtn.classList.add('disabled');
+        }
+
+        const nextBtn = document.getElementById('nextBtnPemasok');
+        if (pager.has_next) {
+            nextBtn.classList.remove('disabled');
+            nextBtn.querySelector('a').onclick = (e) => {
+                e.preventDefault();
+                loadPemasokData(pager.current_page + 1);
+            };
+        } else {
+            nextBtn.classList.add('disabled');
+        }
+    }
+
+    function applyPemasokCustomFilter() {
+        loadPemasokData(1);
+        updatePemasokFilterCount();
+        const offcanvas = document.getElementById('pemasokCustomFilterDrawer');
+        const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvas);
+        if (offcanvasInstance) offcanvasInstance.hide();
+    }
+
+    function resetPemasokCustomFilter() {
+        document.getElementById('pemasokFilterTanggalDari').value = '';
+        document.getElementById('pemasokFilterTanggalSampai').value = '';
+        document.getElementById('pemasokFilterStatus').value = '';
+        document.getElementById('pemasokFilterNamaPemasok').value = '';
+        document.getElementById('pemasokSearchQuery').value = '';
+        updatePemasokFilterCount();
+        loadPemasokData(1);
+    }
+
+    function updatePemasokFilterCount() {
+        let count = 0;
+        if (document.getElementById('pemasokFilterTanggalDari').value) count++;
+        if (document.getElementById('pemasokFilterTanggalSampai').value) count++;
+        if (document.getElementById('pemasokFilterStatus').value) count++;
+        if (document.getElementById('pemasokFilterNamaPemasok').value) count++;
+
+        const badge = document.getElementById('pemasokFilterCount');
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function deletePemasokRecord(id) {
+        Swal.fire({
+            icon: 'question',
+            title: 'Hapus Data?',
+            text: 'Apakah Anda yakin?',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            fetch(`<?= base_url('warehouse2/delete-pemasok') ?>/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success' || data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            timer: 1500
+                        });
+                        loadPemasokData(currentPemasokPage);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: data.message
+                        });
+                    }
+                });
         });
     }
-}
 
-// ============ PRODUKSI TAB FUNCTIONS ============
+    function setupPemasokEventListeners() {
+        const perPageSelect = document.getElementById('perPageSelectPemasok');
+        if (perPageSelect && !perPageSelect.dataset.bound) {
+            perPageSelect.dataset.bound = '1';
+            perPageSelect.addEventListener('change', () => loadPemasokData(1));
+        }
 
-let currentProduksiPage = 1;
-
-function initProduksiTab() {
-    loadProduksiData(1);
-    setupProduksiEventListeners();
-}
-
-function loadProduksiData(page = 1) {
-    currentProduksiPage = page;
-    
-    const filters = {
-        page: page,
-        per_page: document.getElementById('perPageSelectProduksi').value || 10,
-        tanggal_dari: document.getElementById('produksiFilterTanggalDari').value || '',
-        tanggal_sampai: document.getElementById('produksiFilterTanggalSampai').value || '',
-        status: document.getElementById('produksiFilterStatus').value || '',
-        no_spk: document.getElementById('produksiFilterNoSpk').value || '',
-        search: document.getElementById('produksiSearchQuery').value || ''
-    };
-
-    const url = new URL('<?= base_url('warehouse2/api/barang-masuk-produksi') ?>');
-    Object.keys(filters).forEach(key => {
-        if (filters[key]) url.searchParams.append(key, filters[key]);
-    });
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success || data.status === 'success') {
-                renderProduksiTable(data.data);
-                updateProduksiPagination(data.pager || { current_page: 1, total_pages: 1, has_prev: false, has_next: false });
-            }
-        })
-        .catch(error => console.error('Error loading produksi data:', error));
-}
-
-function renderProduksiTable(data) {
-    const tbody = document.getElementById('tbodyProduksi');
-    
-    if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
-        return;
+        const searchForm = document.getElementById('pemasokSearchForm');
+        if (searchForm && !searchForm.dataset.bound) {
+            searchForm.dataset.bound = '1';
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                loadPemasokData(1);
+            });
+        }
     }
 
-    let html = '';
-    data.forEach(item => {
-        const statusColor = item.status === 'terima' ? 'success' : (item.status === 'pending' ? 'warning' : 'danger');
-        const statusLabel = item.status === 'terima' ? 'Terima' : (item.status === 'pending' ? 'Pending' : (item.status === 'ditolak' ? 'Ditolak' : item.status));
-        const actionButtons = canEdit ? 
-            `<button class="btn btn-outline-primary btn-sm me-1" onclick="editProduksi(${item.id})" title="Edit"><i class="fas fa-edit"></i></button>
+    // ============ PRODUKSI TAB FUNCTIONS ============
+
+    let currentProduksiPage = 1;
+
+    function initProduksiTab() {
+        loadProduksiData(1);
+        setupProduksiEventListeners();
+    }
+
+    function loadProduksiData(page = 1) {
+        currentProduksiPage = page;
+
+        const filters = {
+            page: page,
+            per_page: document.getElementById('perPageSelectProduksi').value || 10,
+            tanggal_dari: document.getElementById('produksiFilterTanggalDari').value || '',
+            tanggal_sampai: document.getElementById('produksiFilterTanggalSampai').value || '',
+            status: document.getElementById('produksiFilterStatus').value || '',
+            no_spk: document.getElementById('produksiFilterNoSpk').value || '',
+            search: document.getElementById('produksiSearchQuery').value || ''
+        };
+
+        const url = new URL('<?= base_url('warehouse2/api/barang-masuk-produksi') ?>');
+        Object.keys(filters).forEach(key => {
+            if (filters[key]) url.searchParams.append(key, filters[key]);
+        });
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success || data.status === 'success') {
+                    renderProduksiTable(data.data);
+                    updateProduksiPagination(data.pager || {
+                        current_page: 1,
+                        total_pages: 1,
+                        has_prev: false,
+                        has_next: false
+                    });
+                }
+            })
+            .catch(error => console.error('Error loading produksi data:', error));
+    }
+
+    function renderProduksiTable(data) {
+        const tbody = document.getElementById('tbodyProduksi');
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
+            return;
+        }
+
+        let html = '';
+        data.forEach(item => {
+            const statusColor = item.status === 'terima' ? 'success' : (item.status === 'pending' ? 'warning' : 'danger');
+            const statusLabel = item.status === 'terima' ? 'Terima' : (item.status === 'pending' ? 'Pending' : (item.status === 'ditolak' ? 'Ditolak' : item.status));
+            const actionButtons = canEdit ?
+                `<button class="btn btn-outline-primary btn-sm me-1" onclick="editProduksi(${item.id})" title="Edit"><i class="fas fa-edit"></i></button>
              <button class="btn btn-outline-danger btn-sm" onclick="deleteProduksiRecord(${item.id})" title="Hapus"><i class="fas fa-trash"></i></button>` :
-            '';
-        html += `<tr>
+                '';
+            html += `<tr>
             <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
             <td><strong>${item.nomor_spk || '-'}</strong></td>
+            <td>${item.nomor_lot || '-'}</td>
             <td>${item.kode_barang || '-'}</td>
             <td>${item.nama_barang}</td>
             <td>${item.satuan || '-'}</td>
             <td>${parseInt(item.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
             <td>${item.jumlah_terima ? parseInt(item.jumlah_terima).toLocaleString('id-ID') : '-'}</td>
             <td>${item.nama_penerima || '-'}</td>
+            <td>${item.catatan || '-'}</td>
             <td><span class="badge bg-${statusColor}">${statusLabel}</span></td>
             <td>
                 <div class="btn-group btn-group-sm">
@@ -3615,195 +3654,246 @@ function renderProduksiTable(data) {
                 </div>
             </td>
         </tr>`;
-    });
-    
-    tbody.innerHTML = html;
-}
-
-function updateProduksiPagination(pager) {
-    document.getElementById('currentPageNumProduksi').textContent = pager.current_page || 1;
-    document.getElementById('totalPagesProduksi').textContent = pager.total_pages || 1;
-
-    const prevBtn = document.getElementById('prevBtnProduksi');
-    if (pager.has_prev) {
-        prevBtn.classList.remove('disabled');
-        prevBtn.querySelector('a').onclick = (e) => {
-            e.preventDefault();
-            loadProduksiData(pager.current_page - 1);
-        };
-    } else {
-        prevBtn.classList.add('disabled');
-    }
-
-    const nextBtn = document.getElementById('nextBtnProduksi');
-    if (pager.has_next) {
-        nextBtn.classList.remove('disabled');
-        nextBtn.querySelector('a').onclick = (e) => {
-            e.preventDefault();
-            loadProduksiData(pager.current_page + 1);
-        };
-    } else {
-        nextBtn.classList.add('disabled');
-    }
-}
-
-function applyProduksiCustomFilter() {
-    loadProduksiData(1);
-    updateProduksiFilterCount();
-    const offcanvas = document.getElementById('produksiCustomFilterDrawer');
-    const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvas);
-    if (offcanvasInstance) offcanvasInstance.hide();
-}
-
-function resetProduksiCustomFilter() {
-    document.getElementById('produksiFilterTanggalDari').value = '';
-    document.getElementById('produksiFilterTanggalSampai').value = '';
-    document.getElementById('produksiFilterStatus').value = '';
-    document.getElementById('produksiFilterNoSpk').value = '';
-    document.getElementById('produksiSearchQuery').value = '';
-    updateProduksiFilterCount();
-    loadProduksiData(1);
-}
-
-function updateProduksiFilterCount() {
-    let count = 0;
-    if (document.getElementById('produksiFilterTanggalDari').value) count++;
-    if (document.getElementById('produksiFilterTanggalSampai').value) count++;
-    if (document.getElementById('produksiFilterStatus').value) count++;
-    if (document.getElementById('produksiFilterNoSpk').value) count++;
-
-    const badge = document.getElementById('produksiFilterCount');
-    if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'inline-block';
-    } else {
-        badge.style.display = 'none';
-    }
-}
-
-function deleteProduksiRecord(id) {
-    Swal.fire({
-        icon: 'question', title: 'Hapus Data?', text: 'Apakah Anda yakin?',
-        showCancelButton: true, confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Ya, Hapus', cancelButtonText: 'Batal'
-    }).then(result => {
-        if (!result.isConfirmed) return;
-        fetch(`<?= base_url('warehouse2/delete-produksi') ?>/${id}`, {
-            method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === 'success' || data.success) {
-                Swal.fire({ icon: 'success', title: 'Berhasil', timer: 1500 });
-                loadProduksiData(currentProduksiPage);
-            } else {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
-            }
         });
-    });
-}
 
-function setupProduksiEventListeners() {
-    const perPageSelect = document.getElementById('perPageSelectProduksi');
-    if (perPageSelect && !perPageSelect.dataset.bound) {
-        perPageSelect.dataset.bound = '1';
-        perPageSelect.addEventListener('change', () => loadProduksiData(1));
+        tbody.innerHTML = html;
     }
 
-    const searchForm = document.getElementById('produksiSearchForm');
-    if (searchForm && !searchForm.dataset.bound) {
-        searchForm.dataset.bound = '1';
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            loadProduksiData(1);
-        });
+    function updateProduksiPagination(pager) {
+        document.getElementById('currentPageNumProduksi').textContent = pager.current_page || 1;
+        document.getElementById('totalPagesProduksi').textContent = pager.total_pages || 1;
+
+        const prevBtn = document.getElementById('prevBtnProduksi');
+        if (pager.has_prev) {
+            prevBtn.classList.remove('disabled');
+            prevBtn.querySelector('a').onclick = (e) => {
+                e.preventDefault();
+                loadProduksiData(pager.current_page - 1);
+            };
+        } else {
+            prevBtn.classList.add('disabled');
+        }
+
+        const nextBtn = document.getElementById('nextBtnProduksi');
+        if (pager.has_next) {
+            nextBtn.classList.remove('disabled');
+            nextBtn.querySelector('a').onclick = (e) => {
+                e.preventDefault();
+                loadProduksiData(pager.current_page + 1);
+            };
+        } else {
+            nextBtn.classList.add('disabled');
+        }
     }
-}
 
-// ============ PEMBELI TAB FUNCTIONS (from pagination.js - now inlined) ============
-
-function setupPembeliEventListeners() {
-    const perPageSelect = document.getElementById('perPageSelectPembeli');
-    if (perPageSelect && !perPageSelect.dataset.bound) {
-        perPageSelect.dataset.bound = '1';
-        perPageSelect.addEventListener('change', () => loadPembeliData(1));
+    function applyProduksiCustomFilter() {
+        loadProduksiData(1);
+        updateProduksiFilterCount();
+        const offcanvas = document.getElementById('produksiCustomFilterDrawer');
+        const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvas);
+        if (offcanvasInstance) offcanvasInstance.hide();
     }
 
-    const searchForm = document.getElementById('pembeliSearchForm');
-    if (searchForm && !searchForm.dataset.bound) {
-        searchForm.dataset.bound = '1';
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            loadPembeliData(1);
-        });
+    function resetProduksiCustomFilter() {
+        document.getElementById('produksiFilterTanggalDari').value = '';
+        document.getElementById('produksiFilterTanggalSampai').value = '';
+        document.getElementById('produksiFilterStatus').value = '';
+        document.getElementById('produksiFilterNoSpk').value = '';
+        document.getElementById('produksiSearchQuery').value = '';
+        updateProduksiFilterCount();
+        loadProduksiData(1);
     }
-}
 
-function savePemasok() {
-    const form = document.getElementById('formPemasok');
-    if (!form.checkValidity()) {
+    function updateProduksiFilterCount() {
+        let count = 0;
+        if (document.getElementById('produksiFilterTanggalDari').value) count++;
+        if (document.getElementById('produksiFilterTanggalSampai').value) count++;
+        if (document.getElementById('produksiFilterStatus').value) count++;
+        if (document.getElementById('produksiFilterNoSpk').value) count++;
+
+        const badge = document.getElementById('produksiFilterCount');
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function deleteProduksiRecord(id) {
         Swal.fire({
-            icon: 'warning',
-            title: 'Form Belum Lengkap',
-            text: 'Mohon lengkapi semua field yang wajib diisi',
-            confirmButtonColor: '#3085d6',
-            confirmButtonText: 'OK'
+            icon: 'question',
+            title: 'Hapus Data?',
+            text: 'Apakah Anda yakin?',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            fetch(`<?= base_url('warehouse2/delete-produksi') ?>/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success' || data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            timer: 1500
+                        });
+                        loadProduksiData(currentProduksiPage);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: data.message
+                        });
+                    }
+                });
         });
-        return;
     }
 
-    const data = {
-        nomor_spk: document.getElementById('noDokumenPemasok').value,
-        tanggal: document.getElementById('tanggalPemasok').value,
-        nama_pemasok: document.getElementById('namaPemasok').value,
-        kode_barang: document.getElementById('kodeBarangPemasok').value,
-        nama_barang: document.getElementById('namaBarangPemasok').value,
-        satuan: document.getElementById('satuanPemasok').value,
-        jumlah: document.getElementById('jumlahPemasok').value,
-        no_po: document.getElementById('noPoPemasok').value,
-        no_surat_jalan: document.getElementById('noSuratJalanPemasok').value,
-        catatan: document.getElementById('catatanPemasok').value,
-        status: document.getElementById('statusPemasok').value
-    };
+    function setupProduksiEventListeners() {
+        const perPageSelect = document.getElementById('perPageSelectProduksi');
+        if (perPageSelect && !perPageSelect.dataset.bound) {
+            perPageSelect.dataset.bound = '1';
+            perPageSelect.addEventListener('change', () => loadProduksiData(1));
+        }
 
-    fetch('<?= base_url('warehouse2/store-pemasok') ?>', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success || data.status === 'success') {
-                // Close modal using simple, reliable method
-                const modalEl = document.getElementById('modalPemasok');
-                const closeBtn = modalEl.querySelector('[data-bs-dismiss="modal"]');
-                if (closeBtn) closeBtn.click();
+        const searchForm = document.getElementById('produksiSearchForm');
+        if (searchForm && !searchForm.dataset.bound) {
+            searchForm.dataset.bound = '1';
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                loadProduksiData(1);
+            });
+        }
+    }
 
-                // Small delay to ensure modal closes
-                setTimeout(() => {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Data Berhasil Ditambahkan',
-                        text: 'Data barang masuk pemasok telah ditambahkan',
-                        confirmButtonColor: '#28a745',
-                        confirmButtonText: 'OK',
-                        timer: 3000,
-                        timerProgressBar: true,
-                        didOpen: (toast) => {
-                            toast.addEventListener('mouseenter', Swal.stopTimer)
-                            toast.addEventListener('mouseleave', Swal.resumeTimer)
-                        }
-                    });
-                    loadPemasokData();
-                }, 300);
-            } else {
-                console.error('Validation errors:', data.errors);
-                const errorText = data.errors ? 
-                    Object.values(data.errors).join('\n') : 
-                    (data.message || 'Terjadi kesalahan saat menyimpan data');
+    // ============ PEMBELI TAB FUNCTIONS (from pagination.js - now inlined) ============
+
+    function setupPembeliEventListeners() {
+        const perPageSelect = document.getElementById('perPageSelectPembeli');
+        if (perPageSelect && !perPageSelect.dataset.bound) {
+            perPageSelect.dataset.bound = '1';
+            perPageSelect.addEventListener('change', () => loadPembeliData(1));
+        }
+
+        const searchForm = document.getElementById('pembeliSearchForm');
+        if (searchForm && !searchForm.dataset.bound) {
+            searchForm.dataset.bound = '1';
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                loadPembeliData(1);
+            });
+        }
+    }
+
+    function savePemasok() {
+        const form = document.getElementById('formPemasok');
+        if (!form.checkValidity()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Form Belum Lengkap',
+                text: 'Mohon lengkapi semua field yang wajib diisi',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        const pemasokEditId = document.getElementById('pemasokEditId').value;
+        const isEditMode = Boolean(pemasokEditId);
+
+        const data = {
+            nomor_spk: document.getElementById('noDokumenPemasok').value,
+            tanggal: document.getElementById('tanggalPemasok').value,
+            nama_pemasok: document.getElementById('namaPemasok').value,
+            kode_barang: document.getElementById('kodeBarangPemasok').value,
+            nama_barang: document.getElementById('namaBarangPemasok').value,
+            satuan: document.getElementById('satuanPemasok').value,
+            jumlah: document.getElementById('jumlahPemasok').value,
+            no_po: document.getElementById('noPoPemasok').value,
+            no_surat_jalan: document.getElementById('noSuratJalanPemasok').value,
+            catatan: document.getElementById('catatanPemasok').value,
+            status: document.getElementById('statusPemasok').value
+        };
+
+        const url = isEditMode ?
+            `<?= base_url('warehouse2/update-pemasok') ?>/${pemasokEditId}` :
+            '<?= base_url('warehouse2/store-pemasok') ?>';
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        const csrfToken = getCsrfToken();
+        const csrfField = getCsrfHashField();
+        if (csrfToken && csrfField) {
+            headers[csrfField] = csrfToken;
+        }
+
+        fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(data)
+            })
+            .then(async response => {
+                const text = await response.text();
+                let payload = null;
+                try {
+                    payload = text ? JSON.parse(text) : null;
+                } catch (e) {
+                    console.error('Invalid JSON response:', text);
+                    throw new Error('Invalid server response');
+                }
+
+                if (!response.ok) {
+                    // If validation errors present (422), expose them to caller
+                    if (response.status === 422 && payload && payload.errors) {
+                        return payload;
+                    }
+                    const msg = (payload && (payload.message || payload.error)) ? (payload.message || payload.error) : ('Server error ' + response.status);
+                    throw new Error(msg);
+                }
+
+                return payload;
+            })
+            .then(data => {
+                if (data && (data.success || data.status === 'success')) {
+                    // Close modal using simple, reliable method
+                    const modalEl = document.getElementById('modalPemasok');
+                    const closeBtn = modalEl.querySelector('[data-bs-dismiss="modal"]');
+                    if (closeBtn) closeBtn.click();
+
+                    // Small delay to ensure modal closes
+                    setTimeout(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: isEditMode ? 'Data Berhasil Diubah' : 'Data Berhasil Ditambahkan',
+                            text: isEditMode ? 'Data barang masuk pemasok telah diperbarui' : 'Data barang masuk pemasok telah ditambahkan',
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'OK',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer)
+                                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                            }
+                        });
+                        loadPemasokData(1);
+                    }, 300);
+                    return; // ✅ PENTING: Stop execution setelah success
+                }
+
+                // If we reach here, server returned non-success payload (e.g., validation)
+                console.error('Validation errors:', data && data.errors ? data.errors : null);
+                const errorText = data && data.errors ? Object.values(data.errors).join('\n') : (data && data.message ? data.message : 'Terjadi kesalahan saat menyimpan data');
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal Menyimpan Data',
@@ -3811,67 +3901,128 @@ function savePemasok() {
                     confirmButtonColor: '#dc3545',
                     confirmButtonText: 'OK'
                 });
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Menyimpan Data',
-                text: 'Error: ' + error.message,
-                confirmButtonColor: '#dc3545',
-                confirmButtonText: 'OK'
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menyimpan Data',
+                    text: 'Error: ' + error.message,
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'OK'
+                });
             });
-        });
-}
+    }
 
-function deletePemasokRecord(id) {
-    Swal.fire({
-        title: 'Konfirmasi Penghapusan',
-        text: 'Apakah Anda yakin ingin menghapus data ini?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Ya, Hapus',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`<?= base_url('warehouse2/delete-pemasok') ?>/${id}`, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success || data.status === 'success') {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil Dihapus',
-                            text: 'Data telah dipindahkan ke sampah',
-                            timer: 2000
-                        });
-                        loadPemasokData();
-                    } else {
+    function deletePemasokRecord(id) {
+        Swal.fire({
+            title: 'Konfirmasi Penghapusan',
+            text: 'Apakah Anda yakin ingin menghapus data ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`<?= base_url('warehouse2/delete-pemasok') ?>/${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success || data.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil Dihapus',
+                                text: 'Data telah dipindahkan ke sampah',
+                                timer: 2000
+                            });
+                            loadPemasokData();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Gagal menghapus data'
+                            });
+                        }
+                    })
+                    .catch(error => {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: data.message || 'Gagal menghapus data'
+                            text: error.message
                         });
+                    });
+            }
+        });
+    }
+
+    /**
+     * Edit Pemasok Record
+     */
+    function editPemasok(id) {
+        fetch(`<?= base_url('warehouse2/api/barang-masuk-pemasok') ?>?per_page=100`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if ((data.success || data.status === 'success') && data.data && data.data.length > 0) {
+                    const item = data.data.find(x => x.id == id);
+                    if (!item) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Data tidak ditemukan'
+                        });
+                        return;
                     }
-                })
-                .catch(error => {
+
+                    // Populate form
+                    document.getElementById('tanggalPemasok').value = item.tanggal ? item.tanggal.split(' ')[0] : '';
+                    document.getElementById('noDokumenPemasok').value = item.nomor_lot || '';
+                    document.getElementById('namaPemasok').value = item.nama_pemasok || '';
+                    document.getElementById('noPoPemasok').value = item.no_po || '';
+                    document.getElementById('kodeBarangPemasok').value = item.kode_barang || '';
+                    document.getElementById('namaBarangPemasok').value = item.nama_barang || '';
+                    document.getElementById('satuanPemasok').value = item.satuan || '';
+                    document.getElementById('jumlahPemasok').value = item.jumlah || '';
+                    document.getElementById('noSuratJalanPemasok').value = item.no_surat_jalan || '';
+                    document.getElementById('statusPemasok').value = item.status || 'bahanmasuk';
+                    document.getElementById('catatanPemasok').value = item.catatan || '';
+
+                    // Store ID for update
+                    document.getElementById('pemasokEditId').value = item.id;
+
+                    // Show modal
+                    const modalElement = document.getElementById('modalPemasok');
+                    const modal = new bootstrap.Modal(modalElement, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                    modal.show();
+                } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: error.message
+                        text: 'Gagal memuat data'
                     });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Gagal memuat data'
                 });
-        }
-    });
-}
-
+            });
+    }
 </script>
 
 <?= $this->endSection() ?>

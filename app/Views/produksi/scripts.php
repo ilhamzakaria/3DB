@@ -1,4 +1,34 @@
 <script>
+    // ===== DIAGNOSTIC LOGGING =====
+    // Capture semua console.log ke array untuk debug
+    const diagnosticLogs = [];
+    const originalLog = console.log;
+    const originalError = console.error;
+    
+    console.log = function(...args) {
+        diagnosticLogs.push({ type: 'log', message: args.join(' '), timestamp: new Date().toISOString() });
+        originalLog.apply(console, args);
+    };
+    
+    console.error = function(...args) {
+        diagnosticLogs.push({ type: 'error', message: args.join(' '), timestamp: new Date().toISOString() });
+        originalError.apply(console, args);
+    };
+    
+    // Expose diagnostics globally
+    window.getDiagnostics = function() {
+        return {
+            logs: diagnosticLogs,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            environment: 'server/hosting (assumed from context)'
+        };
+    };
+    
+    console.log('[DIAGNOSTIC] Scripts loaded at', new Date().toISOString());
+</script>
+
+<script>
     let activeRejectStorage = null;
     let jamRowCount = 1000;
     let dtRowCount = 1000;
@@ -14,30 +44,6 @@
             };
             reader.readAsDataURL(input.files[0]);
         }
-    }
-
-    function updateBagusTotal(root = document) {
-        const jamTable = root.querySelector('.table_jam_form');
-        let totalHasil = 0;
-        if (jamTable) {
-            jamTable.querySelectorAll('.jam-hasil').forEach(input => {
-                totalHasil += parseInt(input.value) || 0;
-            });
-        }
-
-        const isiInput = root.querySelector('.isi');
-        const isi = parseInt(isiInput?.value) || 0;
-        const totalPcs = totalHasil * isi;
-
-        const totalReject = parseInt(root.querySelector('.grand_total_reject')?.value) || 0;
-        const totalBagus = Math.max(0, totalPcs - totalReject);
-
-        // Update display field
-        const grandTotalBagusDisplay = root.querySelector('.grand_total_bagus');
-        if (grandTotalBagusDisplay) grandTotalBagusDisplay.value = totalBagus;
-        // Update hidden submit field
-        const grandTotalBagusHidden = root.querySelector('.grand_total_bagus_hidden');
-        if (grandTotalBagusHidden) grandTotalBagusHidden.value = totalBagus;
     }
 
     function updateRejectInlineTotals(root = document) {
@@ -59,44 +65,48 @@
         const grandTotalRejectHidden = root.querySelector('.grand_total_reject_hidden');
         if (grandTotalRejectHidden) grandTotalRejectHidden.value = total;
 
-        updateBagusTotal(root);
+        // Trigger updateTotals to recalculate Total Bagus and Sisa PO
+        updateTotals(root);
     }
 
-    function addRejectInlineRow(root = document) {
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // Reject types passed from PHP (app/Controllers/Produksi.php passes $data['reject_types'])
+    const _rejectTypesData = <?= isset($reject_types) ? json_encode($reject_types, JSON_UNESCAPED_UNICODE) : '[]' ?>;
+
+    function getRejectTypesFromData() {
+        return _rejectTypesData.map(type => type.nama_reject || type);
+    }
+
+    async function addRejectInlineRow(root = document) {
         const rejectTbody = root.querySelector('#reject_tbody');
         if (!rejectTbody) return;
 
+        const types = getRejectTypesFromData();
         const rowCount = rejectTbody.querySelectorAll('tr').length;
         const newRow = document.createElement('tr');
         newRow.className = 'reject-row border-bottom';
         newRow.style.transition = 'background-color 0.2s';
+        
+        let optionsHtml = '<option value="">-- Pilih Jenis Reject --</option>';
+        types.forEach(typeName => {
+            optionsHtml += `<option value="${escHtml(typeName)}">${escHtml(typeName)}</option>`;
+        });
+
         newRow.innerHTML = `
             <td class="px-4 py-3">
                 <select name="rejects[${rowCount}][jenis_reject]"
                     class="form-select form-select-sm reject-type"
                     style="border-radius: 6px; border: 1px solid #dee2e6; font-size: 0.875rem;"
                     required>
-                    <option value="">-- Pilih Jenis Reject --</option>
-                    <option value="start up">Start Up</option>
-                    <option value="karantina">Karantina</option>
-                    <option value="trial">Trial</option>
-                    <option value="camera">Camera</option>
-                    <option value="bottom putih">Bottom Putih</option>
-                    <option value="oval">Oval</option>
-                    <option value="flashing">Flashing</option>
-                    <option value="short shoot">Short Shoot</option>
-                    <option value="kotor">Kotor</option>
-                    <option value="beda warna">Beda Warna</option>
-                    <option value="sampling qc">Sampling QC</option>
-                    <option value="kontaminasi">Kontaminasi</option>
-                    <option value="black spot">Black Spot</option>
-                    <option value="gosong">Gosong</option>
-                    <option value="struktur tidak standard">Struktur Tidak Standard</option>
-                    <option value="inject poin tidak standard">Inject Poin Tidak Standard</option>
-                    <option value="bolong">Bolong</option>
-                    <option value="bubble">Bubble</option>
-                    <option value="berair">Berair</option>
-                    <option value="neck panjang">Neck Panjang</option>
+                    ${optionsHtml}
                 </select>
             </td>
             <td class="px-4 py-3">
@@ -133,6 +143,9 @@
     function initializeRejectSection(root = document) {
         const rejectTable = root.querySelector('#table_reject_inline');
         if (!rejectTable) return;
+
+        // Pre-fetch reject types
+        getRejectTypes();
 
         const addRejectBtn = root.querySelector('#btn_add_reject_row_inline');
         if (addRejectBtn && !addRejectBtn.dataset.rejectBound) {
@@ -242,6 +255,8 @@
                         ${reasonOptions}
                     </select>
                 </td>
+                <td><textarea name="downtimes[${rowId}][problem]" class="form-control form-control-sm" rows="2" placeholder="Problem...">${data.problem || ''}</textarea></td>
+                <td><textarea name="downtimes[${rowId}][action_plant]" class="form-control form-control-sm" rows="2" placeholder="Action Plant...">${data.action_plant || ''}</textarea></td>
                 <td><input type="datetime-local" name="downtimes[${rowId}][mulai]" value="${data.waktu_mulai ? data.waktu_mulai.replace(' ', 'T').substring(0,16) : ''}" class="form-control form-control-sm dt-mulai"></td>
                 <td><input type="datetime-local" name="downtimes[${rowId}][selesai]" value="${data.waktu_selesai ? data.waktu_selesai.replace(' ', 'T').substring(0,16) : ''}" class="form-control form-control-sm dt-selesai"></td>
                 <td><input type="number" name="downtimes[${rowId}][durasi]" value="${data.durasi_menit || ''}" class="form-control form-control-sm dt-durasi"></td>
@@ -289,17 +304,24 @@
             const display = container.querySelector('.grand_total_hasil_display');
             if (display) display.innerText = totalHasil;
 
-            // grand_total_reject: baca dari hidden (disabled field tidak reliable di semua browser)
-            const rejectHidden  = container.querySelector('.grand_total_reject_hidden');
-            const rejectDisplay = container.querySelector('.grand_total_reject');
-            const totalReject   = parseInt(rejectHidden?.value ?? rejectDisplay?.value) || 0;
-            const totalBagus    = Math.max(0, totalPcs - totalReject);
+            // Total Bagus = Total hasil produksi (tidak dikurangi reject)
+            const totalBagus = Math.max(0, totalPcs);
 
             // Update display + hidden untuk grand_total_bagus
             const gBagusDisplay = container.querySelector('.grand_total_bagus');
             if (gBagusDisplay) gBagusDisplay.value = totalBagus;
             const gBagusHidden = container.querySelector('.grand_total_bagus_hidden');
             if (gBagusHidden) gBagusHidden.value = totalBagus;
+
+            // Calculate Sisa PO: total_spk - total_bagus = sisa_po
+            const totalSpkInput = container.querySelector('.total_spk');
+            const sisaPoInput = container.querySelector('.sisa_po');
+            if (totalSpkInput && sisaPoInput) {
+                const totalSpk = parseInt(totalSpkInput.value) || 0;
+                const sisaPo = Math.max(0, totalSpk - totalBagus);
+                sisaPoInput.value = sisaPo;
+                console.log('Auto-calculated Sisa PO:', sisaPo, '(Total SPK:', totalSpk, '- Total Bagus:', totalBagus, ')');
+            }
         };
 
         function normalizeMachineName(machineName) {
@@ -360,6 +382,7 @@
                     opt.textContent = spk;
                     opt.dataset.mesin = data.nama_mesin || '';
                     opt.dataset.produk = data.nama_produk || '';
+                    opt.dataset.brand = data.brand || '';
                     opt.dataset.grade = data.grade || '';
                     opt.dataset.warna = data.warna || '';
                     opt.dataset.nomorMesin = data.nomor_mesin || '';
@@ -374,6 +397,7 @@
                 if (selectedOpt) {
                     selectedOpt.dataset.mesin = data.nama_mesin || '';
                     selectedOpt.dataset.produk = data.nama_produk || '';
+                    selectedOpt.dataset.brand = data.brand || '';
                     selectedOpt.dataset.grade = data.grade || '';
                     selectedOpt.dataset.warna = data.warna || '';
                     selectedOpt.dataset.nomorMesin = data.nomor_mesin || '';
@@ -428,6 +452,36 @@
                 namaProdukHidden.value = produkValue;
             }
 
+            // Set Brand - visible disabled field + hidden input
+            const brandEl = container.querySelector('.brand');
+            const brandHidden = container.querySelector('.brand_hidden');
+            if (brandEl && brandHidden) {
+                const brandValue = source.brand || '';
+                console.log('Setting brand to:', brandValue);
+                brandEl.value = brandValue;
+                brandHidden.value = brandValue;
+            }
+
+            // Set Warna - visible disabled field + hidden input
+            const warnaEl = container.querySelector('.warna');
+            const warnaHidden = container.querySelector('.warna_hidden');
+            if (warnaEl && warnaHidden) {
+                const warnaValue = source.warna || '';
+                console.log('Setting warna to:', warnaValue);
+                warnaEl.value = warnaValue;
+                warnaHidden.value = warnaValue;
+            }
+
+            // Set Grade - visible disabled field + hidden input
+            const gradeEl = container.querySelector('.grade');
+            const gradeHidden = container.querySelector('.grade_hidden');
+            if (gradeEl && gradeHidden) {
+                const gradeValue = source.grade || '';
+                console.log('Setting grade to:', gradeValue);
+                gradeEl.value = gradeValue;
+                gradeHidden.value = gradeValue;
+            }
+
             // Set Nomor Mesin - visible disabled field + hidden input
             const nomorMesinEl = container.querySelector('.nomor_mesin');
             const nomorMesinHidden = container.querySelector('.nomor_mesin_hidden');
@@ -458,6 +512,25 @@
                 const targetValue = source.targett || source.target || '';
                 targetEl.value = targetValue;
                 targetHidden.value = targetValue;
+            }
+
+            // Set Total SPK - visible disabled field + hidden input
+            const totalSpkEl = container.querySelector('.total_spk');
+            const totalSpkHidden = container.querySelector('.total_spk_hidden');
+            if (totalSpkEl && totalSpkHidden) {
+                console.log('Setting total_spk to:', source.total_spk);
+                const rawTotalSpk = String(source.total_spk || '');
+                // Strip non-numeric characters: hapus titik ribuan, koma, spasi, huruf (mis: "5.000 pcs" → "5000")
+                const cleanTotalSpk = rawTotalSpk
+                    .replace(/\./g, '')      // hapus titik ribuan
+                    .replace(/,/g, '')       // hapus koma
+                    .replace(/[^0-9]/g, ''); // hapus semua non-angka (termasuk "pcs", spasi, dll)
+                const totalSpkValue = cleanTotalSpk !== '' ? cleanTotalSpk : '';
+                totalSpkEl.value = totalSpkValue;
+                totalSpkHidden.value = totalSpkValue;
+                console.log('✓ total_spk synced:', { raw: rawTotalSpk, clean: totalSpkValue, visible: totalSpkEl.value, hidden: totalSpkHidden.value });
+            } else {
+                console.warn('⚠ total_spk elements not found - visible:', !!totalSpkEl, 'hidden:', !!totalSpkHidden);
             }
 
             // Set Shift - visible disabled field + hidden input
@@ -534,6 +607,7 @@
             // Get all data attributes - handle both camelCase (dataset) and kebab-case (getAttribute)
             const mesin = opt.dataset.mesin || opt.getAttribute('data-mesin') || '';
             const produk = opt.dataset.produk || opt.getAttribute('data-produk') || '';
+            const brand = opt.dataset.brand || opt.getAttribute('data-brand') || '';
             const grade = opt.dataset.grade || opt.getAttribute('data-grade') || '';
             const warna = opt.dataset.warna || opt.getAttribute('data-warna') || '';
             const nomorMesin = opt.dataset.nomorMesin || opt.getAttribute('data-nomor-mesin') || '';
@@ -541,19 +615,77 @@
             const targett = opt.dataset.targett || opt.getAttribute('data-targett') || '';
             const shif = opt.dataset.shif || opt.getAttribute('data-shif') || '';
             const packing = opt.dataset.packing || opt.getAttribute('data-packing') || '';
+            let totalSpk = opt.dataset.totalSpk || opt.getAttribute('data-total-spk') || '';
 
-            console.log('Extracted autofill data:', { mesin, produk, grade, warna, nomorMesin, operator, targett, shif, packing });
+            console.log('Extracted autofill data:', { mesin, produk, brand, grade, warna, nomorMesin, operator, targett, shif, packing, totalSpk });
 
+            // FALLBACK: If total_spk is empty from dropdown, fetch from PPIC via AJAX
+            if (!totalSpk || totalSpk === '') {
+                console.log('total_spk empty from dropdown, fetching from PPIC...');
+                showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
+                
+                fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(opt.value))
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log('PPIC SPK Detail response:', data);
+                        hideProduksiLoading(container);
+                        
+                        if (data.ppic && data.ppic.total_spk) {
+                            totalSpk = data.ppic.total_spk;
+                            console.log('Got total_spk from PPIC API:', totalSpk);
+                        }
+                        
+                        // Now fill the form with all data including total_spk from API
+                        fillProduksiFromPpic(container, {
+                            nama_mesin: mesin || data.ppic?.nama_mesin,
+                            nama_produk: produk || data.ppic?.nama_produk,
+                            brand: brand || data.ppic?.brand,
+                            grade: grade || data.ppic?.grade,
+                            warna: warna || data.ppic?.warna,
+                            nomor_mesin: nomorMesin || data.ppic?.nomor_mesin,
+                            operator: operator || data.ppic?.operator,
+                            targett: targett || data.ppic?.targett,
+                            shif: shif || data.ppic?.shif,
+                            packing: packing || data.ppic?.packing,
+                            total_spk: totalSpk
+                        }, opt.value);
+                    })
+                    .catch(err => {
+                        console.error('Error fetching PPIC SPK detail:', err);
+                        hideProduksiLoading(container);
+                        
+                        // Still fill with available data even if API fails
+                        fillProduksiFromPpic(container, {
+                            nama_mesin: mesin,
+                            nama_produk: produk,
+                            brand: brand,
+                            grade: grade,
+                            warna: warna,
+                            nomor_mesin: nomorMesin,
+                            operator: operator,
+                            targett: targett,
+                            shif: shif,
+                            packing: packing,
+                            total_spk: totalSpk
+                        }, opt.value);
+                    });
+                
+                return; // Exit early, will continue in async callback
+            }
+
+            // If total_spk is available from dropdown, fill immediately
             fillProduksiFromPpic(container, {
                 nama_mesin: mesin,
                 nama_produk: produk,
+                brand: brand,
                 grade: grade,
                 warna: warna,
                 nomor_mesin: nomorMesin,
                 operator: operator,
                 targett: targett,
                 shif: shif,
-                packing: packing
+                packing: packing,
+                total_spk: totalSpk
             }, opt.value);
         }
 
@@ -570,6 +702,7 @@
                     const opt = select.options[i];
                     const mesin = opt.dataset.mesin || opt.getAttribute('data-mesin') || '';
                     const produk = opt.dataset.produk || opt.getAttribute('data-produk') || '';
+                    const brand = opt.dataset.brand || opt.getAttribute('data-brand') || '';
                     const grade = opt.dataset.grade || opt.getAttribute('data-grade') || '';
                     const warna = opt.dataset.warna || opt.getAttribute('data-warna') || '';
                     const nomorMesin = opt.dataset.nomorMesin || opt.getAttribute('data-nomor-mesin') || '';
@@ -577,19 +710,77 @@
                     const targett = opt.dataset.targett || opt.getAttribute('data-targett') || '';
                     const shif = opt.dataset.shif || opt.getAttribute('data-shif') || '';
                     const packing = opt.dataset.packing || opt.getAttribute('data-packing') || '';
+                    let totalSpk = opt.dataset.totalSpk || opt.getAttribute('data-total-spk') || '';
 
-                    console.log('Alt autofill data:', { mesin, produk, grade, warna, nomorMesin, operator, targett, shif, packing });
+                    console.log('Alt autofill data:', { mesin, produk, brand, grade, warna, nomorMesin, operator, targett, shif, packing, totalSpk });
 
+                    // FALLBACK: If total_spk is empty from dropdown, fetch from PPIC via AJAX
+                    if (!totalSpk || totalSpk === '') {
+                        console.log('Alt method: total_spk empty, fetching from PPIC...');
+                        showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
+                        
+                        fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(value))
+                            .then(r => r.json())
+                            .then(data => {
+                                console.log('PPIC SPK Detail response (alt):', data);
+                                hideProduksiLoading(container);
+                                
+                                if (data.ppic && data.ppic.total_spk) {
+                                    totalSpk = data.ppic.total_spk;
+                                    console.log('Got total_spk from PPIC API (alt):', totalSpk);
+                                }
+                                
+                                // Now fill the form with all data including total_spk from API
+                                fillProduksiFromPpic(container, {
+                                    nama_mesin: mesin || data.ppic?.nama_mesin,
+                                    nama_produk: produk || data.ppic?.nama_produk,
+                                    brand: brand || data.ppic?.brand,
+                                    grade: grade || data.ppic?.grade,
+                                    warna: warna || data.ppic?.warna,
+                                    nomor_mesin: nomorMesin || data.ppic?.nomor_mesin,
+                                    operator: operator || data.ppic?.operator,
+                                    targett: targett || data.ppic?.targett,
+                                    shif: shif || data.ppic?.shif,
+                                    packing: packing || data.ppic?.packing,
+                                    total_spk: totalSpk
+                                }, value);
+                            })
+                            .catch(err => {
+                                console.error('Error fetching PPIC SPK detail (alt):', err);
+                                hideProduksiLoading(container);
+                                
+                                // Still fill with available data even if API fails
+                                fillProduksiFromPpic(container, {
+                                    nama_mesin: mesin,
+                                    nama_produk: produk,
+                                    brand: brand,
+                                    grade: grade,
+                                    warna: warna,
+                                    nomor_mesin: nomorMesin,
+                                    operator: operator,
+                                    targett: targett,
+                                    shif: shif,
+                                    packing: packing,
+                                    total_spk: totalSpk
+                                }, value);
+                            });
+                        
+                        return; // Exit early, will continue in async callback
+                    }
+
+                    // If total_spk is available from dropdown, fill immediately
                     fillProduksiFromPpic(container, {
                         nama_mesin: mesin,
                         nama_produk: produk,
+                        brand: brand,
                         grade: grade,
                         warna: warna,
                         nomor_mesin: nomorMesin,
                         operator: operator,
                         targett: targett,
                         shif: shif,
-                        packing: packing
+                        packing: packing,
+                        total_spk: totalSpk
                     }, value);
                     break;
                 }
@@ -628,6 +819,13 @@
                 const elHidden = container.querySelector('.target_hidden');
                 if (el) el.value = d.target;
                 if (elHidden) elHidden.value = d.target;
+            }
+            if (d.total_spk) {
+                const el = container.querySelector('.total_spk');
+                const elHidden = container.querySelector('.total_spk_hidden');
+                if (el) el.value = d.total_spk;
+                if (elHidden) elHidden.value = d.total_spk;
+                console.log('Set total_spk from last data:', d.total_spk);
             }
             if (d.isi) {
                 const el = container.querySelector('.isi');
@@ -1056,6 +1254,15 @@
 
         // Change events - PRIMARY HANDLER
         document.addEventListener('change', function(e) {
+            // Sync visible tanggal_input to hidden tanggal_hidden field
+            if (e.target.classList.contains('tanggal_input')) {
+                const tanggalHidden = e.target.closest('form')?.querySelector('.tanggal_hidden') || e.target.closest('.modal-body')?.querySelector('.tanggal_hidden');
+                if (tanggalHidden) {
+                    tanggalHidden.value = e.target.value;
+                    console.log('Tanggal updated to:', e.target.value);
+                }
+            }
+
             // SPK Select Autofill - Use option data attributes directly
             if (e.target.classList.contains('nomor_spk')) {
                 if (spkAutofillLock) {
@@ -1308,6 +1515,12 @@
                 updateTotals(e.target.closest('.modal-body'));
             }
 
+            // Total SPK input - trigger sisa_po calculation via updateTotals
+            if (e.target.classList.contains('total_spk')) {
+                const root = e.target.closest('.modal-body') || e.target.closest('form') || document;
+                updateTotals(root);
+            }
+
             // Reject jumlah input — update total reject secara real-time
             if (e.target.classList.contains('reject-jumlah')) {
                 const root = e.target.closest('.modal-body') || e.target.closest('form') || document;
@@ -1330,6 +1543,23 @@
                 }
             }
         });
+
+        // Disable Enter key submission in produksi forms - USE CAPTURE PHASE
+        document.addEventListener('keydown', function(e) {
+            // Check if Enter was pressed
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                const form = e.target.closest('#formAddLaporan') || e.target.closest('#formEditLaporan');
+                if (form) {
+                    // Allow Enter only in textarea
+                    if (e.target.tagName !== 'TEXTAREA') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Enter key blocked in produksi form');
+                        return false;
+                    }
+                }
+            }
+        }, true); // TRUE = capture phase (fires before any other handlers)
 
         // Save Reject from Reject Modal
         const btnSaveReject = document.getElementById('btn_save_reject_generic');
@@ -1415,6 +1645,11 @@
                     initializeRejectSection(container);
                 }
 
+                // Trigger sisa_po calculation on modal show via updateTotals
+                if (container && typeof updateTotals === 'function') {
+                    updateTotals(container);
+                }
+
                 // Auto-load TTD on modal open — no shift required
                 const preview     = addModalEl.querySelector('#auto-ttd-preview');
                 const placeholder = addModalEl.querySelector('#auto-ttd-placeholder');
@@ -1493,6 +1728,21 @@
                 const nomorMesinDisplay = e.target.querySelector('.nomor_mesin');
                 if (nomorMesinEl && nomorMesinDisplay) nomorMesinEl.value = nomorMesinDisplay.value;
 
+                // Sync brand
+                const brandEl = e.target.querySelector('.brand_hidden');
+                const brandDisplay = e.target.querySelector('.brand');
+                if (brandEl && brandDisplay) brandEl.value = brandDisplay.value;
+
+                // Sync warna
+                const warnaEl = e.target.querySelector('.warna_hidden');
+                const warnaDisplay = e.target.querySelector('.warna');
+                if (warnaEl && warnaDisplay) warnaEl.value = warnaDisplay.value;
+
+                // Sync grade
+                const gradeEl = e.target.querySelector('.grade_hidden');
+                const gradeDisplay = e.target.querySelector('.grade');
+                if (gradeEl && gradeDisplay) gradeEl.value = gradeDisplay.value;
+
                 // Sync packing
                 const packingEl = e.target.querySelector('.packing_hidden');
                 const packingDisplay = e.target.querySelector('.packing');
@@ -1502,6 +1752,16 @@
                 const targetEl = e.target.querySelector('.target_hidden');
                 const targetDisplay = e.target.querySelector('.target');
                 if (targetEl && targetDisplay) targetEl.value = targetDisplay.value;
+
+                // Sync total_spk
+                const totalSpkEl = e.target.querySelector('.total_spk_hidden');
+                const totalSpkDisplay = e.target.querySelector('.total_spk');
+                if (totalSpkEl && totalSpkDisplay) totalSpkEl.value = totalSpkDisplay.value;
+
+                // Sync sisa_po
+                const sisaPoEl = e.target.querySelector('.sisa_po_hidden');
+                const sisaPoDisplay = e.target.querySelector('.sisa_po');
+                if (sisaPoEl && sisaPoDisplay) sisaPoEl.value = sisaPoDisplay.value;
 
                 // Sync operator
                 const operatorEl = e.target.querySelector('.operator_hidden');
@@ -1545,6 +1805,60 @@
         // ============================================
         console.log('=== Produksi Scripts Loaded ===');
         
+        // ============================================
+        // SPK DROPDOWN AUTO-FILL ON CHANGE
+        // ============================================
+        // Handle SPK dropdown change to auto-fill form fields
+        // Gunakan event delegation agar bekerja meski Select2 di-init belakangan
+        
+        function handleSpkChange(selectEl) {
+            if (!selectEl || !selectEl.value) return;
+            
+            // Find nearest form container
+            const container = selectEl.closest('form') 
+                || selectEl.closest('[role="dialog"]')?.querySelector('form') 
+                || document;
+            
+            console.log('[SPK-AUTOFILL] SPK changed to:', selectEl.value, '| container:', container?.id || container?.tagName);
+            
+            try {
+                fillFromSpkOption(selectEl, container);
+            } catch (err) {
+                console.error('[SPK-AUTOFILL] fillFromSpkOption error:', err);
+                // Fallback
+                if (typeof fillFromSpkOptionAlt === 'function') {
+                    fillFromSpkOptionAlt(selectEl.value, container);
+                }
+            }
+        }
+        
+        // 1. Attach to all existing .nomor_spk selects (native change)
+        document.querySelectorAll('.nomor_spk').forEach(select => {
+            if (!select.dataset.autofillBound) {
+                select.dataset.autofillBound = '1';
+                select.addEventListener('change', function() {
+                    handleSpkChange(this);
+                });
+            }
+        });
+        
+        // 2. Attach Select2 event setelah delay (Select2 init biasanya selesai 300-500ms setelah DOM)
+        setTimeout(function() {
+            if (typeof jQuery === 'undefined') return;
+            
+            jQuery('.nomor_spk').each(function() {
+                const $sel = jQuery(this);
+                if ($sel.hasClass('select2-hidden-accessible') && !this.dataset.select2AutofillBound) {
+                    this.dataset.select2AutofillBound = '1';
+                    $sel.on('select2:select', function(e) {
+                        console.log('[SPK-AUTOFILL-SELECT2] select2:select fired for:', e.params?.data?.id);
+                        handleSpkChange(this);
+                    });
+                    console.log('[SPK-AUTOFILL] Select2 bound to .nomor_spk');
+                }
+            });
+        }, 600);
+
         // Debug: Log shift selector elements
         const shiftSelectors = document.querySelectorAll('.shift-selector');
         console.log('Found shift selectors:', shiftSelectors.length);
@@ -1692,6 +2006,21 @@
             const nomorMesinDisplay = e.target.querySelector('.nomor_mesin');
             if (nomorMesinEl && nomorMesinDisplay) nomorMesinEl.value = nomorMesinDisplay.value;
 
+            // Sync brand
+            const brandEl = e.target.querySelector('.brand_hidden');
+            const brandDisplay = e.target.querySelector('.brand');
+            if (brandEl && brandDisplay) brandEl.value = brandDisplay.value;
+
+            // Sync warna
+            const warnaEl = e.target.querySelector('.warna_hidden');
+            const warnaDisplay = e.target.querySelector('.warna');
+            if (warnaEl && warnaDisplay) warnaEl.value = warnaDisplay.value;
+
+            // Sync grade
+            const gradeEl = e.target.querySelector('.grade_hidden');
+            const gradeDisplay = e.target.querySelector('.grade');
+            if (gradeEl && gradeDisplay) gradeEl.value = gradeDisplay.value;
+
             // Sync packing
             const packingEl = e.target.querySelector('.packing_hidden');
             const packingDisplay = e.target.querySelector('.packing');
@@ -1724,4 +2053,6 @@
             console.log('All hidden fields synced before submission');
         }
     });
+
+
 </script>

@@ -110,7 +110,17 @@
     }
 
     if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+        // Request notification permission setelah user interact (misal: klik pertama kali)
+        // Untuk menghindari error: "may only be requested from inside a short running user-generated event handler"
+        document.addEventListener('click', function requestNotificationOnce() {
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(function(permission) {
+                    console.log('Notification permission:', permission);
+                });
+            }
+            // Hapus listener setelah pertama kali dijalankan
+            document.removeEventListener('click', requestNotificationOnce);
+        }, { once: true });
     }
     pollUnread();
     pollNotifUnread();

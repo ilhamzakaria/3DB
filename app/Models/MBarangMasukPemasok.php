@@ -13,7 +13,7 @@ class MBarangMasukPemasok extends Model
     protected $returnType = 'array';
     protected $useSoftDeletes = true;
     protected $allowedFields = [
-        'nomor_spk',
+        'nomor_lot',
         'tanggal',
         'nama_pemasok',
         'kode_barang',
@@ -48,15 +48,21 @@ class MBarangMasukPemasok extends Model
         return $this->like('nama_pemasok', $nama_pemasok)->findAll();
     }
 
+    public function getByNomorLot($nomor_lot)
+    {
+        return $this->where('nomor_lot', $nomor_lot)->first();
+    }
+
     public function getByNomorSpk($nomor_spk)
     {
-        return $this->where('nomor_spk', $nomor_spk)->first();
+        // Backward compatibility - redirect to new method
+        return $this->getByNomorLot($nomor_spk);
     }
 
     public function getByNoDokumen($no_dokumen)
     {
         // Backward compatibility - redirect to new method
-        return $this->getByNomorSpk($no_dokumen);
+        return $this->getByNomorLot($no_dokumen);
     }
 
     public function getWithFilter($filters = [])
@@ -78,7 +84,7 @@ class MBarangMasukPemasok extends Model
 
         if (!empty($filters['search'])) {
             $query = $query->groupStart()
-                ->like('nomor_spk', $filters['search'])
+                ->like('nomor_lot', $filters['search'])
                 ->orLike('nama_barang', $filters['search'])
                 ->orLike('nama_pemasok', $filters['search'])
                 ->groupEnd();

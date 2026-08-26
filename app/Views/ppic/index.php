@@ -34,20 +34,8 @@
         ?>
 
         <?= view('ppic/partials/mesin_menu_list', ['current_machine' => $current_machine ?? '']) ?>
-        
-        <?= view('ppic/partials/toolbar', [
-            'filter' => $filter,
-            'searchValue' => $searchValue,
-            'activeFilterCount' => $activeFilterCount,
-            'dateSummary' => $dateSummary
-        ]) ?>
 
-        <div class="card-body p-0">
-            <?= view('ppic/partials/table', [
-                'produksi' => $produksi,
-                'pager' => $pager
-            ]) ?>
-        </div>
+        
     </div>
 </div>
 
@@ -100,13 +88,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-            </div>
-            <div class="modal-footer border-0 p-3">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 10px;">Tutup</button>
             </div>
         </div>
     </div>

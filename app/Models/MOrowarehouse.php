@@ -25,6 +25,7 @@ class MOrowarehouse extends Model
         'packaging',
         'operator',
         'nomor_lot',
+        'nomor_mesin',
         'status',
         'catatan',
     ];

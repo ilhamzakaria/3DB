@@ -358,7 +358,7 @@ $isFinishGoodActive = in_array($currentMachine, $finishGoodSlugs, true);
     <!-- Header -->
     <div class="mesin-menu-header">
         <i class="fas fa-cog"></i>
-        <span>LOG MESIN</span>
+        <span>Selamat Datang di PPIC</span>
     </div>
 
     <!-- Mesin Grid -->

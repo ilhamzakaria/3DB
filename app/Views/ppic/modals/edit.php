@@ -92,6 +92,8 @@
                                 <option value="">-- Pilih Status --</option>
                                 <option value="Normal">Normal</option>
                                 <option value="Ganti Packing">Ganti Packing</option>
+                                <option value="Ganti Mould LN">Ganti Mould LN</option>
+                                <option value="Ganti Mould SN">Ganti Mould SN</option>
                             </select>
                         </div>
 

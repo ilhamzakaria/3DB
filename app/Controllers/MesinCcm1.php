@@ -4,12 +4,14 @@ namespace App\Controllers;
 
 use App\Controllers\Traits\MesinModuleTrait;
 use App\Controllers\Traits\MesinBrandManagementTrait;
+use App\Controllers\Traits\MesinKomposisiManagementTrait;
 use App\Models\MMesinCcm1;
 use App\Models\MPpicMesinCcm1;
+use App\Models\MMesinKomposisi;
 
 class MesinCcm1 extends BaseController
 {
-    use MesinModuleTrait, MesinBrandManagementTrait;
+    use MesinModuleTrait, MesinBrandManagementTrait, MesinKomposisiManagementTrait;
 
     private const VIEW_PATH = 'gudang/mesinccm1';
 
@@ -48,13 +50,14 @@ class MesinCcm1 extends BaseController
         }
         
         return view(self::VIEW_PATH, array_merge([
-            'title'           => 'Mesin CCM 1',
-            'data_list'       => $data_list,
-            'pager'           => $this->activeMesin()->pager,
-            'q'               => $q,
-            'start_date'      => $startDate,
-            'end_date'        => $endDate,
-            'current_machine' => $this->mesinSlug(),
+            'title'              => 'Mesin CCM 1',
+            'data_list'          => $data_list,
+            'pager'              => $this->activeMesin()->pager,
+            'q'                  => $q,
+            'start_date'         => $startDate,
+            'end_date'           => $endDate,
+            'current_machine'    => $this->mesinSlug(),
+            'ccm1_komposisi'     => (new MMesinKomposisi())->getAllByModule('ccm1'),
         ], $this->mesinViewContext()));
     }
 

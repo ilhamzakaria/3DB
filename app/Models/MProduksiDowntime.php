@@ -12,7 +12,7 @@ class MProduksiDowntime extends BaseProduksiModel
     protected $returnType       = 'array';
     protected $useSoftDeletes   = true;
     protected $allowedFields    = [
-        'produksi_header_id', 'alasan_downtime', 
+        'produksi_header_id', 'alasan_downtime', 'problem', 'action_plant',
         'waktu_mulai', 'waktu_selesai', 'durasi_menit'
     ];
 

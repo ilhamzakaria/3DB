@@ -4,12 +4,14 @@ namespace App\Controllers;
 
 use App\Controllers\Traits\MesinModuleTrait;
 use App\Controllers\Traits\MesinBrandManagementTrait;
+use App\Controllers\Traits\MesinKomposisiManagementTrait;
 use App\Models\MMesinPowerjet1;
 use App\Models\MPpicMesinPowerjet1;
+use App\Models\MMesinKomposisi;
 
 class MesinPowerjet1 extends BaseController
 {
-    use MesinModuleTrait, MesinBrandManagementTrait;
+    use MesinModuleTrait, MesinBrandManagementTrait, MesinKomposisiManagementTrait;
 
     private const VIEW_PATH = 'gudang/mesinpowerjet1';
 
@@ -49,13 +51,14 @@ class MesinPowerjet1 extends BaseController
         
         $slug = $this->mesinSlug();
         return view(self::VIEW_PATH, array_merge([
-            'title'           => 'Mesin Powerjet 1',
-            'data_list'       => $data_list,
-            'pager'           => $this->activeMesin()->pager,
-            'q'               => $q,
-            'start_date'      => $startDate,
-            'end_date'        => $endDate,
-            'current_machine' => $slug,
+            'title'                => 'Mesin Powerjet 1',
+            'data_list'            => $data_list,
+            'pager'                => $this->activeMesin()->pager,
+            'q'                    => $q,
+            'start_date'           => $startDate,
+            'end_date'             => $endDate,
+            'current_machine'      => $slug,
+            'powerjet1_komposisi'  => (new MMesinKomposisi())->getAllByModule('powerjet1'),
         ], $this->mesinViewContext()));
     }
 

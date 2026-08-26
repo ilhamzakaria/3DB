@@ -4,12 +4,14 @@ namespace App\Controllers;
 
 use App\Controllers\Traits\MesinModuleTrait;
 use App\Controllers\Traits\MesinBrandManagementTrait;
+use App\Controllers\Traits\MesinKomposisiManagementTrait;
 use App\Models\MMesinIps4;
 use App\Models\MPpicMesinIps4;
+use App\Models\MMesinKomposisi;
 
 class MesinIps4 extends BaseController
 {
-    use MesinModuleTrait, MesinBrandManagementTrait;
+    use MesinModuleTrait, MesinBrandManagementTrait, MesinKomposisiManagementTrait;
 
     private const VIEW_PATH = 'gudang/mesinips4';
 
@@ -48,13 +50,14 @@ class MesinIps4 extends BaseController
         }
         
         return view(self::VIEW_PATH, array_merge([
-            'title'           => 'Mesin IPS 4',
-            'data_list'       => $data_list,
-            'pager'           => $this->activeMesin()->pager,
-            'q'               => $q,
-            'start_date'      => $startDate,
-            'end_date'        => $endDate,
-            'current_machine' => $this->mesinSlug(),
+            'title'              => 'Mesin IPS 4',
+            'data_list'          => $data_list,
+            'pager'              => $this->activeMesin()->pager,
+            'q'                  => $q,
+            'start_date'         => $startDate,
+            'end_date'           => $endDate,
+            'current_machine'    => $this->mesinSlug(),
+            'ips4_komposisi'     => (new MMesinKomposisi())->getAllByModule('ips4'),
         ], $this->mesinViewContext()));
     }
 

@@ -747,14 +747,61 @@ class Ppic extends BaseController
 
     public function exportExcel()
     {
-        $data = $this->MPpic->findAll();
+            // Get query filters from request
+        $q = trim((string) $this->request->getGet('q'));
+        $startDate = $this->request->getGet('start_date');
+        $endDate = $this->request->getGet('end_date');
+        $filter = $this->request->getGet('filter');
+
+        $builder = $this->MPpic;
+
+        // Apply filters
+        if ($filter === 'day') {
+            $builder->where('ppic.tanggal', date('Y-m-d'));
+        } elseif ($filter === 'week') {
+            $builder->where('ppic.tanggal >=', date('Y-m-d', strtotime('-7 days')));
+        } elseif ($filter === 'month') {
+            $builder->where('ppic.tanggal >=', date('Y-m-d', strtotime('-30 days')));
+        }
+
+        if (!empty($startDate) && !empty($endDate)) {
+            if ($endDate < $startDate) {
+                [$startDate, $endDate] = [$endDate, $startDate];
+            }
+            $builder->where('ppic.tanggal >=', $startDate);
+            $builder->where('ppic.tanggal <=', $endDate);
+        }
+
+        if ($q !== '') {
+            $builder->groupStart()
+                ->like('ppic.no_spk', $q)
+                ->orLike('ppic.nama_mesin', $q)
+                ->orLike('ppic.nama_produk', $q)
+                ->orLike('ppic.grade', $q)
+                ->orLike('ppic.warna', $q)
+                ->orLike('ppic.nomor_mesin', $q)
+                ->orLike('ppic.operator', $q)
+                ->orLike('ppic.shif', $q)
+                ->groupEnd();
+        }
+
+        $data = $builder
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('shif', 'DESC')
+            ->orderBy('jam', 'DESC')
+            ->orderBy('id', 'ASC')
+            ->findAll();
+
+        // Enrich data with production summary and revisi
+        $data = $this->attachProduksiSummary($data);
+        $data = $this->attachRevisiData($data);
 
         if (ob_get_length()) {
             ob_end_clean();
         }
 
         header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-        header("Content-Disposition: attachment; filename=data_produksi_ppic.xls");
+        header("Content-Disposition: attachment; filename=data_produksi_ppic_" . date('Y-m-d-His') . ".xls");
         header("Pragma: no-cache");
         header("Expires: 0");
 
@@ -767,23 +814,32 @@ class Ppic extends BaseController
                 <th>Grade</th>
                 <th>Warna</th>
                 <th>Nomor Mesin</th>
-                <th>Shift</th>
-                <th>Target</th>
                 <th>Operator</th>
+                <th>Shift</th>
+                <th>Jam</th>
+                <th>Target</th>
+                <th>Hasil Produksi</th>
+                <th>Revisi</th>
             </tr>";
 
         foreach ($data as $d) {
+            $hasil = (int) ($d['hasil_produksi'] ?? 0);
+            $revisiDisplay = !empty($d['revisi_display']) ? trim($d['revisi_display']) : (trim((string) ($d['revisi'] ?? '')) ?: '-');
+            
             echo "<tr>
-                    <td>" . esc($d['no_spk']) . "</td>
-                    <td>" . esc($d['tanggal']) . "</td>
-                    <td>" . esc($d['nama_mesin']) . "</td>
-                    <td>" . esc($d['nama_produk']) . "</td>
-                    <td>" . esc($d['grade']) . "</td>
-                    <td>" . esc($d['warna']) . "</td>
-                    <td>" . esc($d['nomor_mesin']) . "</td>
-                    <td>" . esc($d['shif']) . "</td>
-                    <td>" . esc($d['targett']) . "</td>
-                    <td>" . esc($d['operator']) . "</td>
+                    <td>" . esc($d['no_spk'] ?? '-') . "</td>
+                    <td>" . esc($d['tanggal'] ?? '-') . "</td>
+                    <td>" . esc($d['nama_mesin'] ?? '-') . "</td>
+                    <td>" . esc($d['nama_produk'] ?? '-') . "</td>
+                    <td>" . esc($d['grade'] ?? '-') . "</td>
+                    <td>" . esc($d['warna'] ?? '-') . "</td>
+                    <td>" . esc($d['nomor_mesin'] ?? '-') . "</td>
+                    <td>" . esc($d['operator'] ?? '-') . "</td>
+                    <td>" . esc($d['shif'] ?? '-') . "</td>
+                    <td>" . esc($d['jam'] ?? '-') . "</td>
+                    <td>" . esc($d['targett'] ?? '-') . "</td>
+                    <td>" . ($hasil > 0 ? number_format($hasil) : '-') . "</td>
+                    <td>" . esc($revisiDisplay) . "</td>
                 </tr>";
         }
 

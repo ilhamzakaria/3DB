@@ -10,6 +10,7 @@ use App\Models\MProduksiMaterial;
 use App\Models\MProduksiColorant;
 use App\Models\MProduksiPackaging;
 use App\Models\MProduksiDowntime;
+use App\Models\MRejectType;
 
 class Produksi extends BaseController
 {
@@ -21,6 +22,7 @@ class Produksi extends BaseController
     protected $colorantModel;
     protected $packagingModel;
     protected $downtimeModel;
+    protected $rejectTypeModel;
 
     public function __construct()
     {
@@ -32,6 +34,7 @@ class Produksi extends BaseController
         $this->colorantModel = new MProduksiColorant();
         $this->packagingModel = new MProduksiPackaging();
         $this->downtimeModel = new MProduksiDowntime();
+        $this->rejectTypeModel = new MRejectType();
         helper(['form', 'url']);
     }
 
@@ -68,11 +71,12 @@ class Produksi extends BaseController
             return $spkList; // unknown slug → return all (safe fallback)
         }
 
-        $label = strtolower($labels[$mesinSlug]); // e.g. "becum", "ips 1"
+        $label = strtolower(trim($labels[$mesinSlug])); // e.g. "becum", "ccm 2"
 
         return array_values(array_filter($spkList, static function (array $spk) use ($label): bool {
             $mesinInSpk = strtolower(trim((string) ($spk['nama_mesin'] ?? '')));
-            return $mesinInSpk === $label;
+            // Exact match or case-insensitive match
+            return $mesinInSpk === $label || strtolower($mesinInSpk) === strtolower($label);
         }));
     }
 
@@ -133,6 +137,7 @@ class Produksi extends BaseController
             'pager'              => $this->headerModel->pager,
             // SPK list filtered to this mesin only — only Becum SPKs show on the Becum page, etc.
             'spk_list'           => $this->filterSpkListByMesin($this->getSpkList(), $mesinSlug),
+            'reject_types'       => $this->rejectTypeModel->getActive(),
             'context_mesin_slug' => $mesinSlug,   // tells the add modal to pre-set the mesin field
             'q'                  => $q,
             'filter_shift'       => $shift,
@@ -199,6 +204,7 @@ class Produksi extends BaseController
             'produksi'       => $query->orderBy('tanggal', 'DESC')->orderBy('shift', 'DESC')->orderBy('id', 'DESC')->paginate(15, 'produksi'),
             'pager'          => $this->headerModel->pager,
             'spk_list'       => $this->getSpkList(),
+            'reject_types'   => $this->rejectTypeModel->getActive(),
             'q'              => $q,
             'filter_shift'   => $shift,
             'filter_tanggal' => $tanggal,
@@ -221,6 +227,7 @@ class Produksi extends BaseController
         $data['colorants'] = $this->colorantModel->where('produksi_header_id', $id)->findAll();
         $data['packaging'] = $this->packagingModel->where('produksi_header_id', $id)->first();
         $data['downtimes'] = $this->downtimeModel->where('produksi_header_id', $id)->findAll();
+        $data['reject_types'] = $this->rejectTypeModel->getActive();
 
         // Filter SPK list to only the mesin matching this record
         $mesinLabel = strtolower(trim((string)($data['header']['nama_mesin'] ?? '')));
@@ -255,12 +262,15 @@ class Produksi extends BaseController
             return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk menambah data.');
         }
 
-        $db = $this->dbProduksi();
-        $db->transStart();
+        try {
+            $db = $this->dbProduksi();
+            $db->transStart();
 
         // 1. Save Header
         $shiftValue = trim($this->request->getPost('shift') ?: $this->request->getPost('shift_hidden'));
         $tercapaiValue = (int)($this->request->getPost('tercapai') ?: '0');
+        $gumpalanValue = $this->request->getPost('gumpalan') ?: '0';
+        
         $headerData = [
             'nomor_spk'     => $this->request->getPost('nomor_spk'),
             'nama_mesin'    => $this->request->getPost('nama_mesin'),
@@ -272,13 +282,14 @@ class Produksi extends BaseController
             'packing'       => $this->request->getPost('packing'),
             'cycle_time'    => $this->request->getPost('cycle_time'),
             'target'        => $this->request->getPost('target'),
+            'total_spk'     => $this->request->getPost('total_spk') ?: 0,
             'isi'           => $this->request->getPost('isi'),
             'tanggal'       => $this->request->getPost('tanggal'),
             'operator'      => $this->request->getPost('operator'),
             'catatan'       => $this->request->getPost('catatan'),
             'sisa_po'       => $this->request->getPost('sisa_po') ?: 0,
             'hold'          => $this->request->getPost('hold') ?: 0,
-            'gumpalan'      => $this->request->getPost('gumpalan') ?: 0,
+            'gumpalan'      => $gumpalanValue,
             'tercapai'      => $tercapaiValue,
             'grand_total_bagus'  => $this->request->getPost('grand_total_bagus') ?: 0,
             'grand_total_reject' => $this->request->getPost('grand_total_reject') ?: 0,
@@ -299,12 +310,30 @@ class Produksi extends BaseController
             $errors = $this->headerModel->errors();
             $dbError = $this->headerModel->db->error();
             $errorMsg = 'Gagal menyimpan header produksi.';
+            $errorDetails = [];
+            
             if (!empty($dbError['message'])) {
-                $errorMsg .= ' DB: ' . $dbError['message'];
-            } elseif (!empty($errors)) {
-                $errorMsg .= ' ' . implode(', ', $errors);
+                $errorMsg .= ' DB Error: ' . $dbError['message'];
+                $errorMsg .= ' (Code: ' . ($dbError['code'] ?? 'unknown') . ')';
+                $errorDetails[] = 'DB Error: ' . $dbError['message'];
+            } 
+            
+            if (!empty($errors)) {
+                $validationErrors = is_array($errors) ? implode(', ', $errors) : (string)$errors;
+                $errorMsg .= ' Validation: ' . $validationErrors;
+                $errorDetails = $errors;
             }
-            log_message('error', 'Produksi::simpan - insert header gagal: ' . $errorMsg . ' | Data: ' . json_encode($headerData));
+            
+            // Log dengan detail lengkap untuk debugging
+            log_message('error', '=== Produksi::simpan - INSERT HEADER FAILED ===');
+            log_message('error', 'Error Message: ' . $errorMsg);
+            log_message('error', 'DB Error Details: ' . json_encode($dbError));
+            log_message('error', 'Validation Errors: ' . json_encode($errors));
+            log_message('error', 'Header Data Sent: ' . json_encode($headerData));
+            log_message('error', 'POST Data: ' . json_encode($this->request->getPost()));
+            log_message('error', '=== END ERROR LOG ===');
+            
+            // Tampilkan error yang lebih informatif ke user
             return redirect()->back()->withInput()->with('error', $errorMsg);
         }
 
@@ -382,9 +411,13 @@ class Produksi extends BaseController
             'box'                   => $this->request->getPost('box'),
             'box_ukuran'            => $this->request->getPost('box_ukuran'),
             'plastik'               => $this->request->getPost('plastik'),
+            'plastik_bagus'         => $this->request->getPost('plastik_bagus'),
+            'plastik_reject'        => $this->request->getPost('plastik_reject'),
             'plastik_ukuran'        => $this->request->getPost('plastik_ukuran'),
             'karung'                => $this->request->getPost('karung'),
             'karung_ukuran'         => $this->request->getPost('karung_ukuran'),
+            'nicktainer'            => $this->request->getPost('nicktainer'),
+            'nicktainer_ukuran'     => $this->request->getPost('nicktainer_ukuran'),
             'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
         ]);
 
@@ -396,6 +429,8 @@ class Produksi extends BaseController
                 $this->downtimeModel->insert([
                     'produksi_header_id' => $headerId,
                     'alasan_downtime'    => $dt['alasan'],
+                    'problem'            => $dt['problem'] ?? null,
+                    'action_plant'       => $dt['action_plant'] ?? null,
                     'waktu_mulai'        => $dt['mulai'],
                     'waktu_selesai'      => $dt['selesai'],
                     'durasi_menit'       => $dt['durasi'],
@@ -412,10 +447,20 @@ class Produksi extends BaseController
         $db->transComplete();
 
         if ($db->transStatus() === false) {
-            return redirect()->back()->with('error', 'Gagal menyimpan data produksi.');
+            log_message('error', 'Produksi::simpan - Transaction failed');
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data produksi. Transaction rollback.');
         }
 
         return redirect()->to('/produksi')->with('success', 'Data produksi berhasil disimpan.');
+        
+        } catch (\Throwable $e) {
+            // Tangkap semua error termasuk fatal error
+            log_message('error', 'Produksi::simpan - Exception caught: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            
+            return redirect()->back()->withInput()->with('error', 
+                'Error: ' . $e->getMessage() . ' | Mohon hubungi admin jika masalah berlanjut.');
+        }
     }
 
 
@@ -431,6 +476,8 @@ class Produksi extends BaseController
         // 1. Update Header
         $shiftValue = trim($this->request->getPost('shift') ?: $this->request->getPost('shift_hidden'));
         $tercapaiValue = (int)($this->request->getPost('tercapai') ?: '0');
+        $gumpalanValue = $this->request->getPost('gumpalan') ?: '0';
+        
         $headerData = [
             'nomor_spk'     => $this->request->getPost('nomor_spk'),
             'nama_mesin'    => $this->request->getPost('nama_mesin'),
@@ -442,13 +489,14 @@ class Produksi extends BaseController
             'packing'       => $this->request->getPost('packing'),
             'cycle_time'    => $this->request->getPost('cycle_time'),
             'target'        => $this->request->getPost('target'),
+            'total_spk'     => $this->request->getPost('total_spk') ?: 0,
             'isi'           => $this->request->getPost('isi'),
             'tanggal'       => $this->request->getPost('tanggal'),
             'operator'      => $this->request->getPost('operator'),
             'catatan'       => $this->request->getPost('catatan'),
             'sisa_po'       => $this->request->getPost('sisa_po') ?: 0,
             'hold'          => $this->request->getPost('hold') ?: 0,
-            'gumpalan'      => $this->request->getPost('gumpalan') ?: 0,
+            'gumpalan'      => $gumpalanValue,
             'tercapai'      => $tercapaiValue,
             'grand_total_bagus'  => $this->request->getPost('grand_total_bagus') ?: 0,
             'grand_total_reject' => $this->request->getPost('grand_total_reject') ?: 0,
@@ -549,9 +597,13 @@ class Produksi extends BaseController
             'box'                   => $this->request->getPost('box'),
             'box_ukuran'            => $this->request->getPost('box_ukuran'),
             'plastik'               => $this->request->getPost('plastik'),
+            'plastik_bagus'         => $this->request->getPost('plastik_bagus'),
+            'plastik_reject'        => $this->request->getPost('plastik_reject'),
             'plastik_ukuran'        => $this->request->getPost('plastik_ukuran'),
             'karung'                => $this->request->getPost('karung'),
             'karung_ukuran'         => $this->request->getPost('karung_ukuran'),
+            'nicktainer'            => $this->request->getPost('nicktainer'),
+            'nicktainer_ukuran'     => $this->request->getPost('nicktainer_ukuran'),
             'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
         ]);
 
@@ -564,6 +616,8 @@ class Produksi extends BaseController
                 $this->downtimeModel->insert([
                     'produksi_header_id' => $id,
                     'alasan_downtime'    => $dt['alasan'],
+                    'problem'            => $dt['problem'] ?? null,
+                    'action_plant'       => $dt['action_plant'] ?? null,
                     'waktu_mulai'        => $dt['mulai'],
                     'waktu_selesai'      => $dt['selesai'],
                     'durasi_menit'       => $dt['durasi'],
@@ -675,6 +729,19 @@ class Produksi extends BaseController
         return $this->response->setJSON($result);
     }
 
+    /**
+     * Strip formatting dari nilai numerik yang disimpan sebagai teks.
+     * Contoh: "5.000 pcs" → "5000", "1,500" → "1500", "2000" → "2000"
+     */
+    private function cleanNumericValue($value): string
+    {
+        $str = trim((string) $value);
+        if ($str === '') return '';
+        // Hapus titik ribuan, koma, spasi, dan semua huruf/simbol
+        $clean = preg_replace('/[^0-9]/', '', str_replace(['.', ','], '', $str));
+        return $clean !== '' ? $clean : '';
+    }
+
     private function getSpkList()
     {
         $spkList = [];
@@ -762,6 +829,7 @@ class Produksi extends BaseController
                                     'tanggal' => $mesin['tanggal'] ?? '',
                                     'nama_mesin' => $mesinName,
                                     'nama_produk' => $produkName,
+                                    'brand' => $mesin['brand'] ?? '',
                                     'grade' => $mesin['grade'] ?? '',
                                     'warna' => $mesin['warna'] ?? '',
                                     'nomor_mesin' => $mesin['nomor_mesin'] ?? '',
@@ -769,6 +837,7 @@ class Produksi extends BaseController
                                     'operator' => $mesin['operator'] ?? '',
                                     'targett' => $target,
                                     'packing' => $packingValue,
+                                    'total_spk' => $this->cleanNumericValue($mesin['total_spk'] ?? ''),
                                     'target_int' => (int)$target,
                                     'total_production' => $totalProduction,
                                     'selesai_spk' => (int)($mesin['selesai_spk'] ?? 0),
@@ -793,7 +862,7 @@ class Produksi extends BaseController
         try {
             $produksiSpks = $this->headerModel
                 ->asArray()
-                ->select('nomor_spk, nama_mesin, nama_produk, grade, warna, nomor_mesin, operator, packing, shift as shif, COALESCE(target, 0) as targett, MAX(tanggal) as tanggal, MAX(selesai_spk) as selesai_spk')
+                ->select('nomor_spk, nama_mesin, nama_produk, grade, warna, nomor_mesin, operator, packing, shift as shif, COALESCE(target, 0) as targett, total_spk, MAX(tanggal) as tanggal, MAX(selesai_spk) as selesai_spk')
                 ->where('nomor_spk !=', null)
                 ->where('nomor_spk !=', '')
                 ->groupBy('nomor_spk')
@@ -824,6 +893,7 @@ class Produksi extends BaseController
                                 'tanggal' => $prod['tanggal'] ?? '',
                                 'nama_mesin' => $prod['nama_mesin'] ?? '',
                                 'nama_produk' => $prod['nama_produk'] ?? '',
+                                'brand' => $prod['brand'] ?? '',
                                 'grade' => $prod['grade'] ?? '',
                                 'warna' => $prod['warna'] ?? '',
                                 'nomor_mesin' => $prod['nomor_mesin'] ?? '',
@@ -831,6 +901,7 @@ class Produksi extends BaseController
                                 'operator' => $prod['operator'] ?? '',
                                 'targett' => $prod['targett'] ?? '',
                                 'packing' => $prod['packing'] ?? '',
+                                'total_spk' => $this->cleanNumericValue($prod['total_spk'] ?? ''),
                                 'target_int' => $targetValue,
                                 'total_production' => $totalProduction,
                                 'selesai_spk' => (int)($prod['selesai_spk'] ?? 0),
@@ -1065,11 +1136,127 @@ class Produksi extends BaseController
     /**
      * Debug endpoint to check SPK list
      */
+    /**
+     * AUTO-TEST endpoint - Test autofill step by step
+     * GET /produksi/test_total_spk_autofill
+     */
+    public function test_total_spk_autofill()
+    {
+        $results = [
+            'timestamp' => date('Y-m-d H:i:s'),
+            'step1_database' => [],
+            'step2_getspklist' => [],
+            'step3_ajax_endpoint' => [],
+            'step4_javascript' => []
+        ];
+        
+        // STEP 1: Check PPIC mesin_becum table
+        try {
+            $db = db_connect('ppic');
+            $mesinData = $db->table('ppic_mesin_becum')
+                ->select('no_spk, total_spk, nama_mesin')
+                ->where('no_spk IS NOT NULL')
+                ->limit(5)
+                ->get()
+                ->getResultArray();
+            
+            $results['step1_database'] = [
+                'status' => 'OK',
+                'table' => 'ppic_mesin_becum',
+                'count' => count($mesinData),
+                'has_total_spk_column' => isset($mesinData[0]['total_spk']) ? 'YES' : 'NO',
+                'samples' => $mesinData
+            ];
+        } catch (\Exception $e) {
+            $results['step1_database'] = ['status' => 'ERROR', 'message' => $e->getMessage()];
+        }
+        
+        // STEP 2: Check getSpkList() returns total_spk
+        try {
+            $spkList = $this->getSpkList();
+            $spkWithTotalSpk = array_filter($spkList, fn($s) => !empty($s['total_spk']));
+            
+            $results['step2_getspklist'] = [
+                'status' => 'OK',
+                'total_spks' => count($spkList),
+                'with_total_spk_value' => count($spkWithTotalSpk),
+                'percentage' => count($spkList) > 0 ? round((count($spkWithTotalSpk) / count($spkList)) * 100, 2) . '%' : 'N/A',
+                'sample_with_value' => array_slice(array_values($spkWithTotalSpk), 0, 2),
+                'sample_without_value' => array_slice(array_values(array_filter($spkList, fn($s) => empty($s['total_spk']))), 0, 2)
+            ];
+        } catch (\Exception $e) {
+            $results['step2_getspklist'] = ['status' => 'ERROR', 'message' => $e->getMessage()];
+        }
+        
+        // STEP 3: Test getPpicSpkDetail() AJAX endpoint
+        try {
+            // Get first SPK from list
+            if (!empty($spkList)) {
+                $testSpk = $spkList[0]['no_spk'];
+                
+                // Simulate AJAX call
+                $ppicDetail = null;
+                $selesaiStatus = 0;
+                $mesinModels = [
+                    'App\\Models\\MPpicMesinBecum',
+                    'App\\Models\\MPpicMesinPowerjet1',
+                    'App\\Models\\MPpicMesinPowerjet2',
+                    'App\\Models\\MPpicMesinCcm1',
+                    'App\\Models\\MPpicMesinCcm2',
+                    'App\\Models\\MPpicMesinIps1',
+                    'App\\Models\\MPpicMesinIps2',
+                    'App\\Models\\MPpicMesinIps3',
+                    'App\\Models\\MPpicMesinIps4',
+                ];
+                
+                foreach ($mesinModels as $modelClass) {
+                    if (!class_exists($modelClass)) continue;
+                    $model = new $modelClass();
+                    $row = $model->where('no_spk', $testSpk)->first();
+                    if ($row) {
+                        $ppicDetail = [
+                            'no_spk' => $row['no_spk'] ?? $testSpk,
+                            'total_spk' => $row['total_spk'] ?? '',
+                            'nama_mesin' => $row['nama_mesin'] ?? '',
+                        ];
+                        break;
+                    }
+                }
+                
+                $results['step3_ajax_endpoint'] = [
+                    'status' => $ppicDetail ? 'OK' : 'NO_DATA',
+                    'test_spk' => $testSpk,
+                    'ppic_detail' => $ppicDetail,
+                    'has_total_spk' => $ppicDetail && !empty($ppicDetail['total_spk']) ? 'YES' : 'NO'
+                ];
+            } else {
+                $results['step3_ajax_endpoint'] = ['status' => 'SKIP', 'reason' => 'No SPKs in list'];
+            }
+        } catch (\Exception $e) {
+            $results['step3_ajax_endpoint'] = ['status' => 'ERROR', 'message' => $e->getMessage()];
+        }
+        
+        // STEP 4: JavaScript info (from server perspective)
+        $results['step4_javascript'] = [
+            'status' => 'MANUAL_CHECK',
+            'instruction' => 'Open browser console and paste: ' .
+                'console.log(document.querySelector(".total_spk")?.value, document.querySelector(".total_spk_hidden")?.value)',
+            'notes' => 'Check if values sync before form submit'
+        ];
+        
+        return $this->response->setJSON($results);
+    }
+
+    /**
+     * DEBUG endpoint - Analyze SPK list and total_spk data
+     * GET /produksi/debug_spk_list
+     */
     public function debug_spk_list()
     {
         $debugInfo = [
             'ppic_table_count' => 0,
-            'mesin_tables' => []
+            'mesin_tables' => [],
+            'total_spk_analysis' => []
         ];
 
         // Check main ppic table
@@ -1100,9 +1287,21 @@ class Produksi extends BaseController
                 if (class_exists($fullyQualifiedModelName)) {
                     $model = new $fullyQualifiedModelName();
                     $count = $model->countAll();
+                    $sample = $model->limit(1)->findAll();
+                    
+                    // Check if sample has total_spk and its value
+                    $totalSpkInfo = 'N/A';
+                    if (!empty($sample)) {
+                        $first = $sample[0];
+                        $totalSpkInfo = isset($first['total_spk']) 
+                            ? ('value: ' . $first['total_spk']) 
+                            : 'column exists but NULL or empty';
+                    }
+                    
                     $debugInfo['mesin_tables'][$modelName] = [
                         'count' => $count,
-                        'sample' => $model->limit(1)->findAll()
+                        'total_spk_status' => $totalSpkInfo,
+                        'sample' => $sample
                     ];
                 }
             } catch (\Exception $e) {
@@ -1113,6 +1312,26 @@ class Produksi extends BaseController
         // Get final SPK list
         $spkList = $this->getSpkList();
         $debugInfo['final_spk_list_count'] = count($spkList);
+        
+        // Analyze total_spk in final list
+        $totalSpkHasValue = 0;
+        $totalSpkEmpty = 0;
+        if (!empty($spkList)) {
+            foreach ($spkList as $spk) {
+                if (!empty($spk['total_spk'])) {
+                    $totalSpkHasValue++;
+                } else {
+                    $totalSpkEmpty++;
+                }
+            }
+        }
+        
+        $debugInfo['total_spk_analysis'] = [
+            'with_value' => $totalSpkHasValue,
+            'empty' => $totalSpkEmpty,
+            'percentage_filled' => $spkList ? round(($totalSpkHasValue / count($spkList)) * 100, 2) . '%' : 'N/A'
+        ];
+        
         $debugInfo['final_spk_list_sample'] = array_slice($spkList, 0, 3);
 
         return $this->response->setJSON($debugInfo);
@@ -1250,6 +1469,7 @@ class Produksi extends BaseController
                         'packing'     => $row['packing']     ?? '',
                         'grade'       => $row['grade']       ?? '',
                         'warna'       => $row['warna']       ?? '',
+                        'total_spk'   => $this->cleanNumericValue($row['total_spk'] ?? ''),
                         'selesai_spk' => (int) ($row['selesai_spk'] ?? 0),
                     ];
                     $selesaiStatus = $ppicDetail['selesai_spk'];

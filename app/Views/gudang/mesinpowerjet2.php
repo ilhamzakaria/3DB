@@ -79,7 +79,7 @@ $formatDate = static function ($value): string {
                 <a href="<?= base_url(($export_url ?? 'export/mesin_powerjet2')) . ((!empty($q) || !empty($start_date) || !empty($end_date)) ? '?' . http_build_query(array_filter(['q' => $q ?? '', 'start_date' => $start_date ?? '', 'end_date' => $end_date ?? ''])) : '') ?>" class="btn btn-outline-success btn-sm px-3 ml-2">
                     <i class="fas fa-file-excel mr-1"></i> Export Excel
                 </a>
-                <button class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#trashModalMesin" onclick="loadTrashMesin()">
+                <button class="btn btn-outline-secondary btn-sm ml-2" data-toggle="modal" data-target="#trashModalMesin" onclick="loadTrashMesin()">
                     <i class="fas fa-trash-restore"></i> Sampah
                 </button>
             </div>
@@ -242,7 +242,7 @@ $formatDate = static function ($value): string {
                                 <td><?= esc($item['realisasi_shift3'] ?? '-') ?></td>
                                 <?php endif; ?>
                                 <td><?= esc($item['berat'] ?? '-') ?></td>
-                                <td style="max-width:120px;white-space:normal;"><?= esc($item['revisi'] ?? '-') ?></td>
+                                <td class="text-left" style="min-width:250px;white-space:normal;"><?= esc($item['revisi'] ?? '-') ?></td>
                                 <td><?= esc($item['total_spk'] ?? '-') ?></td>
                                 <td><?= esc($item['packing'] ?? '-') ?></td>
                                 <td><?= esc($item['keterangan'] ?? '-') ?></td>
@@ -307,7 +307,7 @@ $formatDate = static function ($value): string {
           <div class="col-md-2"><div class="form-group"><label>Tanggal *</label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" required></div></div>
           <div class="col-md-2"><div class="form-group"><label>No. SPK</label><input type="number" class="form-control" name="no_spk"></div></div>
           <div class="col-md-2"><div class="form-group"><label>No Mesin</label><input type="text" class="form-control" name="nomor_mesin" placeholder="cth: I.01"></div></div>
-          <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option><option value="Ganti Packing">Ganti Packing</option></select></div></div>
+          <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="ganti mould ln">Ganti Mould LN</option><option value="ganti mould sn">Ganti Mould SN</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option><option value="ganti packing">GANTI PACKING</option><option value="Ganti Packing">Ganti Packing</option></select></div></div>
           <div class="col-md-2"><div class="form-group"><label>Jam Awal</label><input type="time" class="form-control" name="jam_awal"></div></div>
           <div class="col-md-2"><div class="form-group"><label>Jam Akhir</label><input type="time" class="form-control" name="jam_akhir"></div></div>
         </div>
@@ -339,8 +339,26 @@ $formatDate = static function ($value): string {
         <?php endif; ?>
         <hr class="my-2">
         <div class="row">
-          <div class="col-md-4"><div class="form-group"><label>Komposisi</label><textarea class="form-control" name="revisi" rows="2" placeholder="cth: LDPE:45%, HDPE:30%"></textarea></div></div>
-          <div class="col-md-4"><div class="form-group"><label>Total SPK</label><input type="text" class="form-control" name="total_spk" placeholder="pcs"></div></div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label>Komposisi</label>
+              <div class="input-group">
+                <select class="form-control" name="revisi" id="komposisi">
+                  <option value="">-- Pilih Komposisi --</option>
+                  <?php foreach (($powerjet2_komposisi ?? []) as $k) : ?>
+                    <option value="<?= esc($k) ?>"><?= esc($k) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <div class="input-group-append">
+                  <button type="button" class="btn btn-outline-primary btn-sm" id="btn_tambah_komposisi_add"
+                    onclick="openTambahKomposisiModal('komposisi')" title="Tambah komposisi baru">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3"><div class="form-group"><label>Total SPK</label><input type="text" class="form-control" name="total_spk" placeholder="pcs"></div></div>
           <div class="col-md-2"><div class="form-group"><label>Packing</label><input type="text" class="form-control" name="packing" placeholder="cth: 5-5"></div></div>
           <div class="col-md-2"><div class="form-group"><label>Keterangan</label><input type="text" class="form-control" name="keterangan"></div></div>
         </div>
@@ -353,13 +371,13 @@ $formatDate = static function ($value): string {
 <div class="modal fade" id="editDataModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-xl" role="document"><div class="modal-content">
     <div class="modal-header bg-warning"><h5 class="modal-title"><i class="fas fa-edit mr-2"></i>Edit Data Mesin Powerjet 2</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>
-    <form id="formEdit" method="post" action="<?= base_url(($is_ppic_context ?? false) ? 'ppic/mesin_powerjet2/update/' : 'gudang/mesin_powerjet2/update/') ?>"><?= csrf_field() ?><input type="hidden" name="id" id="edit_id">
+    <form id="formEdit" method="post"><?= csrf_field() ?><input type="hidden" name="id" id="edit_id">
       <div class="modal-body">
         <div class="row">
           <div class="col-md-2"><div class="form-group"><label>Tanggal *</label><input type="date" class="form-control" name="tanggal" id="edit_tanggal" required></div></div>
           <div class="col-md-2"><div class="form-group"><label>No. SPK</label><input type="number" class="form-control" name="no_spk" id="edit_spk"></div></div>
           <div class="col-md-2"><div class="form-group"><label>No Mesin</label><input type="text" class="form-control" name="nomor_mesin" id="edit_nomor_mesin"></div></div>
-          <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status" id="edit_status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option></select></div></div>
+          <div class="col-md-2"><div class="form-group"><label>Status</label><select class="form-control" name="status" id="edit_status"><option value="ganti bottom rata">Ganti Bottom Rata</option><option value="ganti bottom reguler">Ganti Bottom Reguler</option><option value="ganti grade">Ganti Grade</option><option value="ganti mould aguaria">Ganti Mould Aguaria</option><option value="ganti mould reguler">Ganti Mould Reguler</option><option value="ganti mould pristine">Ganti Mould Pristine</option><option value="ganti mould ln">Ganti Mould LN</option><option value="ganti mould sn">Ganti Mould SN</option><option value="bongkar as">BONGKAR AS</option><option value="ganti embos">GANTI EMBOS</option><option value="ganti warna">GANTI WARNA</option><option value="ganti packing">GANTI PACKING</option></select></div></div>
           <div class="col-md-2"><div class="form-group"><label>Jam Awal</label><input type="time" class="form-control" name="jam_awal" id="edit_jam_awal"></div></div>
           <div class="col-md-2"><div class="form-group"><label>Jam Akhir</label><input type="time" class="form-control" name="jam_akhir" id="edit_jam_akhir"></div></div>
         </div>
@@ -392,8 +410,26 @@ $formatDate = static function ($value): string {
         <?php endif; ?>
         <hr class="my-2">
         <div class="row">
-          <div class="col-md-4"><div class="form-group"><label>Komposisi</label><textarea class="form-control" name="revisi" id="edit_revisi" rows="2"></textarea></div></div>
-          <div class="col-md-4"><div class="form-group"><label>Total SPK</label><input type="text" class="form-control" name="total_spk" id="edit_total_spk"></div></div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label>Komposisi</label>
+              <div class="input-group">
+                <select class="form-control" name="revisi" id="edit_komposisi">
+                  <option value="">-- Pilih Komposisi --</option>
+                  <?php foreach (($powerjet2_komposisi ?? []) as $k) : ?>
+                    <option value="<?= esc($k) ?>"><?= esc($k) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <div class="input-group-append">
+                  <button type="button" class="btn btn-outline-primary btn-sm" id="btn_tambah_komposisi_edit"
+                    onclick="openTambahKomposisiModal('edit_komposisi')" title="Tambah komposisi baru">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3"><div class="form-group"><label>Total SPK</label><input type="text" class="form-control" name="total_spk" id="edit_total_spk"></div></div>
           <div class="col-md-2"><div class="form-group"><label>Packing</label><input type="text" class="form-control" name="packing" id="edit_packing"></div></div>
           <div class="col-md-2"><div class="form-group"><label>Keterangan</label><input type="text" class="form-control" name="keterangan" id="edit_keterangan"></div></div>
         </div>
@@ -462,7 +498,7 @@ $formatDate = static function ($value): string {
         setVal('edit_real1', data.getAttribute('data-realisasi_shift1') || '');
         setVal('edit_real2', data.getAttribute('data-realisasi_shift2') || '');
         setVal('edit_real3', data.getAttribute('data-realisasi_shift3') || '');
-        document.getElementById('edit_revisi').value = data.getAttribute('data-revisi') || '';
+        document.getElementById('edit_komposisi').value = data.getAttribute('data-revisi') || '';
         document.getElementById('edit_total_spk').value = data.getAttribute('data-total_spk') || '';
         document.getElementById('edit_packing').value = data.getAttribute('data-packing') || '';
         document.getElementById('edit_keterangan').value = data.getAttribute('data-keterangan') || '';
@@ -638,6 +674,120 @@ $formatDate = static function ($value): string {
         topBar.addEventListener('scroll', function () { if (syncing) return; syncing = true; tableWrap.scrollLeft = topBar.scrollLeft; syncing = false; });
         tableWrap.addEventListener('scroll', function () { if (syncing) return; syncing = true; topBar.scrollLeft = tableWrap.scrollLeft; syncing = false; });
         window.addEventListener('resize', syncWidth);
+    });
+
+    // ──────────────────────────────────────────────────────────
+    // KOMPOSISI management
+    // ──────────────────────────────────────────────────────────
+    const _komposisiApiBase = '<?= base_url(($is_ppic_context ?? false) ? 'ppic/mesin_powerjet2' : 'gudang/mesin_powerjet2') ?>';
+    let   _activeKomposisiSelectId = '';
+
+    // Daftar komposisi aktif di memory (di-seed dari PHP)
+    let _komposisiList = <?= json_encode($powerjet2_komposisi ?? [], JSON_UNESCAPED_UNICODE) ?>;
+
+    function openTambahKomposisiModal(selectId) {
+        _activeKomposisiSelectId = selectId;
+        document.getElementById('tk_komposisi_name').value = '';
+        document.getElementById('tk_feedback').textContent  = '';
+        document.getElementById('tk_feedback').className    = 'mt-1 small';
+        renderKomposisiList(_komposisiList);
+        $('#tambahKomposisiModal').modal('show');
+    }
+
+    function renderKomposisiList(list) {
+        const ul = document.getElementById('tk_komposisi_list');
+        ul.innerHTML = '';
+        if (!list || list.length === 0) {
+            ul.innerHTML = '<li class="list-group-item text-muted small">Belum ada komposisi.</li>';
+            return;
+        }
+        list.forEach(function(k) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-1 px-2 small';
+            li.innerHTML = '<span>' + escHtml(k) + '</span>';
+            ul.appendChild(li);
+        });
+    }
+
+    function submitTambahKomposisi() {
+        const nama    = document.getElementById('tk_komposisi_name').value.trim();
+        const feedback = document.getElementById('tk_feedback');
+        const btn      = document.getElementById('tk_submit_btn');
+
+        if (!nama) {
+            feedback.textContent = 'Nama komposisi tidak boleh kosong.';
+            feedback.className   = 'mt-1 small text-danger';
+            return;
+        }
+
+        btn.disabled  = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Menyimpan...';
+
+        const formData = new FormData();
+        formData.append('nama', nama);
+        formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+        fetch(_komposisiApiBase + '/store-komposisi', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    feedback.textContent = data.message;
+                    feedback.className   = 'mt-1 small text-success';
+                    document.getElementById('tk_komposisi_name').value = '';
+
+                    // Update memory list
+                    _komposisiList = data.komposisi;
+
+                    // Refresh dropdown yang aktif (tambah atau edit)
+                    refreshKomposisiSelect(_activeKomposisiSelectId, nama);
+
+                    // Refresh daftar di modal
+                    renderKomposisiList(_komposisiList);
+                } else {
+                    feedback.textContent = data.message;
+                    feedback.className   = 'mt-1 small text-danger';
+                }
+            })
+            .catch(() => {
+                feedback.textContent = 'Terjadi kesalahan. Coba lagi.';
+                feedback.className   = 'mt-1 small text-danger';
+            })
+            .finally(() => {
+                btn.disabled  = false;
+                btn.innerHTML = '<i class="fas fa-plus mr-1"></i>Tambah';
+            });
+    }
+
+    function refreshKomposisiSelect(selectId, selectedValue) {
+        const sel = document.getElementById(selectId);
+        if (!sel) return;
+
+        // Simpan nilai terpilih saat ini sebelum rebuild
+        const current = selectedValue || sel.value;
+
+        // Kosongkan opsi lama (kecuali placeholder)
+        while (sel.options.length > 1) sel.remove(1);
+
+        // Isi ulang dari _komposisiList
+        _komposisiList.forEach(function(k) {
+            const opt = document.createElement('option');
+            opt.value       = k;
+            opt.textContent = k;
+            if (k === current) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    // Allow pressing Enter in komposisi input
+    document.addEventListener('DOMContentLoaded', function () {
+        const inp = document.getElementById('tk_komposisi_name');
+        if (inp) inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); submitTambahKomposisi(); }
+        });
+
+        // Seed dropdown tambah & edit dari memory list saat halaman load
+        refreshKomposisiSelect('komposisi', '');
+        refreshKomposisiSelect('edit_komposisi', '');
     });</script>
 <?= view('shared/spk_produksi_autofill') ?>
 
@@ -703,6 +853,44 @@ $formatDate = static function ($value): string {
             </div>
         </div>
     </div>
+</div>
+
+<!-- Tambah Komposisi Modal -->
+<div class="modal fade" id="tambahKomposisiModal" tabindex="-1" role="dialog" style="z-index: 1070;">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white py-2">
+        <h6 class="modal-title font-weight-bold mb-0">
+          <i class="fas fa-flask mr-2"></i>Kelola Komposisi
+        </h6>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body pb-2">
+
+        <!-- Tambah baru -->
+        <div class="input-group input-group-sm mb-1">
+          <input type="text" id="tk_komposisi_name" class="form-control" placeholder="Contoh: V:70%, OR+:30%" maxlength="200" autocomplete="off">
+          <div class="input-group-append">
+            <button class="btn btn-success btn-sm" type="button" id="tk_submit_btn" onclick="submitTambahKomposisi()">
+              <i class="fas fa-plus mr-1"></i>Tambah
+            </button>
+          </div>
+        </div>
+        <div id="tk_feedback" class="mt-1 small"></div>
+
+        <hr class="my-2">
+
+        <!-- Daftar komposisi yang ada -->
+        <p class="small text-muted mb-1">Komposisi yang sudah ada:</p>
+        <ul id="tk_komposisi_list" class="list-group list-group-flush" style="max-height: 240px; overflow-y: auto; font-size: 0.82rem;">
+          <li class="list-group-item text-muted small">Memuat...</li>
+        </ul>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <?= $this->endSection() ?>

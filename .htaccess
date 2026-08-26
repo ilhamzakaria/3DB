@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect HTTP ke HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Arahkan semua request ke public/index.php (CodeIgniter)
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

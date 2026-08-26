@@ -6,6 +6,8 @@ use CodeIgniter\Database\Migration;
 
 class CreatePlantProduksiTables extends Migration
 {
+    protected $group = 'produksi';
+
     public function up()
     {
         // 1. produksi_headers

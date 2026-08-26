@@ -40,7 +40,7 @@
                 $currentDate = '';
                 $currentShift = '';
                 // Roles that may edit / delete records
-                $canWrite = in_array(session('role'), ['admin', 'manager', 'produksi', 'manager_warehouse2']);
+                $canWrite = in_array(session('role'), ['admin', 'manager', 'produksi']);
                 foreach ($produksi as $p): 
                     if ($currentDate != $p['tanggal']): 
                         $currentDate = $p['tanggal'];

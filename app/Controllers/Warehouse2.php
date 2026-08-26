@@ -76,12 +76,19 @@ class Warehouse2 extends BaseController
             }
 
             $data = $this->request->getJSON(true);
+            log_message('debug', '[storePemasok] Received data: ' . json_encode($data));
+
+            // Rename nomor_spk to nomor_lot if provided (for backward compatibility)
+            if (isset($data['nomor_spk']) && !isset($data['nomor_lot'])) {
+                $data['nomor_lot'] = $data['nomor_spk'];
+                unset($data['nomor_spk']);
+            }
 
             // Manual validation
             $errors = [];
 
-            if (empty($data['nomor_spk'])) {
-                $errors['nomor_spk'] = 'Nomor SPK is required';
+            if (empty($data['nomor_lot'])) {
+                $errors['nomor_lot'] = 'Nomor Lot is required';
             }
             if (empty($data['tanggal'])) {
                 $errors['tanggal'] = 'Tanggal is required';
@@ -102,11 +109,11 @@ class Warehouse2 extends BaseController
                 $errors['jumlah'] = 'Jumlah is required';
             }
 
-            // Check for duplicate nomor_spk
-            if (!empty($data['nomor_spk'])) {
-                $existing = $this->modelPemasok->where('nomor_spk', $data['nomor_spk'])->first();
+            // Check for duplicate nomor_lot
+            if (!empty($data['nomor_lot'])) {
+                $existing = $this->modelPemasok->where('nomor_lot', $data['nomor_lot'])->first();
                 if ($existing) {
-                    $errors['nomor_spk'] = 'Nomor SPK sudah terdaftar';
+                    $errors['nomor_lot'] = 'Nomor Lot sudah terdaftar';
                 }
             }
 
@@ -118,12 +125,9 @@ class Warehouse2 extends BaseController
                 ])->setStatusCode(422);
             }
 
-            $data['status'] = $data['status'] ?? 'diterima';
+            $data['status'] = $data['status'] ?? 'bahanmasuk';
 
             $this->modelPemasok->insert($data);
-
-            // Sync warehouse2 nomor_spk to produksi database (if applicable)
-            $this->syncWarehouse2ToProduksi($data['nomor_spk'], $data);
 
             return $this->response->setJSON([
                 'success' => true,
@@ -132,6 +136,97 @@ class Warehouse2 extends BaseController
                 'id' => $this->modelPemasok->insertID()
             ])->setStatusCode(201);
         } catch (\Exception $e) {
+            log_message('error', '[storePemasok] Exception: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ])->setStatusCode(500);
+        }
+    }
+
+    public function updatePemasok($id)
+    {
+        try {
+            // Security: Only admin, manager, manager_warehouse2, operator_produksi can write
+            $role = session()->get('role');
+            if (!in_array($role, ['gudang', 'admin', 'manager', 'manager_warehouse2', 'operator_produksi', 'warehouse2'])) {
+                return $this->response->setJSON([
+                    'status'  => 'error',
+                    'message' => 'Anda tidak memiliki izin untuk melakukan aksi ini.'
+                ])->setStatusCode(403);
+            }
+
+            $data = $this->request->getJSON(true);
+
+            // Rename nomor_spk to nomor_lot if provided (for backward compatibility)
+            if (isset($data['nomor_spk']) && !isset($data['nomor_lot'])) {
+                $data['nomor_lot'] = $data['nomor_spk'];
+                unset($data['nomor_spk']);
+            }
+
+            // Manual validation
+            $errors = [];
+
+            if (empty($data['nomor_lot'])) {
+                $errors['nomor_lot'] = 'Nomor Lot is required';
+            }
+            if (empty($data['tanggal'])) {
+                $errors['tanggal'] = 'Tanggal is required';
+            }
+            if (empty($data['nama_pemasok'])) {
+                $errors['nama_pemasok'] = 'Nama pemasok is required';
+            }
+            if (empty($data['kode_barang'])) {
+                $errors['kode_barang'] = 'Kode barang is required';
+            }
+            if (empty($data['nama_barang'])) {
+                $errors['nama_barang'] = 'Nama barang is required';
+            }
+            if (empty($data['satuan'])) {
+                $errors['satuan'] = 'Satuan is required';
+            }
+            if (empty($data['jumlah'])) {
+                $errors['jumlah'] = 'Jumlah is required';
+            }
+
+            if (!empty($errors)) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $errors
+                ])->setStatusCode(422);
+            }
+
+            // Get existing record
+            $existing = $this->modelPemasok->find($id);
+            if (!$existing) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Data tidak ditemukan'
+                ])->setStatusCode(404);
+            }
+
+            // Remove ID from update data
+            unset($data['id']);
+
+            // Update record
+            $updateResult = $this->modelPemasok->update($id, $data);
+            if ($updateResult === false) {
+                $dbError = $this->modelPemasok->errors();
+                log_message('error', '[updatePemasok] Model errors: ' . json_encode($dbError));
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Gagal menyimpan: ' . implode(', ', $dbError)
+                ])->setStatusCode(500);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Data berhasil diubah'
+            ])->setStatusCode(200);
+        } catch (\Exception $e) {
+            log_message('error', '[updatePemasok] Exception: ' . $e->getMessage());
             return $this->response->setJSON([
                 'status' => 'error',
                 'message' => $e->getMessage()
@@ -774,7 +869,7 @@ class Warehouse2 extends BaseController
             $errors = [];
 
             if (empty($data['nomor_spk'])) {
-                $errors['nomor_spk'] = 'Nomor SPK is required';
+                $errors['nomor_spk'] = 'Nomor Lot is required';
             }
             if (empty($data['tanggal'])) {
                 $errors['tanggal'] = 'Tanggal is required';
@@ -804,6 +899,11 @@ class Warehouse2 extends BaseController
                 ])->setStatusCode(422);
             }
 
+            // Convert nomor_spk from form to nomor_lot for database
+            $nomoLot = $data['nomor_spk'];
+            unset($data['nomor_spk']);
+            $data['nomor_lot'] = $nomoLot;
+
             $data['harga_satuan'] = $data['harga_satuan'] ?? 0;
             // Calculate total_harga
             $data['total_harga'] = $data['jumlah'] * $data['harga_satuan'];
@@ -814,9 +914,9 @@ class Warehouse2 extends BaseController
             $this->modelPembeli->insert($data);
             $pembeliId = $this->modelPembeli->insertID();
 
-            error_log("DEBUG: Calling deductGrandTotalBagusFromProduksi with nomor_spk='{$data['nomor_spk']}', jumlah='{$data['jumlah']}'");
+            error_log("DEBUG: Calling deductGrandTotalBagusFromProduksi with nomor_lot='{$nomoLot}', jumlah='{$data['jumlah']}'");
             // Deduct dari grand_total_bagus di database produksi
-            $this->deductGrandTotalBagusFromProduksi($data['nomor_spk'], $data['jumlah']);
+            $this->deductGrandTotalBagusFromProduksi($nomoLot, $data['jumlah']);
 
             return $this->response->setJSON([
                 'status' => 'success',
@@ -892,7 +992,7 @@ class Warehouse2 extends BaseController
             $errors = [];
 
             if (empty($data['nomor_spk'])) {
-                $errors['nomor_spk'] = 'Nomor SPK is required';
+                $errors['nomor_spk'] = 'Nomor Lot is required';
             }
             if (empty($data['tanggal'])) {
                 $errors['tanggal'] = 'Tanggal is required';
@@ -934,6 +1034,11 @@ class Warehouse2 extends BaseController
             $data['harga_satuan'] = $data['harga_satuan'] ?? 0;
             $data['total_harga'] = $data['jumlah'] * $data['harga_satuan'];
 
+            // Convert nomor_spk from form to nomor_lot for database
+            $nomorLot = $data['nomor_spk'];
+            unset($data['nomor_spk']);
+            $data['nomor_lot'] = $nomorLot;
+
             // Remove ID from update data
             unset($data['id']);
 
@@ -946,7 +1051,7 @@ class Warehouse2 extends BaseController
                 // If jumlah increased, deduct more from inventory
                 // If jumlah decreased, add back to inventory
                 if ($jumlahDifference != 0) {
-                    $this->adjustInventoryForPembeli($data['nomor_spk'], $jumlahDifference);
+                    $this->adjustInventoryForPembeli($nomorLot, $jumlahDifference);
                 }
 
                 return $this->response->setJSON([
@@ -1549,6 +1654,81 @@ class Warehouse2 extends BaseController
         }
     }
 
+    /**
+     * Temporary debug endpoint - REMOVE after fixing
+     * Access: GET /warehouse2/debug-insert-test
+     */
+    public function debugInsertTest()
+    {
+        // Skip in production for security
+        if (ENVIRONMENT === 'production') {
+            return $this->response->setJSON([
+                'error' => 'Debug endpoint disabled in production'
+            ])->setStatusCode(403);
+        }
+
+        try {
+            $testData = [
+                'tanggal' => date('Y-m-d'),
+                'spk' => 'TEST-001',
+                'produk' => 'Test Product',
+                'shift' => '1',
+                'grup' => 'Test Grup',
+                'hasil_bagus' => 100,
+                'hasil_reject' => 5,
+                'material' => 'Test Material',
+                'colorant' => 'Test Colorant',
+                'packaging' => 'Test Packaging',
+                'operator' => 'Test Operator',
+                'nomor_lot' => 'LOT-001',
+                'status' => 'pending',
+                'catatan' => 'Test insert from debug endpoint'
+            ];
+
+            log_message('debug', '[DEBUG] Test data: ' . json_encode($testData));
+
+            // Try insert
+            $result = $this->modelOrowarehouse->insert($testData);
+
+            if ($result) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Test insert successful',
+                    'id' => $this->modelOrowarehouse->insertID(),
+                    'test_data' => $testData
+                ]);
+            }
+
+            // Get model errors
+            $errors = $this->modelOrowarehouse->errors();
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Insert returned false',
+                'model_errors' => $errors,
+                'test_data' => $testData
+            ])->setStatusCode(500);
+
+        } catch (\CodeIgniter\Database\Exceptions\DatabaseException $dbEx) {
+            return $this->response->setJSON([
+                'success' => false,
+                'error_type' => 'DatabaseException',
+                'message' => $dbEx->getMessage(),
+                'code' => $dbEx->getCode(),
+                'file' => $dbEx->getFile(),
+                'line' => $dbEx->getLine()
+            ])->setStatusCode(500);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'error_type' => 'Exception',
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => explode("\n", $e->getTraceAsString())
+            ])->setStatusCode(500);
+        }
+    }
+
     public function storeOrowarehouse()
     {
         try {
@@ -1562,6 +1742,7 @@ class Warehouse2 extends BaseController
             }
 
             $data = $this->request->getJSON(true);
+            log_message('debug', '[storeOrowarehouse] Received data: ' . json_encode($data));
 
             // Manual validation
             $errors = [];
@@ -1578,11 +1759,13 @@ class Warehouse2 extends BaseController
             if (empty($data['shift'])) {
                 $errors['shift'] = 'Shift is required';
             }
-            if (empty($data['hasil_bagus']) && empty($data['hasil_reject'])) {
+            // hasil_bagus dan hasil_reject adalah number — hanya reject jika keduanya truly null/not set
+            if (!isset($data['hasil_bagus']) && !isset($data['hasil_reject'])) {
                 $errors['hasil'] = 'Hasil bagus atau hasil reject harus diisi';
             }
 
             if (!empty($errors)) {
+                log_message('debug', '[storeOrowarehouse] Validation errors: ' . json_encode($errors));
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Validation failed',
@@ -1592,20 +1775,64 @@ class Warehouse2 extends BaseController
 
             $data['status'] = $data['status'] ?? 'pending';
 
-            if ($this->modelOrowarehouse->insert($data)) {
+            // Enhanced error logging untuk debug hosting
+            log_message('debug', '[storeOrowarehouse] Attempting insert with data: ' . json_encode($data));
+            
+            try {
+                $insertResult = $this->modelOrowarehouse->insert($data);
+                
+                if ($insertResult) {
+                    log_message('info', '[storeOrowarehouse] Insert successful, ID: ' . $this->modelOrowarehouse->insertID());
+                    return $this->response->setJSON([
+                        'success' => true,
+                        'message' => 'Data berhasil disimpan',
+                        'id' => $this->modelOrowarehouse->insertID()
+                    ])->setStatusCode(201);
+                }
+                
+                // If insert returned false, get validation errors from model
+                $modelErrors = $this->modelOrowarehouse->errors();
+                log_message('error', '[storeOrowarehouse] Model validation errors: ' . json_encode($modelErrors));
+                
+                throw new \Exception('Insert failed. Model errors: ' . json_encode($modelErrors));
+                
+            } catch (\CodeIgniter\Database\Exceptions\DatabaseException $dbEx) {
+                // Database specific exception
+                log_message('error', '[storeOrowarehouse] Database Exception: ' . $dbEx->getMessage());
+                log_message('error', '[storeOrowarehouse] Database Error Code: ' . $dbEx->getCode());
+                
+                // Return detailed error in development, generic in production
+                $errorMsg = (ENVIRONMENT === 'development') 
+                    ? 'Database Error: ' . $dbEx->getMessage() 
+                    : 'Terjadi kesalahan database. Silakan hubungi administrator.';
+                
                 return $this->response->setJSON([
-                    'success' => true,
-                    'message' => 'Data berhasil disimpan',
-                    'id' => $this->modelOrowarehouse->insertID()
-                ])->setStatusCode(201);
+                    'success' => false,
+                    'message' => $errorMsg,
+                    'debug' => (ENVIRONMENT === 'development') ? [
+                        'code' => $dbEx->getCode(),
+                        'file' => $dbEx->getFile(),
+                        'line' => $dbEx->getLine()
+                    ] : null
+                ])->setStatusCode(500);
             }
-
-            throw new \Exception('Failed to insert data');
+            
         } catch (\Exception $e) {
-            log_message('error', 'storeOrowarehouse Error: ' . $e->getMessage());
+            log_message('error', '[storeOrowarehouse] Exception: ' . $e->getMessage());
+            log_message('error', '[storeOrowarehouse] Stack trace: ' . $e->getTraceAsString());
+            
+            // Return detailed error in development, generic in production
+            $errorMsg = (ENVIRONMENT === 'development') 
+                ? $e->getMessage() 
+                : 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.';
+            
             return $this->response->setJSON([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $errorMsg,
+                'debug' => (ENVIRONMENT === 'development') ? [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ] : null
             ])->setStatusCode(500);
         }
     }
@@ -1775,6 +2002,17 @@ class Warehouse2 extends BaseController
                 $query->where('tanggal >=', date('Y-m-d', strtotime('-7 days')));
             } elseif ($period === 'month') {
                 $query->where('tanggal >=', date('Y-m-d', strtotime('-30 days')));
+            }
+
+            // Date range filter
+            $tanggalDari = $this->request->getGet('tanggal_dari');
+            $tanggalSampai = $this->request->getGet('tanggal_sampai');
+            if (!empty($tanggalDari) && !empty($tanggalSampai)) {
+                if ($tanggalSampai < $tanggalDari) {
+                    [$tanggalDari, $tanggalSampai] = [$tanggalSampai, $tanggalDari];
+                }
+                $query->where('DATE(tanggal) >=', $tanggalDari);
+                $query->where('DATE(tanggal) <=', $tanggalSampai);
             }
 
             // Custom filters
@@ -1951,9 +2189,9 @@ class Warehouse2 extends BaseController
         try {
             $noSpk = trim((string) $noSpk); // Clean up input
             $jumlah = (int)$jumlah;
-            
+
             error_log("DEBUG: deductGrandTotalBagusFromProduksi called with noSpk='{$noSpk}', jumlah={$jumlah}");
-            
+
             // Connect to produksi database
             $db = \Config\Database::connect('produksi');
             error_log("DEBUG: Connected to produksi database");

@@ -12,7 +12,7 @@ class MProduksiPackaging extends BaseProduksiModel
     protected $returnType       = 'array';
     protected $useSoftDeletes   = true;
     protected $allowedFields    = [
-        'produksi_header_id', 'box', 'box_ukuran', 'plastik', 'plastik_ukuran', 'karung', 'karung_ukuran', 'box_karung_nicktainer'
+        'produksi_header_id', 'box', 'box_ukuran', 'plastik', 'plastik_bagus', 'plastik_reject', 'plastik_ukuran', 'karung', 'karung_ukuran', 'nicktainer', 'nicktainer_ukuran', 'box_karung_nicktainer'
     ];
 
     protected $useTimestamps = true;

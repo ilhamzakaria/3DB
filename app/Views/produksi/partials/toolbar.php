@@ -1,6 +1,6 @@
 <div class="card-header py-3 bg-white">
     <div class="production-toolbar">
-        <?php $canWrite = in_array(session('role'), ['admin', 'manager', 'produksi', 'manager_warehouse2']); ?>
+        <?php $canWrite = in_array(session('role'), ['admin', 'manager', 'produksi']); ?>
         <div class="toolbar-group">
             <?php if ($canWrite) : ?>
                 <button class="btn btn-primary btn-sm shadow-sm toolbar-btn" data-bs-toggle="modal" data-bs-target="#addDataModal">

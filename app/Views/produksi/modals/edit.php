@@ -37,9 +37,9 @@
             font-weight: 600 !important;
         }
     </style>
-    <form id="formEditLaporan" action="<?= base_url('produksi/update/' . $header['id']) ?>" method="POST" enctype="multipart/form-data">
+    <form id="formEditLaporan" action="<?= base_url('produksi/update/' . $header['id']) ?>" method="POST" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter' || event.target.tagName === 'TEXTAREA';">
         <?= csrf_field() ?>
-        <?= view('produksi/partials/form_fields', ['header' => $header, 'jams' => $jams, 'rejects' => $rejects, 'materials' => $materials, 'colorants' => $colorants, 'packaging' => $packaging, 'downtimes' => $downtimes, 'spk_list' => $spk_list]) ?>
+        <?= view('produksi/partials/form_fields', ['header' => $header, 'jams' => $jams, 'rejects' => $rejects, 'materials' => $materials, 'colorants' => $colorants, 'packaging' => $packaging, 'downtimes' => $downtimes, 'spk_list' => $spk_list, 'reject_types' => $reject_types ?? []]) ?>
     </form>
 
     <script>
@@ -89,11 +89,34 @@
         document.addEventListener('DOMContentLoaded', function() {
             const spkSelect = document.querySelector('.nomor_spk');
             const shiftSelect = document.querySelector('#shift_select');
+
+            // Autofill semua field dari SPK yang dipilih
+            function triggerSpkAutofillEdit(sel) {
+                if (!sel || !sel.value) return;
+                const editModal = document.getElementById('modalEdit');
+                const container = editModal ? (editModal.querySelector('#formEditLaporan') || editModal.querySelector('.modal-body')) : document;
+                if (typeof fillFromSpkOption === 'function') {
+                    fillFromSpkOption(sel, container);
+                } else if (typeof fillFromSpkOptionAlt === 'function') {
+                    fillFromSpkOptionAlt(sel.value, container);
+                }
+            }
             
+            // Native change event
             if (spkSelect) spkSelect.addEventListener('change', function() {
                 updateShiftOptions();
                 updateTercapaiField();
+                triggerSpkAutofillEdit(this);
             });
+
+            // Select2 event (untuk hosting yang pakai Select2)
+            if (spkSelect && typeof jQuery !== 'undefined') {
+                jQuery(spkSelect).on('select2:select', function(e) {
+                    updateShiftOptions();
+                    updateTercapaiField();
+                    triggerSpkAutofillEdit(spkSelect);
+                });
+            }
             
             if (shiftSelect) {
                 shiftSelect.addEventListener('change', updateTercapaiField);

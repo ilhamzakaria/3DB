@@ -5,6 +5,10 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
+
+// === TEST ROUTES (Remove after debugging) ===
+$routes->get('test-db', 'TestDb::index');
+
 // home
 $routes->get('/home', 'Home::index');
 $routes->get('/laporan', 'Laporan::index', ['filter' => 'manager']);
@@ -199,6 +203,9 @@ $routes->post('/admin/update/(:num)', 'Admin::update/$1');
 // warehouse2 - Main page (ppic & produksi bisa view, warehouse2 full access)
 $routes->get('/warehouse2', 'Warehouse2::index', ['filter' => 'readOnlyWarehouse2']);
 
+// warehouse2 - Debug endpoint (TEMPORARY - REMOVE after fixing)
+$routes->get('/warehouse2/debug-insert-test', 'Warehouse2::debugInsertTest', ['filter' => 'auth']);
+
 // warehouse2 - API endpoints untuk fetch data (read-only, semua role bisa akses)
 $routes->get('/warehouse2/api/barang-masuk-pemasok', 'Warehouse2::getBarangMasukPemasok');
 $routes->get('/warehouse2/api/barang-masuk-produksi', 'Warehouse2::getBarangMasukProduksi');
@@ -212,33 +219,34 @@ $routes->get('/warehouse2/api/orowarehouse-trash', 'Warehouse2::getOrowarehouseT
 $routes->get('/warehouse2/export-orowarehouse', 'Warehouse2::exportOrowarehouse');
 
 // warehouse2 - CRUD barang masuk pemasok (hanya manager warehouse2)
-$routes->post('/warehouse2/store-pemasok', 'Warehouse2::storePemasok', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/delete-pemasok/(:num)', 'Warehouse2::deletePemasok/$1', ['filter' => 'managerWarehouse2']);
-$routes->delete('/warehouse2/delete-pemasok/(:num)', 'Warehouse2::deletePemasok/$1', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/update-status-pemasok/(:num)', 'Warehouse2::updateStatusPemasok/$1', ['filter' => 'managerWarehouse2']);
+$routes->post('/warehouse2/store-pemasok', 'Warehouse2::storePemasok', ['filter' => 'auth']);
+$routes->post('/warehouse2/update-pemasok/(:num)', 'Warehouse2::updatePemasok/$1', ['filter' => 'auth']);
+$routes->post('/warehouse2/delete-pemasok/(:num)', 'Warehouse2::deletePemasok/$1', ['filter' => 'auth']);
+$routes->delete('/warehouse2/delete-pemasok/(:num)', 'Warehouse2::deletePemasok/$1', ['filter' => 'auth']);
+$routes->post('/warehouse2/update-status-pemasok/(:num)', 'Warehouse2::updateStatusPemasok/$1', ['filter' => 'auth']);
 
 // warehouse2 - CRUD barang masuk produksi (hanya manager warehouse2)
-$routes->post('/warehouse2/store-produksi', 'Warehouse2::storeProduksi', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/update-produksi/(:num)', 'Warehouse2::updateProduksi/$1', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/update-status-produksi/(:num)', 'Warehouse2::updateStatusProduksi/$1', ['filter' => 'managerWarehouse2']);
-$routes->delete('/warehouse2/delete-produksi/(:num)', 'Warehouse2::deleteProduksi/$1', ['filter' => 'managerWarehouse2']);
+$routes->post('/warehouse2/store-produksi', 'Warehouse2::storeProduksi', ['filter' => 'auth']);
+$routes->post('/warehouse2/update-produksi/(:num)', 'Warehouse2::updateProduksi/$1', ['filter' => 'auth']);
+$routes->post('/warehouse2/update-status-produksi/(:num)', 'Warehouse2::updateStatusProduksi/$1', ['filter' => 'auth']);
+$routes->delete('/warehouse2/delete-produksi/(:num)', 'Warehouse2::deleteProduksi/$1', ['filter' => 'auth']);
 
 // warehouse2 - CRUD barang keluar pembeli (hanya manager warehouse2)
-$routes->post('/warehouse2/store-pembeli', 'Warehouse2::storePembeli', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/update-pembeli/(:num)', 'Warehouse2::updatePembeli/$1', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/update-status-pembeli/(:num)', 'Warehouse2::updateStatusPembeli/$1', ['filter' => 'managerWarehouse2']);
-$routes->delete('/warehouse2/delete-pembeli/(:num)', 'Warehouse2::deletePembeli/$1', ['filter' => 'managerWarehouse2']);
+$routes->post('/warehouse2/store-pembeli', 'Warehouse2::storePembeli', ['filter' => 'auth']);
+$routes->post('/warehouse2/update-pembeli/(:num)', 'Warehouse2::updatePembeli/$1', ['filter' => 'auth']);
+$routes->post('/warehouse2/update-status-pembeli/(:num)', 'Warehouse2::updateStatusPembeli/$1', ['filter' => 'auth']);
+$routes->delete('/warehouse2/delete-pembeli/(:num)', 'Warehouse2::deletePembeli/$1', ['filter' => 'auth']);
 
 // warehouse2 - CRUD barang masuk dari produksi (hanya manager warehouse2)
-$routes->post('/warehouse2/store-masuk-produksi', 'Warehouse2::storeMasukProduksi', ['filter' => 'managerWarehouse2']);
-$routes->delete('/warehouse2/delete-masuk-produksi/(:num)', 'Warehouse2::deleteMasukProduksi/$1', ['filter' => 'managerWarehouse2']);
+$routes->post('/warehouse2/store-masuk-produksi', 'Warehouse2::storeMasukProduksi', ['filter' => 'auth']);
+$routes->delete('/warehouse2/delete-masuk-produksi/(:num)', 'Warehouse2::deleteMasukProduksi/$1', ['filter' => 'auth']);
 
 // warehouse2 - OROWAREHOUSE write endpoints (hanya manager warehouse2)
-$routes->post('/warehouse2/store-orowarehouse', 'Warehouse2::storeOrowarehouse', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/update-orowarehouse/(:num)', 'Warehouse2::updateOrowarehouse/$1', ['filter' => 'managerWarehouse2']);
-$routes->delete('/warehouse2/delete-orowarehouse/(:num)', 'Warehouse2::deleteOrowarehouse/$1', ['filter' => 'managerWarehouse2']);
-$routes->post('/warehouse2/restore-orowarehouse/(:num)', 'Warehouse2::restoreOrowarehouse/$1', ['filter' => 'managerWarehouse2']);
-$routes->delete('/warehouse2/delete-permanent-orowarehouse/(:num)', 'Warehouse2::deletePermanentOrowarehouse/$1', ['filter' => 'managerWarehouse2']);
+$routes->post('/warehouse2/store-orowarehouse', 'Warehouse2::storeOrowarehouse', ['filter' => 'auth']);
+$routes->post('/warehouse2/update-orowarehouse/(:num)', 'Warehouse2::updateOrowarehouse/$1', ['filter' => 'auth']);
+$routes->delete('/warehouse2/delete-orowarehouse/(:num)', 'Warehouse2::deleteOrowarehouse/$1', ['filter' => 'auth']);
+$routes->post('/warehouse2/restore-orowarehouse/(:num)', 'Warehouse2::restoreOrowarehouse/$1', ['filter' => 'auth']);
+$routes->delete('/warehouse2/delete-permanent-orowarehouse/(:num)', 'Warehouse2::deletePermanentOrowarehouse/$1', ['filter' => 'auth']);
 
 // chat (ppic, produksi, gudang)
 $routes->get('/pesan', 'Pesan::index');
@@ -322,12 +330,10 @@ foreach ($ppicMesinModules as $m) {
     $routes->delete("/ppic/mesin_$m/delete-brand/(:num)", "$ctrl::deleteBrand/$1", ['filter' => 'operatorReadOnly']);
     $routes->post("/ppic/mesin_$m/delete-brand/(:num)", "$ctrl::deleteBrand/$1", ['filter' => 'operatorReadOnly']);
 
-    // Komposisi management (hanya becum)
-    if ($m === 'becum') {
-        $routes->get("/ppic/mesin_$m/komposisi-json", "$ctrl::getKomposisiJson", ['filter' => 'operatorReadOnly']);
-        $routes->post("/ppic/mesin_$m/store-komposisi", "$ctrl::storeKomposisi", ['filter' => 'operatorReadOnly']);
-        $routes->post("/ppic/mesin_$m/delete-komposisi/(:num)", "$ctrl::deleteKomposisi/$1", ['filter' => 'operatorReadOnly']);
-    }
+    // Komposisi management (semua mesin)
+    $routes->get("/ppic/mesin_$m/komposisi-json", "$ctrl::getKomposisiJson", ['filter' => 'operatorReadOnly']);
+    $routes->post("/ppic/mesin_$m/store-komposisi", "$ctrl::storeKomposisi", ['filter' => 'operatorReadOnly']);
+    $routes->post("/ppic/mesin_$m/delete-komposisi/(:num)", "$ctrl::deleteKomposisi/$1", ['filter' => 'operatorReadOnly']);
 }
 
 // gudang mesin modules (LOG MESIN non-ppic context)
@@ -398,6 +404,17 @@ $routes->get('/produksi/get-target-by-shift', 'Produksi::getTargetByShift', ['fi
 // POST routes: hanya manager, admin, operator
 $routes->post('/produksi/simpan', 'Produksi::simpan', ['filter' => 'managerProduksi']);
 $routes->post('/produksi/update/(:num)', 'Produksi::update/$1', ['filter' => 'managerProduksi']);
+
+// reject types (produksi module)
+$routes->get('/reject-type/getAll', 'RejectType::getAll', ['filter' => 'auth']);
+$routes->get('/reject-type/getJson', 'RejectType::getJson', ['filter' => 'auth']);
+$routes->get('/reject-type/manage', 'RejectType::manage', ['filter' => 'auth']);
+$routes->post('/reject-type/create', 'RejectType::create', ['filter' => 'auth']);
+$routes->post('/reject-type/store', 'RejectType::store', ['filter' => 'auth']);
+$routes->post('/reject-type/update/(:num)', 'RejectType::update/$1', ['filter' => 'auth']);
+$routes->post('/reject-type/toggle/(:num)', 'RejectType::toggle', ['filter' => 'auth']);
+$routes->post('/reject-type/delete/(:num)', 'RejectType::delete/$1', ['filter' => 'auth']);
+$routes->post('/reject-type/destroy/(:num)', 'RejectType::destroy/$1', ['filter' => 'auth']);
 
 // Migration routes
 $routes->get('/MigrateDb/addJumlah', 'MigrateDb::addJumlah');

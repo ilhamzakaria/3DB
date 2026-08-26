@@ -40,16 +40,31 @@
                         font-weight: 600 !important;
                     }
                 </style>
-                <form id="formAddLaporan" action="<?= base_url('produksi/simpan') ?>" method="POST" enctype="multipart/form-data">
+                <form id="formAddLaporan" action="<?= base_url('produksi/simpan') ?>" method="POST" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter' || event.target.tagName === 'TEXTAREA';">
                     <?= csrf_field() ?>
                     <input type="hidden" name="submit_type" id="submit_type" value="save">
                     <?= view('produksi/partials/form_fields', [
                         'spk_list'           => $spk_list,
                         'context_mesin_slug' => $context_mesin_slug ?? '',
+                        'reject_types'       => $reject_types ?? [],
                     ]) ?>
                 </form>
 
                 <script>
+                    // Regenerate CSRF token sebelum submit untuk menghindari token expired
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const form = document.getElementById('formAddLaporan');
+                        if (form) {
+                            form.addEventListener('submit', function(e) {
+                                // Fetch fresh CSRF token
+                                const csrfInput = form.querySelector('input[name="<?= csrf_token() ?>"]');
+                                if (csrfInput) {
+                                    console.log('CSRF token before submit:', csrfInput.value.substring(0, 20) + '...');
+                                }
+                            });
+                        }
+                    });
+                    
                     // Update Shift dropdown with tercapai status when SPK changes
                     function updateShiftOptions() {
                         const spkSelect = document.querySelector('.nomor_spk');
@@ -92,15 +107,41 @@
                         }
                     }
                     
+                    // Autofill semua field dari SPK yang dipilih
+                    function triggerSpkAutofill(spkSelect) {
+                        if (!spkSelect || !spkSelect.value) return;
+                        
+                        const modal = document.getElementById('addDataModal');
+                        const container = modal ? (modal.querySelector('#formAddLaporan') || modal.querySelector('.modal-body')) : document;
+                        
+                        // Gunakan fillFromSpkOption dari scripts.php jika tersedia
+                        if (typeof fillFromSpkOption === 'function') {
+                            fillFromSpkOption(spkSelect, container);
+                        } else if (typeof fillFromSpkOptionAlt === 'function') {
+                            fillFromSpkOptionAlt(spkSelect.value, container);
+                        }
+                    }
+
                     // Initialize on modal open
                     document.addEventListener('DOMContentLoaded', function() {
                         const spkSelect = document.querySelector('.nomor_spk');
                         const shiftSelect = document.querySelector('#shift_select');
                         
+                        // Native change event (untuk non-Select2)
                         if (spkSelect) spkSelect.addEventListener('change', function() {
                             updateShiftOptions();
                             updateTercapaiField();
+                            triggerSpkAutofill(this);
                         });
+
+                        // Select2 event (untuk hosting yang pakai Select2)
+                        if (spkSelect && typeof jQuery !== 'undefined') {
+                            jQuery(spkSelect).on('select2:select', function(e) {
+                                updateShiftOptions();
+                                updateTercapaiField();
+                                triggerSpkAutofill(spkSelect);
+                            });
+                        }
                         
                         if (shiftSelect) {
                             shiftSelect.addEventListener('change', updateTercapaiField);
@@ -125,7 +166,6 @@
             </div>
             <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
                 <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" form="formAddLaporan" class="btn btn-outline-primary px-4 shadow-sm" onclick="document.getElementById('submit_type').value='save_and_add'">Simpan & Tambah Lagi</button>
                 <button type="submit" form="formAddLaporan" class="btn btn-primary px-5 shadow-sm" onclick="document.getElementById('submit_type').value='save'">Simpan Laporan</button>
             </div>
         </div>

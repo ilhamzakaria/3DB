@@ -16,6 +16,7 @@ class MBarangMasukProduksi extends Model
     protected $allowedFields = [
         // Field lama (renamed)
         'nomor_spk',
+        'nomor_lot',
         'tanggal',
         'no_spk',
         'nama_produksi',

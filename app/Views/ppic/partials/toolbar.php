@@ -2,7 +2,7 @@
     <!-- Trash Button -->
     <div>
         <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#trashModal">
-            <i class="fas fa-trash-restore"></i> Tempat Sampah
+            <i class="fas fa-trash-restore"></i> Tempat Sampah 2
         </button>
     </div>
 </div>

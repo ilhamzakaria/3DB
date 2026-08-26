@@ -25,20 +25,22 @@ class PpicExport extends BaseController
     // Kolom target+realisasi yang sama di semua mesin baru
     // ----------------------------------------------------------------
     private const COMMON_HEADERS = [
-        'Tanggal', 'No. SPK', 'No Mesin', 'Shift',
+        'Tanggal', 'No. SPK', 'No Mesin', 'Shift', 'Jam',
         'Waktu Awal Target', 'Waktu Akhir Target',
         'Target Shift 1 (pcs)', 'Target Shift 2 (pcs)', 'Target Shift 3 (pcs)',
         'Waktu Awal Realisasi', 'Waktu Akhir Realisasi',
         'Realisasi Shift 1 (pcs)', 'Realisasi Shift 2 (pcs)', 'Realisasi Shift 3 (pcs)',
+        'Total Hasil Produksi (pcs)',
         'Berat (gr)', 'Komposisi', 'Total SPK', 'Packing', 'Keterangan',
     ];
 
     private const COMMON_ROW = [
-        'tanggal', 'no_spk', 'nomor_mesin', 'shif',
+        'tanggal', 'no_spk', 'nomor_mesin', 'shif', 'jam',
         'jam', 'waktu_akhir_target',
         'target_shift1', 'target_shift2', 'target_shift3',
         'waktu_awal_realisasi', 'waktu_akhir_realisasi',
         'realisasi_shift1', 'realisasi_shift2', 'realisasi_shift3',
+        'total_hasil_produksi',
         'berat', 'revisi', 'total_spk', 'packing', 'keterangan',
     ];
 
@@ -91,6 +93,25 @@ class PpicExport extends BaseController
 
         $rows = [];
         foreach ($data as $d) {
+            // Calculate total hasil produksi (sum of all shifts + extra shifts if any)
+            $totalHasil = (int) ($d['realisasi_shift1'] ?? 0) +
+                         (int) ($d['realisasi_shift2'] ?? 0) +
+                         (int) ($d['realisasi_shift3'] ?? 0);
+
+            // Handle extra_realisasi_shifts if it exists (JSON field)
+            if (!empty($d['extra_realisasi_shifts'])) {
+                try {
+                    $extra = json_decode($d['extra_realisasi_shifts'], true);
+                    if (is_array($extra)) {
+                        foreach ($extra as $val) {
+                            $totalHasil += (int) $val;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore JSON decode errors
+                }
+            }
+
             $row = [
                 $d[$produkField] ?? '',
                 $d['brand']      ?? '',
@@ -104,14 +125,20 @@ class PpicExport extends BaseController
             }
 
             // Kolom umum
+            $commonRowValues = [];
             foreach (self::COMMON_ROW as $f) {
-                $row[] = $d[$f] ?? '';
+                if ($f === 'total_hasil_produksi') {
+                    $commonRowValues[] = $totalHasil > 0 ? $totalHasil : '-';
+                } else {
+                    $commonRowValues[] = $d[$f] ?? '';
+                }
             }
 
+            $row = array_merge($row, $commonRowValues);
             $rows[] = $row;
         }
 
-        $filename = 'mesin_' . $slug . '_ppic_' . date('Y-m-d') . '.xls';
+        $filename = 'mesin_' . $slug . '_ppic_' . date('Y-m-d-His') . '.xls';
         return $this->buildExcel($filename, $headers, $rows, $machineName);
     }
 

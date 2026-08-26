@@ -8,7 +8,7 @@ use CodeIgniter\Filters\FilterInterface;
 
 /**
  * Produksi write routes - hanya role dengan full access yang boleh POST/PUT/DELETE
- * Full access  : admin, manager, operator, produksi, manager_warehouse2
+ * Full access  : admin, manager, operator, produksi
  */
 class RoleManagerProduksi implements FilterInterface
 {
@@ -20,7 +20,7 @@ class RoleManagerProduksi implements FilterInterface
 
         $role = session()->get('role');
 
-        if (!in_array($role, ['admin', 'manager', 'operator', 'produksi', 'manager_warehouse2'])) {
+        if (!in_array($role, ['admin', 'manager', 'operator', 'produksi'])) {
             return redirect()->to('/home')->with('error', 'Akses terbatas');
         }
 

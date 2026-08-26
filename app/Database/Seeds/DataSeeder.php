@@ -67,7 +67,7 @@ class DataSeeder extends Seeder
             $data = [
                 'nomor_spk'     => 'SPK-' . rand(1000, 9999),
                 'nama_mesin'    => $mesins[array_rand($mesins)],
-                'nama_produksi' => $produks[array_rand($produks)],
+                'nama_produk' => $produks[array_rand($produks)],
                 'batch_number'  => 'BATCH-' . rand(100, 999),
                 'shift'         => (string) rand(1, 3),
                 'grup'          => chr(rand(65, 68)),

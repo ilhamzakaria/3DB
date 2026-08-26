@@ -8,8 +8,8 @@ use CodeIgniter\Filters\FilterInterface;
 
 /**
  * Produksi routes - akses lintas role
- * Full access  : admin, manager, operator, produksi, manager_warehouse2
- * Read-only    : ppic, manager_ppic, operator_ppic, operator_produksi, warehouse2
+ * Full access  : admin, manager, operator, produksi
+ * Read-only    : ppic, manager_ppic, operator_ppic, operator_produksi, warehouse2, manager_warehouse2
  */
 class RoleReadOnlyProduksi implements FilterInterface
 {
@@ -27,8 +27,8 @@ class RoleReadOnlyProduksi implements FilterInterface
             return redirect()->to('/home')->with('error', 'Akses terbatas');
         }
 
-        // ppic, manager_ppic, operator_ppic, operator_produksi, warehouse2 hanya boleh GET (view)
-        $readOnlyRoles = ['ppic', 'manager_ppic', 'operator_ppic', 'operator_produksi', 'warehouse2'];
+        // ppic, manager_ppic, operator_ppic, operator_produksi, warehouse2, manager_warehouse2 hanya boleh GET (view)
+        $readOnlyRoles = ['ppic', 'manager_ppic', 'operator_ppic', 'operator_produksi', 'warehouse2', 'manager_warehouse2'];
         if (in_array($role, $readOnlyRoles)) {
             $method = $request->getMethod();
             if (in_array($method, ['post', 'put', 'delete'])) {
