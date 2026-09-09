@@ -148,7 +148,7 @@ foreach ($mesinModules as $m) {
     $routes->delete("/gudang/mesin_$m/delete/(:num)", "$ctrl::delete/$1");
     $routes->post("/gudang/mesin_$m/update/(:num)", "$ctrl::update/$1");
     $routes->post("/gudang/mesin_$m/completeSpk/(:num)", "$ctrl::completeSpk/$1");
-    
+
     // Brand management
     $routes->get("/gudang/mesin_$m/brands-json", "$ctrl::getBrandsJson");
     $routes->post("/gudang/mesin_$m/store-brand", "$ctrl::storeBrand");
@@ -274,6 +274,7 @@ $routes->get('/ppic/exportExcel', 'Ppic::exportExcel');
 $routes->post('/ppic/createUser', 'Ppic::createUser', ['filter' => 'operatorReadOnly']);
 
 // ppic — Finish Good (Galon / Cap Galon / Freeform / Screw Cap)
+$routes->get('/ppic/finish_good',                  'FinishGoodPpic::galon',        ['filter' => 'operatorReadOnly']);
 $routes->get('/ppic/finish_good/galon',                  'FinishGoodPpic::galon',        ['filter' => 'operatorReadOnly']);
 $routes->post('/ppic/finish_good/galon/tambah',          'FinishGoodPpic::tambahGalon',  ['filter' => 'operatorReadOnly']);
 $routes->post('/ppic/finish_good/galon/update/(:num)',   'FinishGoodPpic::updateGalon/$1', ['filter' => 'operatorReadOnly']);
@@ -310,6 +311,14 @@ $routes->get('/ppic/finish_good/screw_cap/get-trash',        'FinishGoodPpic::ge
 $routes->get('/ppic/finish_good/screw_cap/restore/(:num)',   'FinishGoodPpic::restore', ['filter' => 'operatorReadOnly']);
 $routes->get('/ppic/finish_good/screw_cap/delete-permanent/(:num)', 'FinishGoodPpic::deletePermanent', ['filter' => 'operatorReadOnly']);
 
+// ppic — Finish Good Import Excel Routes
+$routes->post('/ppic/finish_good/(:segment)/import-preview',  'FinishGoodPpic::importPreview/$1', ['filter' => 'operatorReadOnly']);
+$routes->post('/ppic/finish_good/(:segment)/import-commit',   'FinishGoodPpic::importCommit/$1',  ['filter' => 'operatorReadOnly']);
+$routes->get('/ppic/finish_good/(:segment)/template',         'FinishGoodPpic::downloadTemplate/$1', ['filter' => 'operatorReadOnly']);
+
+// ppic — Finish Good Add Produk Baru (AJAX endpoint)
+$routes->post('/ppic/finish_good/(:segment)/add-produk',      'FinishGoodPpic::addProduk/$1', ['filter' => 'operatorReadOnly']);
+
 // mesin modules (ppic / LOG MESIN)
 $ppicMesinModules = ['becum', 'powerjet1', 'powerjet2', 'ccm1', 'ccm2', 'ips1', 'ips2', 'ips3', 'ips4'];
 foreach ($ppicMesinModules as $m) {
@@ -323,7 +332,7 @@ foreach ($ppicMesinModules as $m) {
     $routes->get("/ppic/mesin_$m/get-trash", "$ctrl::getTrash", ['filter' => 'operatorReadOnly']);
     $routes->get("/ppic/mesin_$m/restore/(:num)", "$ctrl::restore/$1", ['filter' => 'operatorReadOnly']);
     $routes->get("/ppic/mesin_$m/delete-permanent/(:num)", "$ctrl::deletePermanent/$1", ['filter' => 'operatorReadOnly']);
-    
+
     // Brand management
     $routes->get("/ppic/mesin_$m/brands-json", "$ctrl::getBrandsJson", ['filter' => 'operatorReadOnly']);
     $routes->post("/ppic/mesin_$m/store-brand", "$ctrl::storeBrand", ['filter' => 'operatorReadOnly']);

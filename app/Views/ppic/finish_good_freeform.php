@@ -1,21 +1,125 @@
-<?= $this->extend('layout/main') ?>
+﻿<?= $this->extend('layout/main') ?>
 <?= $this->section('content') ?>
 
 <?php
 $formatDate = static fn($v): string => ($t = strtotime((string)$v)) ? date('d-m-Y', $t) : '-';
 $baseUrl    = 'ppic/finish_good/freeform';
 $typeLabel  = 'Freeform';
+
+// Array lengkap produk freeform — edit di sini untuk mengubah data referensi
+// fields: nomor, nama_produk, warna, berat, jumlah, packing
+$produkFreeform = [
+    ['nomor' => 1,  'nama_produk' => 'NESTLE CBN 28,30,31',          'warna' => 'BLUE 14',   'berat' => 12.5, 'jumlah' => 1381392, 'packing' => 106],
+    ['nomor' => 2,  'nama_produk' => 'NESTLE SGN',                   'warna' => 'BLUE 14',   'berat' => 12.5, 'jumlah' => 3675024, 'packing' => 282],
+    ['nomor' => 3,  'nama_produk' => 'NESTLE HOLD KARUNG',           'warna' => 'BLUE 14',   'berat' => 12.5, 'jumlah' => 777168,  'packing' => 514],
+    ['nomor' => 4,  'nama_produk' => 'SORTIR FM NESTLE',             'warna' => 'BLUE 14',   'berat' => 12.5, 'jumlah' => 58968,   'packing' => 39],
+    ['nomor' => 5,  'nama_produk' => 'TIRTA JADE IPS 01',            'warna' => 'BLUE 20',   'berat' => 12.5, 'jumlah' => 57456,   'packing' => 38],
+    ['nomor' => 6,  'nama_produk' => 'FM JADE L IPS 01',             'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 270648,  'packing' => 179],
+    ['nomor' => 7,  'nama_produk' => 'BLU9 MT IPS 01',               'warna' => 'BLUE 14',   'berat' => 12.5, 'jumlah' => 272160,  'packing' => 180],
+    ['nomor' => 8,  'nama_produk' => 'FM JADE L IPS 02',             'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 967680,  'packing' => 640],
+    ['nomor' => 9,  'nama_produk' => 'INDOMARET JD-L IPS 02',        'warna' => 'BLUE 20-1', 'berat' => 12.5, 'jumlah' => 226800,  'packing' => 150],
+    ['nomor' => 10, 'nama_produk' => 'FM WK L IPS02',                'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 158760,  'packing' => 105],
+    ['nomor' => 11, 'nama_produk' => 'BLU9 MT IPS 02',               'warna' => 'BLUE 14',   'berat' => 12.5, 'jumlah' => 0,       'packing' => 0],
+    ['nomor' => 12, 'nama_produk' => 'NPL JADE LIV',                 'warna' => 'BLUE 14',   'berat' => 12.5, 'jumlah' => 0,       'packing' => 0],
+    ['nomor' => 13, 'nama_produk' => 'TRANSISI',                     'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 34776,   'packing' => 23],
+    ['nomor' => 14, 'nama_produk' => 'SIERRA',                       'warna' => 'BLUE 20',   'berat' => 12.5, 'jumlah' => 0,       'packing' => 0],
+    ['nomor' => 17, 'nama_produk' => 'ASPEN YS IPS 03',              'warna' => 'BLUE 29',   'berat' => 12.5, 'jumlah' => 87552,   'packing' => 76],
+    ['nomor' => 18, 'nama_produk' => 'TRAIL ASPEN WK L IPS 03',      'warna' => 'BLUE 29',   'berat' => 15.8, 'jumlah' => 126720,  'packing' => 110],
+    ['nomor' => 19, 'nama_produk' => 'ASPEN YS-W01 LIV IPS 03',      'warna' => 'BLUE 29',   'berat' => 15.8, 'jumlah' => 0,       'packing' => 0],
+    ['nomor' => 20, 'nama_produk' => 'ASPEN JADE LIV IPS 03',        'warna' => 'BLUE 29',   'berat' => 15.8, 'jumlah' => 0,       'packing' => 0],
+    ['nomor' => 21, 'nama_produk' => 'FM JADE LIV IPS 03',           'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 1047816, 'packing' => 693],
+    ['nomor' => 22, 'nama_produk' => 'FM JADE LIV HOLD',             'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 96768,   'packing' => 64],
+    ['nomor' => 23, 'nama_produk' => 'GRAND JADE LIV BOX',           'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 46872,   'packing' => 31],
+    ['nomor' => 24, 'nama_produk' => 'FM JADE LIV HOLD SIERRA',      'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 78624,   'packing' => 52],
+    ['nomor' => 25, 'nama_produk' => 'SIERRA RETURN YS IPS 02 BAM',  'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 492912,  'packing' => 326],
+    ['nomor' => 26, 'nama_produk' => 'FM JADE IPS 02 BAM',           'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 42336,   'packing' => 28],
+    ['nomor' => 27, 'nama_produk' => 'FM JADE LIV IPS 01 BAM',       'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 896616,  'packing' => 593],
+    ['nomor' => 28, 'nama_produk' => 'FM JADE LIV IPS 02 BAM',       'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 2293704, 'packing' => 1517],
+    ['nomor' => 29, 'nama_produk' => 'FM YS-W01 LIV IPS 02 BAM',     'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 379512,  'packing' => 251],
+    ['nomor' => 30, 'nama_produk' => 'FM MT IPS 02 BAM',             'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 30240,   'packing' => 20],
+    ['nomor' => 31, 'nama_produk' => 'FM WK L.IV IPS 02 BAM',        'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 0,       'packing' => 0],
+    ['nomor' => 32, 'nama_produk' => 'TRANSISI BAM',                 'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 958608,  'packing' => 634],
+    ['nomor' => 33, 'nama_produk' => 'FM WK IPS 02 HOLD BAM',        'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 149688,  'packing' => 99],
+    ['nomor' => 34, 'nama_produk' => 'FM WK L.IV IPS 02 HOLD BAM',   'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 80136,   'packing' => 53],
+    ['nomor' => 35, 'nama_produk' => 'INDOMARET WK L.IV HOLD BAM',   'warna' => 'BLUE 20-1', 'berat' => 12.5, 'jumlah' => 225288,  'packing' => 149],
+    ['nomor' => 36, 'nama_produk' => 'FM WK IPS 03 BAM HJU BAM',     'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 13608,   'packing' => 9],
+    ['nomor' => 37, 'nama_produk' => 'FM JADE LIV IPS 03 BAM',       'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 470232,  'packing' => 311],
+    ['nomor' => 38, 'nama_produk' => 'FM YS-W01 LIV IPS 03 BAM',     'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 12096,   'packing' => 8],
+    ['nomor' => 39, 'nama_produk' => 'ASPEN YS-W01 LIV IPS 03 BAM',  'warna' => 'BLUE 29',   'berat' => 15.8, 'jumlah' => 541440,  'packing' => 470],
+    ['nomor' => 40, 'nama_produk' => 'ASPEN JADE LIV IPS 03 BAM',    'warna' => 'BLUE 29',   'berat' => 15.8, 'jumlah' => 10368,   'packing' => 9],
+    ['nomor' => 43, 'nama_produk' => 'FM JADE LIV IPS 02 HOLIS',     'warna' => 'CLEAR',     'berat' => 12.5, 'jumlah' => 3099600, 'packing' => 2050],
+    ['nomor' => 44, 'nama_produk' => 'FM JADE LIV IPS 02 HOLIS',     'warna' => 'CLEAR',     'berat' => 10.9, 'jumlah' => 1876392, 'packing' => 1241],
+];
 ?>
 
 <style>
-.filter-sidebar{position:fixed;top:0;right:-360px;width:360px;height:100vh;background:#fff;z-index:1100;box-shadow:-5px 0 15px rgba(0,0,0,.1);transition:all .3s ease;display:flex;flex-direction:column}
-.filter-sidebar.active{right:0}
-.filter-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.5);z-index:1090;display:none;backdrop-filter:blur(2px)}
-.filter-overlay.active{display:block}
-.filter-header{padding:1.25rem;border-bottom:1px solid #e3e6f0;display:flex;justify-content:space-between;align-items:center;background:#f8f9fc}
-.filter-body{padding:1.5rem;flex-grow:1;overflow-y:auto}
-.filter-footer{padding:1.25rem;border-top:1px solid #e3e6f0;background:#f8f9fc;display:flex;gap:10px}
-.filter-chip{display:inline-flex;align-items:center;background:#eaecf4;padding:.25rem .75rem;border-radius:20px;font-size:.85rem;margin-right:.5rem;margin-bottom:.5rem}
+    .filter-sidebar {
+        position: fixed;
+        top: 0;
+        right: -360px;
+        width: 360px;
+        height: 100vh;
+        background: #fff;
+        z-index: 1100;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, .1);
+        transition: all .3s ease;
+        display: flex;
+        flex-direction: column
+    }
+
+    .filter-sidebar.active {
+        right: 0
+    }
+
+    .filter-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, .5);
+        z-index: 1090;
+        display: none;
+        backdrop-filter: blur(2px)
+    }
+
+    .filter-overlay.active {
+        display: block
+    }
+
+    .filter-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fc
+    }
+
+    .filter-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+        overflow-y: auto
+    }
+
+    .filter-footer {
+        padding: 1.25rem;
+        border-top: 1px solid #e3e6f0;
+        background: #f8f9fc;
+        display: flex;
+        gap: 10px
+    }
+
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        background: #eaecf4;
+        padding: .25rem .75rem;
+        border-radius: 20px;
+        font-size: .85rem;
+        margin-right: .5rem;
+        margin-bottom: .5rem
+    }
 </style>
 
 <div class="card shadow mb-4">
@@ -28,6 +132,9 @@ $typeLabel  = 'Freeform';
                 </a>
                 <button class="btn btn-primary btn-sm mr-2" data-bs-toggle="modal" data-bs-target="#addDataModal">
                     <i class="fas fa-plus"></i> Tambah Data
+                </button>
+                <button type="button" class="btn btn-success btn-sm mr-2" data-bs-toggle="modal" data-bs-target="#pasteImportModal">
+                    <i class="fas fa-paste"></i> Paste dari Excel
                 </button>
                 <button class="btn btn-outline-primary btn-sm" onclick="toggleFilter(true)">
                     <i class="fas fa-filter"></i> Filter
@@ -126,7 +233,9 @@ $typeLabel  = 'Freeform';
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data</td></tr>
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">Tidak ada data</td>
+                        </tr>
                     <?php endif; ?>
                 </tbody>
                 <tfoot class="thead-light font-weight-bold">
@@ -140,16 +249,8 @@ $typeLabel  = 'Freeform';
         </div>
         <div class="d-flex align-items-center justify-content-between mt-3">
             <div class="text-muted small">
-                <?php
-                $pg    = $pager->getCurrentPage('fg_freeform');
-                $perPg = 15;
-                $total = count($data_list ?? []);
-                $start = (($pg - 1) * $perPg) + 1;
-                $end   = $start + $total - 1;
-                ?>
-                Menampilkan <strong><?= $start ?>–<?= $end ?></strong> entri
+                Total: <strong><?= count($data_list ?? []) ?></strong> entri
             </div>
-            <?= $pager->links('fg_freeform', 'bootstrap_pagination') ?>
         </div>
     </div>
 </div>
@@ -166,17 +267,53 @@ $typeLabel  = 'Freeform';
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6"><div class="form-group"><label>Tanggal <span class="text-danger">*</span></label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" required></div></div>
-                        <div class="col-md-6"><div class="form-group"><label>Nomor</label><input type="text" class="form-control" name="nomor" placeholder="Nomor..."></div></div>
+                        <div class="col-md-6">
+                            <div class="form-group"><label>Tanggal <span class="text-danger">*</span></label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" required></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group"><label>Nomor</label><input type="text" class="form-control" name="nomor" placeholder="Nomor..."></div>
+                        </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6"><div class="form-group"><label>Nama Produk</label><input type="text" class="form-control" name="nama_produk" placeholder="Nama produk..."></div></div>
-                        <div class="col-md-6"><div class="form-group"><label>Warna</label><input type="text" class="form-control" name="warna" placeholder="Warna..."></div></div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nama Produk</label>
+                                <div class="input-group">
+                                    <select class="form-control select2-produk" name="nama_produk" id="add_nama_produk">
+                                        <option value="">-- Pilih Produk --</option>
+                                        <?php foreach ($produkFreeform as $p): ?>
+                                            <option value="<?= esc($p['nama_produk']) ?>"
+                                                data-nomor="<?= esc($p['nomor']) ?>"
+                                                data-warna="<?= esc($p['warna']) ?>"
+                                                data-berat="<?= esc($p['berat']) ?>"
+                                                data-jumlah="<?= esc($p['jumlah']) ?>"
+                                                data-packing="<?= esc($p['packing'] ?? '') ?>">
+                                                <?= esc($p['nomor'] . '. ' . $p['nama_produk'] . ' — ' . $p['warna']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addProdukModal" title="Tambah produk baru">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group"><label>Warna</label><input type="text" class="form-control" name="warna" id="add_warna" placeholder="Warna..."></div>
+                        </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4"><div class="form-group"><label>Berat (gr)</label><input type="text" class="form-control" name="berat" placeholder="Berat..."></div></div>
-                        <div class="col-md-4"><div class="form-group"><label>Jumlah (pcs)</label><input type="text" class="form-control" name="jumlah" placeholder="Jumlah..."></div></div>
-                        <div class="col-md-4"><div class="form-group"><label>Packing</label><input type="text" class="form-control" name="packing" placeholder="Packing..."></div></div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>Berat (gr)</label><input type="text" class="form-control" name="berat" id="add_berat" placeholder="Berat..."></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>Jumlah (pcs)</label><input type="text" class="form-control" name="jumlah" id="add_jumlah" placeholder="Jumlah..."></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>Packing</label><input type="text" class="form-control" name="packing" id="add_packing" placeholder="Packing..."></div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -201,17 +338,46 @@ $typeLabel  = 'Freeform';
                 <input type="hidden" name="id" id="edit_id">
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6"><div class="form-group"><label>Tanggal</label><input type="date" class="form-control" name="tanggal" id="edit_tanggal" required></div></div>
-                        <div class="col-md-6"><div class="form-group"><label>Nomor</label><input type="text" class="form-control" name="nomor" id="edit_nomor"></div></div>
+                        <div class="col-md-6">
+                            <div class="form-group"><label>Tanggal</label><input type="date" class="form-control" name="tanggal" id="edit_tanggal" required></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group"><label>Nomor</label><input type="text" class="form-control" name="nomor" id="edit_nomor"></div>
+                        </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6"><div class="form-group"><label>Nama Produk</label><input type="text" class="form-control" name="nama_produk" id="edit_nama_produk"></div></div>
-                        <div class="col-md-6"><div class="form-group"><label>Warna</label><input type="text" class="form-control" name="warna" id="edit_warna"></div></div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nama Produk</label>
+                                <select class="form-control select2-produk" name="nama_produk" id="edit_nama_produk">
+                                    <option value="">-- Pilih Produk --</option>
+                                    <?php foreach ($produkFreeform as $p): ?>
+                                        <option value="<?= esc($p['nama_produk']) ?>"
+                                            data-nomor="<?= esc($p['nomor']) ?>"
+                                            data-warna="<?= esc($p['warna']) ?>"
+                                            data-berat="<?= esc($p['berat']) ?>"
+                                            data-jumlah="<?= esc($p['jumlah']) ?>"
+                                            data-packing="<?= esc($p['packing'] ?? '') ?>">
+                                            <?= esc($p['nomor'] . '. ' . $p['nama_produk'] . ' — ' . $p['warna']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group"><label>Warna</label><input type="text" class="form-control" name="warna" id="edit_warna"></div>
+                        </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4"><div class="form-group"><label>Berat (gr)</label><input type="text" class="form-control" name="berat" id="edit_berat"></div></div>
-                        <div class="col-md-4"><div class="form-group"><label>Jumlah (pcs)</label><input type="text" class="form-control" name="jumlah" id="edit_jumlah"></div></div>
-                        <div class="col-md-4"><div class="form-group"><label>Packing</label><input type="text" class="form-control" name="packing" id="edit_packing"></div></div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>Berat (gr)</label><input type="text" class="form-control" name="berat" id="edit_berat"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>Jumlah (pcs)</label><input type="text" class="form-control" name="jumlah" id="edit_jumlah"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group"><label>Packing</label><input type="text" class="form-control" name="packing" id="edit_packing"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -265,56 +431,67 @@ $typeLabel  = 'Freeform';
 </div>
 
 <script>
-function toggleFilter(show) {
-    document.querySelector('.filter-sidebar').classList.toggle('active', show);
-    document.querySelector('.filter-overlay').classList.toggle('active', show);
-}
+    function toggleFilter(show) {
+        document.querySelector('.filter-sidebar').classList.toggle('active', show);
+        document.querySelector('.filter-overlay').classList.toggle('active', show);
+    }
 
-function setEditModal(btn) {
-    const d = btn.dataset;
-    document.getElementById('edit_id').value          = d.id;
-    document.getElementById('edit_tanggal').value     = d.tanggal      || '';
-    document.getElementById('edit_nomor').value       = d.nomor        || '';
-    document.getElementById('edit_nama_produk').value = d.nama_produk  || '';
-    document.getElementById('edit_warna').value       = d.warna        || '';
-    document.getElementById('edit_berat').value       = d.berat        || '';
-    document.getElementById('edit_jumlah').value      = d.jumlah       || '';
-    document.getElementById('edit_packing').value     = d.packing      || '';
-    document.getElementById('formEdit').action = '<?= base_url('ppic/finish_good/freeform/update') ?>/' + d.id;
-}
+    function setEditModal(btn) {
+        const d = btn.dataset;
+        document.getElementById('edit_id').value = d.id;
+        document.getElementById('edit_tanggal').value = d.tanggal || '';
+        document.getElementById('edit_nomor').value = d.nomor || '';
 
-function setDeleteModal(btn) {
-    const id   = btn.dataset.id;
-    const nama = btn.dataset.nama || 'data ini';
-    document.getElementById('delete_id').value                    = id;
-    document.getElementById('delete_message').textContent         = 'Hapus "' + nama + '"?';
-    document.getElementById('formDelete').action                  = '<?= base_url('ppic/finish_good/freeform/delete') ?>/' + id;
-}
+        // Handle nama_produk select
+        const selProduk = document.getElementById('edit_nama_produk');
+        selProduk.value = d.nama_produk || '';
+        if (selProduk.value === '' && d.nama_produk) {
+            const opt = new Option(d.nama_produk, d.nama_produk, true, true);
+            selProduk.add(opt);
+        }
+        if (typeof $(selProduk).select2 === 'function') {
+            $(selProduk).trigger('change');
+        }
 
-// Load Trash Data
-function loadTrashFreeform() {
-    const tbody = document.querySelector('#trashTableFreeform tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat...</td></tr>';
-    
-    const url = '<?= base_url('ppic/finish_good/freeform/get-trash') ?>';
-    console.log('Fetching trash from:', url);
-    
-    fetch(url)
-        .then(r => {
-            console.log('Response status:', r.status);
-            if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
-            return r.json();
-        })
-        .then(data => {
-            console.log('Trash data:', data);
-            tbody.innerHTML = '';
-            if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Tempat sampah kosong.</td></tr>';
-                return;
-            }
-            data.forEach(item => {
-                const html = `<tr style="font-size: 13px;">
+        document.getElementById('edit_warna').value = d.warna || '';
+        document.getElementById('edit_berat').value = d.berat || '';
+        document.getElementById('edit_jumlah').value = d.jumlah || '';
+        document.getElementById('edit_packing').value = d.packing || '';
+        document.getElementById('formEdit').action = '<?= base_url('ppic/finish_good/freeform/update') ?>/' + d.id;
+    }
+
+    function setDeleteModal(btn) {
+        const id = btn.dataset.id;
+        const nama = btn.dataset.nama || 'data ini';
+        document.getElementById('delete_id').value = id;
+        document.getElementById('delete_message').textContent = 'Hapus "' + nama + '"?';
+        document.getElementById('formDelete').action = '<?= base_url('ppic/finish_good/freeform/delete') ?>/' + id;
+    }
+
+    // Load Trash Data
+    function loadTrashFreeform() {
+        const tbody = document.querySelector('#trashTableFreeform tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat...</td></tr>';
+
+        const url = '<?= base_url('ppic/finish_good/freeform/get-trash') ?>';
+        console.log('Fetching trash from:', url);
+
+        fetch(url)
+            .then(r => {
+                console.log('Response status:', r.status);
+                if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+                return r.json();
+            })
+            .then(data => {
+                console.log('Trash data:', data);
+                tbody.innerHTML = '';
+                if (!Array.isArray(data) || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Tempat sampah kosong.</td></tr>';
+                    return;
+                }
+                data.forEach(item => {
+                    const html = `<tr style="font-size: 13px;">
                     <td class="px-3 py-2">
                         <div class="font-weight-bold">${item.nama_produk || '-'}</div>
                         <div class="text-muted" style="font-size: 11px;">Warna: ${item.warna || '-'}</div>
@@ -332,53 +509,78 @@ function loadTrashFreeform() {
                         </div>
                     </td>
                 </tr>`;
-                tbody.insertAdjacentHTML('beforeend', html);
+                    tbody.insertAdjacentHTML('beforeend', html);
+                });
+            })
+            .catch(err => {
+                console.error('Error loading trash:', err);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Gagal memuat data sampah: ' + err.message + '</td></tr>';
             });
-        })
-        .catch(err => {
-            console.error('Error loading trash:', err);
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Gagal memuat data sampah: ' + err.message + '</td></tr>';
-        });
-}
+    }
 
-// Initialize modals
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded: Initializing delete modal handler');
-    
-    // Delete modal handler
-    const deleteModal = document.getElementById('modalDelete');
-    console.log('Delete modal element:', deleteModal);
-    
-    if (deleteModal) {
-        deleteModal.addEventListener('show.bs.modal', function(event) {
-            console.log('Delete modal showing', event);
-            const btn = event.relatedTarget;
-            console.log('Related target button:', btn);
-            
-            if (!btn) {
-                console.error('No related target button found');
-                return;
-            }
-            
-            const id = btn.getAttribute('data-id');
-            const nama = btn.getAttribute('data-nama') || 'data ini';
-            console.log('Delete ID:', id, 'Nama:', nama);
-            
-            document.getElementById('delete_id').value = id;
-            document.getElementById('delete_message').textContent = 'Hapus "' + nama + '"?';
-            document.getElementById('formDelete').action = '<?= base_url('ppic/finish_good/freeform/delete') ?>/' + id;
-            console.log('Form action set to:', document.getElementById('formDelete').action);
-        });
-        console.log('Delete modal event listener attached');
-    }
-    
-    // Trash modal handler
-    const trashModal = document.getElementById('trashModalFg');
-    if (trashModal) {
-        trashModal.addEventListener('show.bs.modal', loadTrashFreeform);
-        console.log('Trash modal event listener registered');
-    }
-});
+    // Initialize modals
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded: Initializing delete modal handler');
+
+        // Delete modal handler
+        const deleteModal = document.getElementById('modalDelete');
+        console.log('Delete modal element:', deleteModal);
+
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                console.log('Delete modal showing', event);
+                const btn = event.relatedTarget;
+                console.log('Related target button:', btn);
+
+                if (!btn) {
+                    console.error('No related target button found');
+                    return;
+                }
+
+                const id = btn.getAttribute('data-id');
+                const nama = btn.getAttribute('data-nama') || 'data ini';
+                console.log('Delete ID:', id, 'Nama:', nama);
+
+                document.getElementById('delete_id').value = id;
+                document.getElementById('delete_message').textContent = 'Hapus "' + nama + '"?';
+                document.getElementById('formDelete').action = '<?= base_url('ppic/finish_good/freeform/delete') ?>/' + id;
+                console.log('Form action set to:', document.getElementById('formDelete').action);
+            });
+            console.log('Delete modal event listener attached');
+        }
+
+        // Trash modal handler
+        const trashModal = document.getElementById('trashModalFg');
+        if (trashModal) {
+            trashModal.addEventListener('show.bs.modal', loadTrashFreeform);
+            console.log('Trash modal event listener registered');
+        }
+
+        // Initialize Select2 for nama_produk dropdowns
+        if (typeof $.fn.select2 !== 'undefined') {
+            $('.select2-produk').select2({
+                theme: 'bootstrap4',
+                placeholder: '-- Pilih Produk --',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+
+        // Autofill form tambah saat produk dipilih
+        const addProduk = document.getElementById('add_nama_produk');
+        if (addProduk) {
+            $(addProduk).on('change', function() {
+                const sel = this.options[this.selectedIndex];
+                if (!sel || !sel.value) return;
+                const nomorEl = document.querySelector('#addDataModal [name="nomor"]');
+                if (nomorEl && !nomorEl.value) nomorEl.value = sel.getAttribute('data-nomor') || '';
+                document.getElementById('add_warna').value = sel.getAttribute('data-warna') || '';
+                document.getElementById('add_berat').value = sel.getAttribute('data-berat') || '';
+                document.getElementById('add_jumlah').value = sel.getAttribute('data-jumlah') || '';
+                document.getElementById('add_packing').value = sel.getAttribute('data-packing') || '';
+            });
+        }
+    });
 </script>
 
 <!-- Trash Modal -->
@@ -403,7 +605,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="5" class="text-center py-3 text-muted">Klik tombol untuk memuat...</td></tr>
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">Klik tombol untuk memuat...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -416,3 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <?= $this->endSection() ?>
+
+<?= view('ppic/partials/paste_import_modal', ['type' => 'freeform', 'type_label' => $typeLabel]) ?>
+
+<?= view('ppic/partials/add_produk_modal', ['type' => 'freeform', 'type_label' => $typeLabel]) ?>

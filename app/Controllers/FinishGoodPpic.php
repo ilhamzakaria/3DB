@@ -127,7 +127,7 @@ class FinishGoodPpic extends BaseController
             $query = $query->where('tanggal <=', $endDate);
         }
 
-        $data_list = $query->orderBy('tanggal', 'DESC')->orderBy('id', 'DESC')->paginate(15, 'fg_' . $type);
+        $data_list = $query->orderBy('tanggal', 'DESC')->orderBy('id', 'DESC')->findAll();
 
         // Totals — SUM across ALL filtered rows (not just current page)
         $totals      = ['wh_oro' => 0, 'wh_bam' => 0, 'jumlah' => 0];
@@ -291,7 +291,6 @@ class FinishGoodPpic extends BaseController
     private function buildPostData(string $type): array
     {
         $base = [
-            'bagian'      => trim((string) $this->request->getPost('bagian')),
             'nomor'       => trim((string) $this->request->getPost('nomor')),
             'nama_produk' => trim((string) $this->request->getPost('nama_produk')),
             'berat'       => trim((string) $this->request->getPost('berat')),
@@ -320,5 +319,374 @@ class FinishGoodPpic extends BaseController
             'jumlah'  => trim((string) $this->request->getPost('jumlah')),
             'packing' => trim((string) $this->request->getPost('packing')),
         ]);
+    }
+
+    // ================================================================
+    // Excel Import — Preview & Commit
+    // ================================================================
+
+    public function importPreview($type = null)
+    {
+        if (!isset(self::TYPE_LABELS[$type])) {
+            return $this->response->setJSON(['error' => 'Tipe tidak valid'])->setStatusCode(400);
+        }
+
+        $file = $this->request->getFile('excel_file');
+        if (!$file || !$file->isValid()) {
+            return $this->response->setJSON(['error' => 'File tidak valid'])->setStatusCode(400);
+        }
+
+        // Allowed extensions
+        $ext = strtolower($file->getClientExtension());
+        if (!in_array($ext, ['xlsx', 'xls'])) {
+            return $this->response->setJSON(['error' => 'File harus berformat .xlsx atau .xls'])->setStatusCode(400);
+        }
+
+        try {
+            // Load spreadsheet
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            if (empty($rows)) {
+                return $this->response->setJSON(['error' => 'File Excel kosong'])->setStatusCode(400);
+            }
+
+            // Get headers from first row
+            $headerRow = array_map(fn($h) => strtolower(trim((string) $h)), $rows[0]);
+            
+            // Expected columns per type
+            $expectedCols = $this->getExpectedColumns($type);
+            
+            // Map header indices
+            $colMap = [];
+            foreach ($expectedCols as $col) {
+                $idx = array_search($col, $headerRow);
+                if ($idx === false && $col !== 'bagian') { // bagian is optional
+                    return $this->response->setJSON([
+                        'error' => "Kolom '$col' tidak ditemukan di header Excel"
+                    ])->setStatusCode(400);
+                }
+                $colMap[$col] = $idx;
+            }
+
+            // Validate rows
+            $validRows = [];
+            $errors = [];
+            
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                $rowNum = $i + 1;
+                
+                // Skip empty rows
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+
+                $rowData = [];
+                $rowErrors = [];
+
+                foreach ($expectedCols as $col) {
+                    $value = isset($colMap[$col]) && $colMap[$col] !== false 
+                        ? trim((string) ($row[$colMap[$col]] ?? '')) 
+                        : '';
+                    
+                    $rowData[$col] = $value;
+
+                    // Validate required columns (skip bagian as it's optional)
+                    if ($col !== 'bagian' && $value === '') {
+                        $rowErrors[] = "Kolom '$col' kosong";
+                    }
+                }
+
+                // Validate numeric fields
+                if ($type === 'galon') {
+                    if ($rowData['berat'] !== '' && !is_numeric($rowData['berat'])) {
+                        $rowErrors[] = "Berat harus angka";
+                    }
+                    if ($rowData['wh_oro'] !== '' && !is_numeric($rowData['wh_oro'])) {
+                        $rowErrors[] = "WH ORO harus angka";
+                    }
+                    if ($rowData['wh_bam'] !== '' && !is_numeric($rowData['wh_bam'])) {
+                        $rowErrors[] = "WH BAM harus angka";
+                    }
+                } else {
+                    if ($rowData['berat'] !== '' && !is_numeric($rowData['berat'])) {
+                        $rowErrors[] = "Berat harus angka";
+                    }
+                    if ($rowData['jumlah'] !== '' && !is_numeric($rowData['jumlah'])) {
+                        $rowErrors[] = "Jumlah harus angka";
+                    }
+                }
+
+                // Validate date format
+                if ($rowData['tanggal'] !== '') {
+                    $date = \DateTime::createFromFormat('Y-m-d', $rowData['tanggal']);
+                    if (!$date || $date->format('Y-m-d') !== $rowData['tanggal']) {
+                        // Try d/m/Y or d-m-Y format
+                        $date = \DateTime::createFromFormat('d/m/Y', $rowData['tanggal']) 
+                            ?: \DateTime::createFromFormat('d-m-Y', $rowData['tanggal']);
+                        if ($date) {
+                            $rowData['tanggal'] = $date->format('Y-m-d');
+                        } else {
+                            $rowErrors[] = "Tanggal harus format YYYY-MM-DD atau DD/MM/YYYY";
+                        }
+                    }
+                }
+
+                if (empty($rowErrors)) {
+                    $validRows[] = $rowData;
+                } else {
+                    $errors[] = [
+                        'row' => $rowNum,
+                        'message' => implode(', ', $rowErrors)
+                    ];
+                }
+            }
+
+            return $this->response->setJSON([
+                'valid' => $validRows,
+                'errors' => $errors,
+                'total' => count($rows) - 1,
+                'valid_count' => count($validRows),
+                'error_count' => count($errors)
+            ]);
+
+        } catch (\Throwable $e) {
+            log_message('error', 'Import preview error: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'error' => 'Gagal membaca file: ' . $e->getMessage()
+            ])->setStatusCode(500);
+        }
+    }
+
+    public function importCommit($type = null)
+    {
+        if (!isset(self::TYPE_LABELS[$type])) {
+            return $this->response->setJSON(['error' => 'Tipe tidak valid'])->setStatusCode(400);
+        }
+
+        $json = $this->request->getJSON(true);
+        $rows = $json['rows'] ?? [];
+
+        if (empty($rows)) {
+            return $this->response->setJSON(['error' => 'Tidak ada data untuk diimport'])->setStatusCode(400);
+        }
+
+        // Kolom yang diizinkan per tipe (harus cocok dengan $allowedFields model)
+        $allowedKeys = $this->getAllowedKeys($type);
+        $today       = date('Y-m-d');
+
+        // Sanitize server-side: strip internal JS keys, pastikan tanggal ada, cast numerik
+        $validRows = [];
+        foreach ($rows as $row) {
+            $cleaned = [];
+
+            foreach ($allowedKeys as $key) {
+                $raw = isset($row[$key]) ? trim((string) $row[$key]) : '';
+
+                // Tanggal default ke hari ini jika kosong
+                if ($key === 'tanggal') {
+                    if ($raw === '' || $raw === '0' || $raw === 'null') {
+                        $cleaned[$key] = $today;
+                    } else {
+                        // Normalisasi: DD/MM/YYYY → YYYY-MM-DD
+                        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $raw, $m)) {
+                            $raw = sprintf('%s-%02d-%02d', $m[3], (int)$m[2], (int)$m[1]);
+                        }
+                        $cleaned[$key] = $raw;
+                    }
+                    continue;
+                }
+
+                // Field numerik: default 0 jika kosong
+                if (in_array($key, ['wh_oro', 'wh_bam', 'jumlah', 'berat'])) {
+                    $num = str_replace(',', '.', $raw);
+                    $cleaned[$key] = is_numeric($num) ? $num : '0';
+                    continue;
+                }
+
+                $cleaned[$key] = $raw;
+            }
+
+            // Wajib ada tanggal
+            if (empty($cleaned['tanggal'])) {
+                $cleaned['tanggal'] = $today;
+            }
+
+            $validRows[] = $cleaned;
+        }
+
+        if (empty($validRows)) {
+            return $this->response->setJSON(['error' => 'Tidak ada baris valid setelah sanitasi'])->setStatusCode(400);
+        }
+
+        try {
+            $model    = $this->getModel($type);
+            $inserted = $model->insertBatch($validRows);
+
+            return $this->response->setJSON([
+                'success'  => true,
+                'inserted' => $inserted,
+                'message'  => $inserted . ' baris berhasil disimpan',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Import commit error [' . $type . ']: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'error'   => 'Gagal menyimpan data: ' . $e->getMessage(),
+            ])->setStatusCode(500);
+        }
+    }
+
+    public function downloadTemplate($type = null)
+    {
+        if (!isset(self::TYPE_LABELS[$type])) {
+            return redirect()->back()->with('error', 'Tipe tidak valid');
+        }
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set headers
+        $headers = $this->getExpectedColumns($type);
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', strtoupper($header));
+            $sheet->getStyle($col . '1')->getFont()->setBold(true);
+            $col++;
+        }
+
+        // Auto-size columns
+        foreach (range('A', $col) as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        // Write to output
+        $filename = 'template_finish_good_' . $type . '_' . date('Ymd') . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+        exit;
+    }
+
+    private function getExpectedColumns(string $type): array
+    {
+        $base = ['bagian', 'nomor', 'nama_produk', 'berat', 'tanggal'];
+
+        if ($type === 'galon') {
+            return array_merge($base, ['grade', 'wh_oro', 'wh_bam']);
+        }
+
+        if ($type === 'screw_cap') {
+            return array_merge($base, ['warna', 'jumlah', 'keterangan']);
+        }
+
+        // cap_galon & freeform
+        return array_merge($base, ['warna', 'jumlah', 'packing']);
+    }
+
+    /**
+     * Kolom yang diizinkan masuk ke insertBatch — sama dengan allowedFields model,
+     * minus timestamps (ditangani model otomatis).
+     */
+    private function getAllowedKeys(string $type): array
+    {
+        $base = ['bagian', 'nomor', 'nama_produk', 'berat', 'tanggal'];
+
+        if ($type === 'galon') {
+            return array_merge($base, ['grade', 'wh_oro', 'wh_bam']);
+        }
+
+        if ($type === 'screw_cap') {
+            return array_merge($base, ['warna', 'jumlah', 'keterangan']);
+        }
+
+        // cap_galon & freeform
+        return array_merge($base, ['warna', 'jumlah', 'packing']);
+    }
+
+    /**
+     * AJAX: Tambah Produk Baru
+     * POST /ppic/finish_good/{type}/add-produk
+     * Body JSON: { "nama_produk": "...", "nomor": "...", ... }
+     * Returns JSON dengan produk baru
+     */
+    public function addProduk($type = null)
+    {
+        // Check if this is a valid API request (POST with JSON content)
+        $isAjax = $this->request->isAJAX() || 
+                  ($this->request->getMethod() === 'post' && 
+                   strpos($this->request->getHeaderLine('Content-Type'), 'application/json') !== false);
+        
+        if (!$isAjax) {
+            return $this->response->setJSON(['success' => false, 'error' => 'AJAX request required'])
+                ->setStatusCode(400);
+        }
+
+        if (!isset(self::TYPE_LABELS[$type])) {
+            return $this->response->setJSON(['success' => false, 'error' => 'Tipe tidak valid'])
+                ->setStatusCode(400);
+        }
+
+        $json = $this->request->getJSON(true);
+        $namaProduk = trim((string) ($json['nama_produk'] ?? ''));
+        $nomor = trim((string) ($json['nomor'] ?? ''));
+
+        if ($namaProduk === '') {
+            return $this->response->setJSON(['success' => false, 'error' => 'Nama produk tidak boleh kosong'])
+                ->setStatusCode(400);
+        }
+
+        // Ambil field opsional lainnya berdasarkan tipe
+        $data = [
+            'nomor' => $nomor,
+            'nama_produk' => $namaProduk,
+            'berat' => trim((string) ($json['berat'] ?? '')),
+            'tanggal' => date('Y-m-d'),
+        ];
+
+        if ($type === 'galon') {
+            $data['grade'] = trim((string) ($json['grade'] ?? ''));
+            $data['wh_oro'] = trim((string) ($json['wh_oro'] ?? '0'));
+            $data['wh_bam'] = trim((string) ($json['wh_bam'] ?? '0'));
+        } elseif ($type === 'screw_cap') {
+            $data['warna'] = trim((string) ($json['warna'] ?? ''));
+            $data['jumlah'] = trim((string) ($json['jumlah'] ?? '0'));
+            $data['keterangan'] = trim((string) ($json['keterangan'] ?? ''));
+        } else { // cap_galon & freeform
+            $data['warna'] = trim((string) ($json['warna'] ?? ''));
+            $data['jumlah'] = trim((string) ($json['jumlah'] ?? '0'));
+            $data['packing'] = trim((string) ($json['packing'] ?? ''));
+        }
+
+        try {
+            $model = $this->getModel($type);
+            $id = $model->insert($data);
+
+            if ($id) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'id' => $id,
+                    'nomor' => $data['nomor'],
+                    'nama_produk' => $data['nama_produk'],
+                    'warna' => $data['warna'] ?? null,
+                    'berat' => $data['berat'],
+                    'jumlah' => $data['jumlah'] ?? null,
+                    'message' => 'Produk berhasil ditambahkan'
+                ]);
+            } else {
+                return $this->response->setJSON(['success' => false, 'error' => 'Gagal menyimpan produk'])
+                    ->setStatusCode(500);
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Add produk error [' . $type . ']: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'error' => 'Error: ' . $e->getMessage()])
+                ->setStatusCode(500);
+        }
     }
 }

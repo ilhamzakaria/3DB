@@ -476,4 +476,644 @@
     tr.spk-selesai-row:hover > td {
         background-color: rgba(40, 167, 69, 0.065) !important;
     }
+
+    /* ============================================================
+       MOBILE STYLES — Tasks 1, 3, 4, 5, 6, 7
+       Breakpoint: ≤ 767px (phones)
+       Desktop tampilan tidak berubah sama sekali.
+       ============================================================ */
+
+    @media (max-width: 767.98px) {
+
+        /* ----------------------------------------------------------
+           TASK 7: Toolbar vertical stack
+           ---------------------------------------------------------- */
+        .production-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.6rem;
+        }
+
+        .toolbar-group {
+            width: 100%;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .toolbar-btn {
+            flex: 1 1 auto;
+            justify-content: center;
+            min-height: 44px;
+        }
+
+        .toolbar-search {
+            width: 100%;
+        }
+
+        .toolbar-search-form {
+            width: 100%;
+        }
+
+        .toolbar-search .input-group {
+            width: 100%;
+        }
+
+        /* ----------------------------------------------------------
+           TASK 7: Machine links — horizontal scroll (tidak wrap)
+           ---------------------------------------------------------- */
+        .machine-links-wrapper {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+            /* hide scrollbar visually but keep functional */
+            scrollbar-width: none;
+        }
+
+        .machine-links-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        .machine-links-wrapper .machine-btn-group {
+            flex-wrap: nowrap;
+            display: inline-flex;
+            width: max-content;
+            margin-bottom: 0;
+        }
+
+        /* ----------------------------------------------------------
+           TASK 6: Machine links via card-header flex override
+           (fallback jika wrapper class tidak ada)
+           ---------------------------------------------------------- */
+        .card-header .machine-btn-group {
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+
+        .card-header .machine-btn-group::-webkit-scrollbar {
+            display: none;
+        }
+
+        .card-header .machine-link-btn {
+            flex-shrink: 0;
+            white-space: nowrap;
+            font-size: 0.78rem;
+            padding: 0.4rem 0.7rem;
+        }
+
+        /* ----------------------------------------------------------
+           TASK 2: Tabel → card list per baris
+           ---------------------------------------------------------- */
+
+        /* Reset min-width — kunci agar tabel tidak overflow di HP */
+        .table-main {
+            min-width: unset !important;
+        }
+
+        /* Sembunyikan header tabel */
+        .table-main thead {
+            display: none;
+        }
+
+        /* Container tidak perlu horizontal scroll di mobile */
+        .plant-table-wrap {
+            overflow-x: unset;
+        }
+
+        /* Setiap baris data jadi card */
+        .table-main tbody tr:not(.date-divider):not(.shift-divider) {
+            display: block;
+            margin: 0.5rem 0.75rem;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #e8ecf4;
+        }
+
+        /* green-tinted card untuk SPK selesai */
+        tr.spk-selesai-row:not(.date-divider):not(.shift-divider) {
+            background-color: rgba(40, 167, 69, 0.04) !important;
+            border-color: rgba(40, 167, 69, 0.2) !important;
+        }
+
+        /* Date & shift divider: reset ke table-cell agar tetap full-width */
+        .table-main tbody tr.date-divider,
+        .table-main tbody tr.shift-divider {
+            display: table-row;
+        }
+
+        .table-main tbody tr.date-divider td,
+        .table-main tbody tr.shift-divider td {
+            display: table-cell;
+            padding: 0.5rem 0.75rem;
+        }
+
+        /* Setiap cell jadi flex row: label kiri, nilai kanan */
+        .table-main td {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.35rem 0;
+            border: none !important;
+            border-bottom: 1px solid #f5f7fa !important;
+            font-size: 0.82rem;
+            gap: 0.5rem;
+        }
+
+        .table-main td:last-child {
+            border-bottom: none !important;
+        }
+
+        /* Label pseudo-element dari data-label attribute */
+        .table-main td[data-label]::before {
+            content: attr(data-label);
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            flex-shrink: 0;
+            min-width: 90px;
+            margin-right: 0.75rem;
+            padding-top: 0.15rem;
+        }
+
+        /* Kolom aksi: tombol lebih besar untuk jari */
+        .table-main td[data-label="Aksi"] {
+            padding-top: 0.6rem;
+            border-top: 1px solid #f0f2f5 !important;
+            border-bottom: none !important;
+            margin-top: 0.25rem;
+        }
+
+        .table-main td[data-label="Aksi"] .d-flex {
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .btn-action {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+        }
+
+        /* ----------------------------------------------------------
+           TASK 4: Modal add/edit/detail — bottom sheet (position:fixed)
+           ---------------------------------------------------------- */
+        #addDataModal .modal-dialog,
+        #modalEdit .modal-dialog,
+        #modalDetail .modal-dialog {
+            margin: 0;
+            max-width: 100%;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            /* override Bootstrap's transform-based centering */
+            transform: none !important;
+        }
+
+        #addDataModal .modal-content,
+        #modalEdit .modal-content,
+        #modalDetail .modal-content {
+            border-radius: 20px 20px 0 0 !important;
+            max-height: 93vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Handle drag indicator */
+        #addDataModal .modal-header::before,
+        #modalEdit .modal-header::before,
+        #modalDetail .modal-header::before {
+            display: none;
+        }
+
+        /* Sticky header — grid 3 kolom: [kosong] [judul center] [✕] */
+        #addDataModal .modal-header,
+        #modalEdit .modal-header,
+        #modalDetail .modal-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 40px;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #f0f2f5;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #fff;
+            border-radius: 20px 20px 0 0;
+        }
+
+        /* Judul tepat di tengah */
+        #addDataModal .modal-header .modal-title,
+        #modalEdit   .modal-header .modal-title,
+        #modalDetail .modal-header .modal-title {
+            grid-column: 2;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Tombol close di kolom kanan */
+        #addDataModal .modal-header .btn-close,
+        #modalEdit   .modal-header .btn-close,
+        #modalDetail .modal-header .btn-close {
+            grid-column: 3;
+            justify-self: end;
+            position: static !important;
+            transform: none !important;
+            margin: 0;
+            padding: 0.4rem;
+        }
+
+        #addDataModal .modal-body,
+        #modalEdit .modal-body,
+        #modalDetail .modal-body {
+            padding: 1rem 1.25rem;
+        }
+
+        /* Sticky footer — tombol Simpan selalu kelihatan */
+        #addDataModal .modal-footer,
+        #modalEdit .modal-footer {
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            background: #fff;
+            border-top: 1px solid #f0f2f5;
+            padding: 0.75rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #addDataModal .modal-footer .btn,
+        #modalEdit .modal-footer .btn {
+            flex: 1;
+            min-height: 46px;
+            font-size: 0.95rem;
+            border-radius: 12px;
+        }
+
+        #modalDetail .modal-footer {
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            background: #fff;
+            padding: 0.75rem 1.25rem;
+        }
+
+        #modalDetail .modal-footer .btn {
+            width: 100%;
+            min-height: 46px;
+            font-size: 0.95rem;
+            border-radius: 12px;
+        }
+
+        /* ----------------------------------------------------------
+           TASK 5: Form fields — 1 kolom penuh, touch-friendly
+           ---------------------------------------------------------- */
+
+        /* Semua col-* di modal body jadi 100% */
+        #addDataModal .modal-body .col-lg-3,
+        #addDataModal .modal-body .col-lg-4,
+        #addDataModal .modal-body .col-lg-6,
+        #addDataModal .modal-body .col-md-3,
+        #addDataModal .modal-body .col-md-4,
+        #addDataModal .modal-body .col-md-5,
+        #addDataModal .modal-body .col-md-6,
+        #modalEdit .modal-body .col-lg-3,
+        #modalEdit .modal-body .col-lg-4,
+        #modalEdit .modal-body .col-lg-6,
+        #modalEdit .modal-body .col-md-3,
+        #modalEdit .modal-body .col-md-4,
+        #modalEdit .modal-body .col-md-5,
+        #modalEdit .modal-body .col-md-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        /* Input lebih tinggi — mudah disentuh jari */
+        #addDataModal .modal-body .form-control,
+        #addDataModal .modal-body .form-select,
+        #modalEdit .modal-body .form-control,
+        #modalEdit .modal-body .form-select {
+            min-height: 46px !important;
+            font-size: 0.95rem !important;
+            padding: 0.65rem 1rem;
+        }
+
+        /* Select2 juga ikut */
+        #addDataModal .modal-body .select2-selection,
+        #modalEdit .modal-body .select2-selection {
+            min-height: 46px !important;
+            font-size: 0.95rem !important;
+        }
+
+        /* Label */
+        #addDataModal .modal-body .form-label,
+        #modalEdit .modal-body .form-label {
+            font-size: 0.78rem;
+            margin-bottom: 0.3rem;
+        }
+
+        /* Section title lebih kompak */
+        #addDataModal .modal-body .section-title,
+        #modalEdit .modal-body .section-title {
+            font-size: 0.82rem;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* row gutter dikurangi */
+        #addDataModal .modal-body .row.g-3,
+        #addDataModal .modal-body .row.g-4,
+        #modalEdit .modal-body .row.g-3,
+        #modalEdit .modal-body .row.g-4 {
+            --bs-gutter-x: 0.75rem;
+            --bs-gutter-y: 0.5rem;
+        }
+
+        /* Modal detail: kolom jadi 1 kolom */
+        #modalDetail .col-md-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        /* Tabel detail lebih kompak */
+        #modalDetail .table td,
+        #modalDetail .table th {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.5rem;
+        }
+
+    } /* end @media max-width: 767.98px */
+
+    /* ── DOWNTIME CARD LIST ─────────────────────────────────────
+       Berlaku di semua ukuran layar — konsisten desktop & mobile
+       ─────────────────────────────────────────────────────────── */
+
+    .dt-list-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dt-card {
+        border: 1px solid #e8ecf4;
+        border-radius: 12px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .dt-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.6rem 1rem;
+        background: #fef3f2;
+        border-bottom: 1px solid #fde8e6;
+    }
+
+    .dt-card-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #c0392b;
+    }
+
+    .dt-remove-btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 6px;
+    }
+
+    .dt-card-body {
+        padding: 0.85rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    .dt-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .dt-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #a3aed1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0;
+    }
+
+    /* Mulai & Selesai: 2 kolom berdampingan */
+    .dt-field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .dt-field-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Input dalam card sedikit lebih besar dari form-control-sm default */
+    .dt-card .form-control,
+    .dt-card .form-select {
+        font-size: 0.875rem;
+        min-height: 36px;
+    }
+
+    /* Empty state saat belum ada downtime */
+    .dt-empty-state {
+        text-align: center;
+        padding: 1.5rem;
+        color: #a3aed1;
+        font-size: 0.82rem;
+        border: 1px dashed #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 0;
+    }
+
+    /* Becum/Powerjet: reject diinput per jam, card Detail Jenis Reject disembunyikan */
+    .jam-reject-hidden {
+        display: none !important;
+    }
+
+    /* ── JAM REJECT INLINE ────────────────────────────── */
+
+    /* Box sizing untuk kolom tabel */
+    .table_jam_form col,
+    .table_jam_form th,
+    .table_jam_form td { 
+        box-sizing: border-box; 
+    }
+
+    /* Kolom JAM (1st) */
+    .table_jam_form th:nth-child(1),
+    .table_jam_form td:nth-child(1) { 
+        width: 90px !important; 
+        min-width: 90px; 
+        flex-shrink: 0;
+    }
+
+    /* Kolom HASIL (2nd) — lebih lebar, fleksibel */
+    .table_jam_form th:nth-child(2),
+    .table_jam_form td:nth-child(2) { 
+        width: 190px !important; 
+        min-width: 160px; 
+        flex-grow: 0;
+    }
+
+    /* Kolom REJECT (3rd) — hanya untuk Becum/Powerjet, sisa ruang */
+    .table_jam_form th:nth-child(3):not(:last-child),
+    .table_jam_form td:nth-child(3):not(:last-child) { 
+        width: auto !important; 
+        min-width: 330px; 
+        flex-grow: 1;
+    }
+
+    /* Kolom AKSI — last child (bisa 3rd atau 4th tergantung mesin) */
+    .table_jam_form th:last-child,
+    .table_jam_form td:last-child { 
+        width: 50px !important; 
+        min-width: 50px; 
+        flex-shrink: 0;
+    }
+
+    /* Input HASIL lebih lebar */
+    .table_jam_form .jam-hasil {
+        width: 100% !important;
+        min-width: unset;
+        font-size: 0.875rem !important;
+    }
+
+    /* Dropdown reject — compact width */
+    .jam-reject-type {
+        max-width: 180px !important;
+        min-width: 100px !important;
+        flex: 1 1 0 !important;
+    }
+
+    /* Input jumlah reject — fixed width */
+    .jam-reject-jumlah {
+        width: 100px !important;
+        min-width: 90px;
+        flex-shrink: 0;
+        font-size: 0.875rem !important;
+        text-align: center;
+    }
+
+    /* Tombol remove reject — small icon button */
+    .btn-remove-jam-reject {
+        width: 24px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        font-size: 0.65rem !important;
+        flex-shrink: 0;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Tombol add reject — link style */
+    .btn-add-jam-reject {
+        font-size: 0.68rem !important;
+        color: #6c757d !important;
+        text-decoration: none;
+        display: block;
+        margin-top: 2px;
+    }
+
+    .btn-add-jam-reject:hover { 
+        color: #4361ee !important; 
+    }
+
+    /* Cell reject — padding lebih kecil */
+    .jam-reject-cell {
+        padding: 0.35rem 0.5rem !important;
+        vertical-align: middle;
+    }
+
+    /* Setiap baris reject (dropdown + input + hapus) */
+    .jam-reject-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .jam-reject-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 3px;
+        flex-wrap: nowrap;
+    }
+
+    /* Dropdown jenis reject — compact */
+    .jam-reject-type {
+        font-size: 0.72rem !important;
+        padding: 0.2rem 0.35rem !important;
+        min-width: 0 !important;
+        flex: 1 1 0;
+        height: 28px;
+    }
+
+    /* Input jumlah reject */
+    .jam-reject-jumlah {
+        width: 52px !important;
+        flex-shrink: 0;
+        font-size: 0.72rem !important;
+        padding: 0.2rem 0.3rem !important;
+        height: 28px;
+        text-align: center;
+    }
+
+    /* Tombol hapus sub-baris reject */
+    .btn-remove-jam-reject {
+        flex-shrink: 0;
+        width: 22px !important;
+        height: 22px !important;
+        padding: 0 !important;
+        font-size: 0.65rem !important;
+        line-height: 1 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px !important;
+    }
+
+    /* Tombol + Reject */
+    .btn-add-jam-reject {
+        font-size: 0.68rem !important;
+        padding: 0 !important;
+        color: #a3aed1 !important;
+        display: block;
+        margin-top: 2px;
+        text-decoration: none;
+    }
+
+    .btn-add-jam-reject:hover { color: #4361ee !important; }
+
+    /* Mobile: kolom reject stack ke bawah */
+    @media (max-width: 767.98px) {
+        .jam-reject-type   { font-size: 0.7rem !important; }
+        .jam-reject-jumlah { width: 46px !important; }
+    }
 </style>

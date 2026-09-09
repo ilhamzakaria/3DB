@@ -15,9 +15,10 @@ foreach ($downtimes as $dt) {
             <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2 text-primary"></i> Informasi Umum</h6>
             <table class="table table-sm table-borderless">
                 <tr><td width="150" class="text-muted">No. SPK</td><td class="fw-bold"><?= esc($header['nomor_spk']) ?></td></tr>
-                <tr><td class="text-muted">Mesin</td><td><?= esc($header['nama_mesin']) ?> (M#<?= esc($header['nomor_mesin']) ?>)</td></tr>
+                <tr><td class="text-muted">Mesin & No Mesin</td><td><?= esc($header['nama_mesin']) ?><?php if (!empty($ppic_nomor_mesin)): ?> dan <?= esc($ppic_nomor_mesin) ?><?php endif; ?></td></tr>
                 <tr><td class="text-muted">Produk</td><td><?= esc($header['nama_produk']) ?></td></tr>
                 <tr><td class="text-muted">Batch</td><td><?= esc($header['batch_number'] ?: '-') ?></td></tr>
+                <tr><td class="text-muted">Type Produk</td><td><?= esc($header['type_produk'] ?? '-' ?: '-') ?></td></tr>
                 <tr><td class="text-muted">Tanggal</td><td><?= date('d M Y', strtotime($header['tanggal'])) ?></td></tr>
                 <tr><td class="text-muted">Shift / Grup</td><td><?php 
                     $shiftRaw = (string)($header['shift'] ?? '');
@@ -70,6 +71,28 @@ foreach ($downtimes as $dt) {
                 </div>
             </div>
         </div>
+
+        <?php 
+        // Detect if record is Becum machine
+        $detailMesinNama = strtolower(str_replace([' ', '-', '_'], '', $header['nama_mesin'] ?? ''));
+        $detailIsBecum   = ($detailMesinNama === 'becum');
+        ?>
+
+        <?php if ($detailIsBecum): ?>
+        <div class="col-md-6">
+            <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-flask me-2 text-primary"></i> Status Spesifik Becum</h6>
+            <div class="d-flex gap-3">
+                <div class="flex-fill text-center p-2 bg-light rounded">
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Plash Kotor</small>
+                    <div class="fw-bold text-primary" style="font-size: 0.95rem;"><?= esc($header['plash_kotor'] ?: '-') ?></div>
+                </div>
+                <div class="flex-fill text-center p-2 bg-light rounded">
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Sapuan</small>
+                    <div class="fw-bold text-success" style="font-size: 0.95rem;"><?= esc($header['sapuan'] ?: '-') ?></div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
         
         <div class="col-md-12">
             <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fas fa-history me-2 text-info"></i> Hasil Produksi Per Jam</h6>
@@ -126,6 +149,73 @@ foreach ($downtimes as $dt) {
                 </p>
                 <p class="mb-1 small"><strong>Lot:</strong> <?= !empty($materials) ? implode(', ', array_filter([$materials[0]['lot_a'], $materials[0]['lot_b'], $materials[0]['lot_c'], $materials[0]['lot_d']])) : '-' ?></p>
                 
+                <!-- Komposisi Detail -->
+                <?php if (!empty($materials) && ($materials[0]['komposisi_nama_1'] || $materials[0]['komposisi_persen_1'])): ?>
+                <hr class="my-2">
+                <p class="mb-2 small"><strong class="text-dark">Komposisi:</strong></p>
+                <?php
+                $isDetailBecum = strtolower(trim($header['nama_mesin'] ?? '')) === 'becum';
+                $komposisiList = [];
+                $totalPersen   = 0;
+                $totalKgDetail = 0;
+                $hasKgData     = false;
+                for ($i = 1; $i <= 4; $i++) {
+                    $nama   = $materials[0]["komposisi_nama_$i"]   ?? '';
+                    $persen = $materials[0]["komposisi_persen_$i"] ?? 0;
+                    $kg     = $materials[0]["komposisi_kg_$i"]     ?? null;
+                    if (!empty($nama) || $persen > 0) {
+                        $komposisiList[] = ['nama' => $nama, 'persen' => $persen, 'kg' => $kg];
+                        $totalPersen    += (float)$persen;
+                        if ($kg !== null && $kg !== '') {
+                            $totalKgDetail += (float)$kg;
+                            $hasKgData      = true;
+                        }
+                    }
+                }
+                ?>
+                <table class="table table-sm table-borderless mb-0" style="font-size: 0.7rem;">
+                    <thead>
+                        <tr>
+                            <th class="ps-0 py-1 text-muted fw-normal">Nama</th>
+                            <th class="text-end pe-0 py-1 text-muted fw-normal">Persen</th>
+                            <?php if ($isDetailBecum && $hasKgData): ?>
+                            <th class="text-end pe-0 py-1 text-muted fw-normal">KG</th>
+                            <?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($komposisiList as $comp): ?>
+                    <tr style="line-height: 1.2;">
+                        <td class="ps-0 py-1"><strong><?= esc($comp['nama']) ?></strong></td>
+                        <td class="text-end pe-0 py-1"><strong><?= number_format((float)$comp['persen'], 2) ?> %</strong></td>
+                        <?php if ($isDetailBecum && $hasKgData): ?>
+                        <td class="text-end pe-0 py-1">
+                            <?= ($comp['kg'] !== null && $comp['kg'] !== '') ? number_format((float)$comp['kg'], 3) . ' kg' : '-' ?>
+                        </td>
+                        <?php endif; ?>
+                    </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                    <tfoot>
+                    <tr style="line-height: 1.2; border-top: 1px solid #dee2e6;">
+                        <td class="ps-0 py-1"><strong class="text-primary">Total:</strong></td>
+                        <td class="text-end pe-0 py-1">
+                            <span class="badge <?= $totalPersen == 100 ? 'bg-success' : ($totalPersen < 100 ? 'bg-warning' : 'bg-danger') ?>" style="font-size: 0.65rem;">
+                                <strong><?= number_format($totalPersen, 2) ?> %</strong>
+                            </span>
+                        </td>
+                        <?php if ($isDetailBecum && $hasKgData): ?>
+                        <td class="text-end pe-0 py-1">
+                            <span class="badge bg-secondary" style="font-size: 0.65rem;">
+                                <strong><?= number_format($totalKgDetail, 3) ?> kg</strong>
+                            </span>
+                        </td>
+                        <?php endif; ?>
+                    </tr>
+                    </tfoot>
+                </table>
+                <?php endif; ?>
+                
                 <hr class="my-2">
                 
                 <p class="mb-1 small"><strong class="text-dark">Colorant:</strong></p>
@@ -134,6 +224,13 @@ foreach ($downtimes as $dt) {
                     <strong>Pemakaian:</strong> <?= !empty($colorants) ? $colorants[0]['pemakaian'] . ' kg' : '-' ?>
                 </p>
                 <p class="mb-1 small"><strong>Lot:</strong> <?= !empty($colorants) ? esc($colorants[0]['nomor_lot']) : '-' ?></p>
+                <?php if (!empty($colorants[0]['tb_in']) || !empty($colorants[0]['tb_out'])): ?>
+                <p class="mb-1 small">
+                    <strong>TB in:</strong> <?= esc($colorants[0]['tb_in'] ?: '-') ?>
+                    &nbsp;|&nbsp;
+                    <strong>TB out:</strong> <?= esc($colorants[0]['tb_out'] ?: '-') ?>
+                </p>
+                <?php endif; ?>
             
                 <div class="mt-2 pt-2 border-top">
                     <p class="mb-1 small"><strong class="text-dark">Packaging :</strong></p>
@@ -163,6 +260,18 @@ foreach ($downtimes as $dt) {
                             <span class="badge bg-white text-dark border w-100 text-start font-weight-normal">
                                 <i class="fas fa-drum text-primary me-1"></i> Nicktainer: <?= $packaging['nicktainer'] ?> pcs
                                 <br><small class="text-muted ms-4">Ukuran: <?= esc($packaging['nicktainer_ukuran'] ?: '-') ?></small>
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($packaging['meter_awal']) || !empty($packaging['meter_akhir'])): ?>
+                        <div class="col-12 mt-1">
+                            <span class="badge bg-white text-dark border w-100 text-start font-weight-normal">
+                                <i class="fas fa-tachometer-alt text-info me-1"></i>
+                                Awal: <?= number_format((float)($packaging['meter_awal'] ?? 0), 2) ?>
+                                &nbsp;&rarr;&nbsp;
+                                Akhir: <?= number_format((float)($packaging['meter_akhir'] ?? 0), 2) ?>
+                                &nbsp;=&nbsp;
+                                <strong>Pakai: <?= number_format((float)($packaging['meter_pemakaian'] ?? 0), 2) ?></strong>
                             </span>
                         </div>
                         <?php endif; ?>

@@ -40,7 +40,11 @@
                 $currentDate = '';
                 $currentShift = '';
                 // Roles that may edit / delete records
-                $canWrite = in_array(session('role'), ['admin', 'manager', 'produksi']);
+                $canDelete    = in_array(session('role'), ['manager', 'produksi']);
+                $_tableRole   = session('role');
+                $_plantMesin  = \App\Controllers\Produksi::getPlantMesin($_tableRole);
+                // canEdit dihitung per baris (plant check), pre-set true untuk non-plant roles
+                $canEditBase  = in_array($_tableRole, ['admin', 'manager', 'leader', 'leader_plant1', 'leader_plant2', 'produksi']);
                 foreach ($produksi as $p): 
                     if ($currentDate != $p['tanggal']): 
                         $currentDate = $p['tanggal'];
@@ -64,7 +68,7 @@
             <?php endif; ?>
 
             <tr<?= (!empty($p['selesai_spk'])) ? ' class="spk-selesai-row"' : '' ?>>
-                <td>
+                <td data-label="No. SPK">
                     <button type="button" class="badge badge-modern badge-spk btn-spk-autofill"
                         style="background: rgba(67, 97, 238, 0.1) !important; color: #4361ee !important;
                                border: 1px solid rgba(67, 97, 238, 0.3) !important; font-weight: 700 !important;
@@ -82,7 +86,7 @@
                         </span>
                     <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Mesin">
                     <div class="d-flex align-items-center">
                         <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2"
                              style="width: 30px; height: 30px;">
@@ -94,19 +98,19 @@
                         </div>
                     </div>
                 </td>
-                <td><?= esc($p['nama_produk']) ?></td>
-                <td class="text-center">
+                <td data-label="Nama Produk"><?= esc($p['nama_produk']) ?></td>
+                <td data-label="Grup" class="text-center">
                     <span class="badge badge-pill badge-light text-muted small px-3"><?= esc($p['grup'] ?? '-') ?></span>
                 </td>
-                <td>
+                <td data-label="Operator">
                     <div class="d-flex align-items-center">
                         <i class="far fa-user me-2 text-muted small"></i>
                         <span class="small font-weight-600"><?= esc($p['operator']) ?></span>
                     </div>
                 </td>
-                <td class="text-right font-weight-bold text-success"><?= number_format($p['grand_total_bagus']) ?></td>
-                <td class="text-right text-danger font-weight-bold"><?= number_format($p['grand_total_reject']) ?></td>
-                <td class="text-center">
+                <td data-label="Hasil Bagus" class="text-right font-weight-bold text-success"><?= number_format($p['grand_total_bagus']) ?></td>
+                <td data-label="Reject" class="text-right text-danger font-weight-bold"><?= number_format($p['grand_total_reject']) ?></td>
+                <td data-label="Aksi" class="text-center">
                     <div class="d-flex justify-content-center gap-1">
                         <button class="btn-action btn-detail btn_view_detail"
                                 data-id="<?= $p['id'] ?>"
@@ -114,13 +118,24 @@
                                 title="Detail">
                             <i class="fas fa-eye small"></i>
                         </button>
-                        <?php if ($canWrite): ?>
+                        <?php
+                        // Per-row: leader_plant hanya boleh edit baris mesin plant-nya
+                        if ($canEditBase && $_plantMesin !== null) {
+                            $rowSlug = array_search($p['nama_mesin'] ?? '', \App\Controllers\Produksi::mesinLabels());
+                            $canEdit = $rowSlug !== false && in_array($rowSlug, $_plantMesin, true);
+                        } else {
+                            $canEdit = $canEditBase;
+                        }
+                        ?>
+                        <?php if ($canEdit): ?>
                             <button class="btn-action btn-edit btn_edit_laporan"
                                     data-id="<?= $p['id'] ?>"
                                     data-bs-toggle="modal" data-bs-target="#modalEdit"
                                     title="Edit">
                                 <i class="fas fa-edit small"></i>
                             </button>
+                        <?php endif; ?>
+                        <?php if ($canDelete): ?>
                             <button class="btn-action btn-delete btn_confirm_delete"
                                     data-id="<?= $p['id'] ?>"
                                     data-bs-toggle="modal" data-bs-target="#modalDeleteConfirm"

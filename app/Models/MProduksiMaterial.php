@@ -13,7 +13,10 @@ class MProduksiMaterial extends BaseProduksiModel
     protected $useSoftDeletes   = true;
     protected $allowedFields    = [
         'produksi_header_id', 'merek_kode', 'pemakaian', 
-        'lot_a', 'lot_b', 'lot_c', 'lot_d'
+        'lot_a', 'lot_b', 'lot_c', 'lot_d',
+        'komposisi_nama_1', 'komposisi_nama_2', 'komposisi_nama_3', 'komposisi_nama_4',
+        'komposisi_persen_1', 'komposisi_persen_2', 'komposisi_persen_3', 'komposisi_persen_4',
+        'komposisi_kg_1', 'komposisi_kg_2', 'komposisi_kg_3', 'komposisi_kg_4'
     ];
 
     protected $useTimestamps = true;

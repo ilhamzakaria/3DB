@@ -61,7 +61,17 @@ class Auth extends BaseController
                     return redirect()->to('/gudang');
                 case 'produksi':
                     return redirect()->to('/produksi');
+                case 'leader':
+                    return redirect()->to('/produksi');
+                case 'leader_plant1':
+                    return redirect()->to('/produksi');
+                case 'leader_plant2':
+                    return redirect()->to('/produksi');
                 case 'operator_produksi':
+                    return redirect()->to('/produksi');
+                case 'operator_produksi1':
+                    return redirect()->to('/produksi');
+                case 'operator_produksi2':
                     return redirect()->to('/produksi');
                 case 'warehouse2':
                     return redirect()->to('/warehouse2');

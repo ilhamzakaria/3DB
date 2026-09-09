@@ -12,7 +12,7 @@ class MProduksiColorant extends BaseProduksiModel
     protected $returnType       = 'array';
     protected $useSoftDeletes   = true;
     protected $allowedFields    = [
-        'produksi_header_id', 'code', 'nomor_lot', 'pemakaian'
+        'produksi_header_id', 'code', 'nomor_lot', 'pemakaian', 'tb_in', 'tb_out'
     ];
 
     protected $useTimestamps = true;

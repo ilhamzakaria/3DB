@@ -1,8 +1,10 @@
 <div class="card-header py-3 bg-white">
     <div class="production-toolbar">
-        <?php $canWrite = in_array(session('role'), ['admin', 'manager', 'produksi']); ?>
-        <div class="toolbar-group">
-            <?php if ($canWrite) : ?>
+        <?php
+        $canAdd    = in_array(session('role'), ['manager', 'produksi', 'operator', 'operator_produksi', 'operator_produksi1', 'operator_produksi2']);
+        $canDelete = in_array(session('role'), ['manager', 'produksi']);
+        ?>        <div class="toolbar-group">
+            <?php if ($canAdd) : ?>
                 <button class="btn btn-primary btn-sm shadow-sm toolbar-btn" data-bs-toggle="modal" data-bs-target="#addDataModal">
                     <i class="fas fa-plus me-1"></i> Tambah Laporan
                 </button>
@@ -20,7 +22,7 @@
             <a href="<?= $exportUrl ?>" class="btn btn-outline-success btn-sm shadow-sm toolbar-btn">
                 <i class="fas fa-file-excel me-1"></i> Export Excel
             </a>
-            <?php if ($canWrite) : ?>
+            <?php if ($canDelete) : ?>
                 <button class="btn btn-outline-secondary btn-sm toolbar-btn" data-bs-toggle="modal" data-bs-target="#trashModal" id="btn_open_trash">
                     <i class="fas fa-trash-restore me-1"></i> Sampah
                 </button>

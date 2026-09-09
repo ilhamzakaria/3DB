@@ -77,6 +77,12 @@
                         badge.style.display = 'none';
                     }
                     lastCount = c;
+                    // Sync ke mobile badge (Task 6)
+                    var mb = document.getElementById('mobileChatBadge');
+                    if (mb) {
+                        if (c > 0) { mb.textContent = c > 99 ? '99+' : c; mb.style.display = 'inline-block'; }
+                        else { mb.style.display = 'none'; }
+                    }
                 }
             } catch (e) {}
         };
@@ -104,6 +110,12 @@
                     notifBadge.style.display = 'none';
                 }
                 lastNotifCount = c;
+                // Sync ke mobile badge (Task 6)
+                var mn = document.getElementById('mobileNotifBadge');
+                if (mn) {
+                    if (c > 0) { mn.textContent = c > 99 ? '99+' : c; mn.style.display = 'inline-block'; }
+                    else { mn.style.display = 'none'; }
+                }
             } catch (e) {}
         };
         xhr.send();

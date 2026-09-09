@@ -4,17 +4,25 @@
     const diagnosticLogs = [];
     const originalLog = console.log;
     const originalError = console.error;
-    
+
     console.log = function(...args) {
-        diagnosticLogs.push({ type: 'log', message: args.join(' '), timestamp: new Date().toISOString() });
+        diagnosticLogs.push({
+            type: 'log',
+            message: args.join(' '),
+            timestamp: new Date().toISOString()
+        });
         originalLog.apply(console, args);
     };
-    
+
     console.error = function(...args) {
-        diagnosticLogs.push({ type: 'error', message: args.join(' '), timestamp: new Date().toISOString() });
+        diagnosticLogs.push({
+            type: 'error',
+            message: args.join(' '),
+            timestamp: new Date().toISOString()
+        });
         originalError.apply(console, args);
     };
-    
+
     // Expose diagnostics globally
     window.getDiagnostics = function() {
         return {
@@ -24,7 +32,7 @@
             environment: 'server/hosting (assumed from context)'
         };
     };
-    
+
     console.log('[DIAGNOSTIC] Scripts loaded at', new Date().toISOString());
 </script>
 
@@ -34,6 +42,63 @@
     let dtRowCount = 1000;
     let spkAutofillLock = false;
     let ttdAutoFillInProgress = false; // Flag untuk track TTD auto-fill status
+
+    // Flag: apakah mesin ini menggunakan reject inline per jam (Becum, Powerjet 1, Powerjet 2)
+    // Nilai di-set oleh form_fields.php via window.IS_JAM_REJECT_MESIN sebelum scripts.php dieksekusi
+    const IS_JAM_REJECT_MESIN = window.IS_JAM_REJECT_MESIN === true;
+
+    /**
+     * Parse persentase komposisi dari PPIC revisi field
+     * Contoh input: "(TBT Pristine : 293 kg) V : 30,84 %, RS Ikrama : 40 % , OT+ : 29 %, Trans Blue : 0,16 %"
+     * Output: 100.00
+     */
+    function parseKomposisiPersentase(revisiText) {
+        return 0;
+    }
+
+    function displayKomposisi(container, komposisiArr) {
+        console.log('[KOMPOSISI] displayKomposisi called with:', {
+            container,
+            komposisiArr
+        });
+
+        const wrapper = (container && container.querySelector('#ppic_komposisi_wrapper')) ||
+            document.querySelector('#ppic_komposisi_wrapper');
+        const list = (container && container.querySelector('#ppic_komposisi_list')) ||
+            document.querySelector('#ppic_komposisi_list');
+        const empty = (container && container.querySelector('#ppic_komposisi_empty')) ||
+            document.querySelector('#ppic_komposisi_empty');
+
+        console.log('[KOMPOSISI] Elements found:', {
+            wrapper: !!wrapper,
+            list: !!list,
+            empty: !!empty
+        });
+
+        if (!wrapper || !list || !empty) {
+            console.warn('[KOMPOSISI] Missing elements - wrapper:', !!wrapper, 'list:', !!list, 'empty:', !!empty);
+            return;
+        }
+
+        if (!komposisiArr || komposisiArr.length === 0) {
+            console.log('[KOMPOSISI] No data, showing empty state');
+            wrapper.style.display = 'none';
+            empty.style.display = 'block';
+            list.innerHTML = '';
+            return;
+        }
+
+        // Generate badges untuk setiap komposisi
+        console.log('[KOMPOSISI] Generating badges for:', komposisiArr);
+        list.innerHTML = komposisiArr.map(nama =>
+            `<span class="badge fw-normal" style="background: rgba(13,110,253,.1); color: #0a58ca; border: 1px solid rgba(13,110,253,.25); font-size: 0.7rem; border-radius: 12px;">${escHtml(String(nama))}</span>`
+        ).join('');
+
+        wrapper.style.display = 'block';
+        empty.style.display = 'none';
+
+        console.log('[KOMPOSISI] Displayed:', komposisiArr.length, 'items successfully');
+    }
 
     function previewSig(input) {
         if (input.files && input.files[0]) {
@@ -69,6 +134,47 @@
         updateTotals(root);
     }
 
+    /**
+     * syncJamRejectToRejectSection — Kumpulkan semua reject dari kolom jam,
+     * gabungkan per jenis, update Total Reject, simpan ke form.dataset untuk submit.
+     * Hanya aktif jika IS_JAM_REJECT_MESIN = true.
+     */
+    function syncJamRejectToRejectSection(container) {
+        if (!IS_JAM_REJECT_MESIN) return;
+
+        // Kumpulkan semua reject dari semua baris jam
+        const rejectMap = {}; // { 'START UP': 10, 'CAMERA': 8 }
+        container.querySelectorAll('.jam-reject-cell').forEach(cell => {
+            cell.querySelectorAll('.jam-reject-row').forEach(row => {
+                const jenis  = row.querySelector('.jam-reject-type')?.value  || '';
+                const jumlah = parseInt(row.querySelector('.jam-reject-jumlah')?.value) || 0;
+                if (jenis && jumlah > 0) {
+                    rejectMap[jenis] = (rejectMap[jenis] || 0) + jumlah;
+                }
+            });
+        });
+
+        // Hitung total reject
+        const totalReject = Object.values(rejectMap).reduce((a, b) => a + b, 0);
+
+        // Update display Total Reject
+        const rejectDisplay = container.querySelector('.grand_total_reject');
+        const rejectHidden  = container.querySelector('.grand_total_reject_hidden');
+        if (rejectDisplay) rejectDisplay.value = totalReject;
+        if (rejectHidden)  rejectHidden.value  = totalReject;
+
+        // Update badge di card Detail Jenis Reject
+        const rejectTotalBadge = container.querySelector('#reject_total');
+        if (rejectTotalBadge) rejectTotalBadge.textContent = totalReject.toLocaleString('id-ID');
+
+        // Simpan rejectMap ke dataset form untuk dipakai saat submit
+        const form = container.querySelector('form') || container.closest('form');
+        if (form) form.dataset.jamRejectMap = JSON.stringify(rejectMap);
+
+        // Trigger updateTotals agar Sisa PO ikut dihitung ulang
+        updateTotals(container);
+    }
+
     function escHtml(str) {
         return String(str)
             .replace(/&/g, '&amp;')
@@ -94,7 +200,7 @@
         const newRow = document.createElement('tr');
         newRow.className = 'reject-row border-bottom';
         newRow.style.transition = 'background-color 0.2s';
-        
+
         let optionsHtml = '<option value="">-- Pilih Jenis Reject --</option>';
         types.forEach(typeName => {
             optionsHtml += `<option value="${escHtml(typeName)}">${escHtml(typeName)}</option>`;
@@ -185,9 +291,121 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Helper functions for dynamic rows
+        // Function untuk menghitung total komposisi persen
+        window.updateKomposisiTotal = function(container = document) {
+            console.log('[updateKomposisiTotal] Called with container:', container);
+            const persenInputs = container.querySelectorAll('.komposisi-persen-input');
+            const totalDisplay = container.querySelector('.komposisi-total-persen');
+            const warningContainer = container.querySelector('.komposisi-warning');
+            const warningText = container.querySelector('.komposisi-warning-text');
+            
+            console.log('[updateKomposisiTotal] Persen inputs found:', persenInputs.length, 'Total display:', totalDisplay);
+            
+            if (!totalDisplay) {
+                console.warn('[updateKomposisiTotal] No totalDisplay element found!');
+                return;
+            }
+            
+            let total = 0;
+            persenInputs.forEach((input, idx) => {
+                const value = parseFloat(input.value) || 0;
+                console.log(`[updateKomposisiTotal] Input ${idx}:`, value);
+                total += value;
+            });
+            
+            console.log('[updateKomposisiTotal] Total calculated:', total.toFixed(2));
+            
+            // Update display
+            totalDisplay.textContent = total.toFixed(2) + ' %';
+            
+            // Change color berdasarkan total
+            if (total === 100) {
+                totalDisplay.className = 'komposisi-total-persen badge bg-success';
+                if (warningContainer) warningContainer.style.display = 'none';
+                console.log('[updateKomposisiTotal] Status: VALID (100%)');
+            } else if (total < 100) {
+                totalDisplay.className = 'komposisi-total-persen badge bg-warning';
+                if (warningContainer && warningText) {
+                    warningText.textContent = `Total persen hanya ${total.toFixed(2)}%, harus 100% untuk valid.`;
+                    warningContainer.style.display = 'block';
+                }
+                console.log('[updateKomposisiTotal] Status: INCOMPLETE (<100%)');
+            } else {
+                totalDisplay.className = 'komposisi-total-persen badge bg-danger';
+                if (warningContainer && warningText) {
+                    warningText.textContent = `Total persen ${total.toFixed(2)}%, melebihi 100%!`;
+                    warningContainer.style.display = 'block';
+                }
+                console.log('[updateKomposisiTotal] Status: OVER (>100%)');
+            }
+        };
+
+        // Init komposisi event listeners
+        function initKomposisiListeners(container = document) {
+            console.log('[initKomposisiListeners] Starting with container:', container);
+            const persenInputs = container.querySelectorAll('.komposisi-persen-input');
+            console.log('[initKomposisiListeners] Found persen inputs:', persenInputs.length);
+            
+            persenInputs.forEach(input => {
+                if (!input.dataset.komposisiBound) {
+                    input.dataset.komposisiBound = '1';
+                    input.addEventListener('input', function() {
+                        console.log('[komposisi input] Value changed:', this.value);
+                        window.updateKomposisiTotal(container);
+                    });
+                    console.log('[initKomposisiListeners] Listener attached to input');
+                }
+            });
+            // Initial calculation
+            console.log('[initKomposisiListeners] Calling updateKomposisiTotal');
+            window.updateKomposisiTotal(container);
+        }
+
+        // Expose for modal initialization
+        window.initKomposisiListeners = initKomposisiListeners;
+
+        // GLOBAL EVENT DELEGATION - untuk catch semua input persentase komposisi
+        // Fallback jika event listener direct tidak berfungsi
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('komposisi-persen-input')) {
+                console.log('[global-delegation] Komposisi persen input changed:', e.target.value);
+                const form = e.target.closest('form') || e.target.closest('.modal-body') || document;
+                window.updateKomposisiTotal(form);
+            }
+        }, true);
         window.addJamRow = function(tableBody, jam, val = '') {
             const rowId = jamRowCount++;
+
+            // Build reject options dari data PHP
+            let rejectOptions = '<option value="">-- Jenis --</option>';
+            getRejectTypesFromData().forEach(name => {
+                rejectOptions += `<option value="${escHtml(name)}">${escHtml(name)}</option>`;
+            });
+
+            // Kolom reject — hanya jika mesin Becum/Powerjet
+            const rejectColHtml = IS_JAM_REJECT_MESIN ? `
+                <td class="px-2 py-2 jam-reject-cell" data-jam="${jam}">
+                    <div class="jam-reject-list">
+                        <div class="jam-reject-row d-flex gap-1 mb-1 align-items-center">
+                            <select class="form-select form-select-sm jam-reject-type flex-grow-1"
+                                style="font-size: 0.75rem; min-width: 110px;">
+                                ${rejectOptions}
+                            </select>
+                            <input type="number" min="0"
+                                class="form-control form-control-sm jam-reject-jumlah"
+                                placeholder="0" style="width: 60px; font-size: 0.75rem;">
+                            <button type="button"
+                                class="btn btn-sm btn-outline-danger btn-remove-jam-reject"
+                                style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">✕</button>
+                        </div>
+                    </div>
+                    <button type="button"
+                        class="btn btn-link btn-sm btn-add-jam-reject p-0 mt-1"
+                        style="font-size: 0.72rem; color: #6c757d;">
+                        <i class="fas fa-plus me-1"></i>Reject
+                    </button>
+                </td>` : '';
+
             const html = `
             <tr data-jam="${jam}">
                 <td class="px-4 py-3">
@@ -197,6 +415,7 @@
                 <td class="px-4 py-3">
                     <input type="number" name="jam_data[${rowId}][hasil_produksi]" value="${val}" class="form-control form-control-sm jam-hasil" required placeholder="0" style="border-radius: 6px; border: 1px solid #dee2e6;">
                 </td>
+                ${rejectColHtml}
                 <td class="text-center px-4 py-3">
                     <button type="button" class="btn btn-sm btn-outline-danger remove-jam" title="Hapus" style="border-radius: 50%; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center;">
                         <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
@@ -207,17 +426,17 @@
             tableBody.insertAdjacentHTML('beforeend', html);
         };
 
-        window.addDtRow = function(tableBody, data = {}) {
+        window.addDtRow = function(container, data = {}) {
             const rowId = dtRowCount++;
             const reasons = {
-                'DT1': 'Improvement',
-                'DT2': 'PLN Off',
-                'DT3': 'Change Product',
-                'DT4': 'Planned Maintenance',
-                'DT5': 'Trial Produk',
-                'DT6': 'Trial mould dan emboss',
-                'DT7': 'Bencana Alam',
-                'DT8': 'Hari libur dan istirahat',
+                'DT1':  'Improvement',
+                'DT2':  'PLN Off',
+                'DT3':  'Change Product',
+                'DT4':  'Planned Maintenance',
+                'DT5':  'Trial Produk',
+                'DT6':  'Trial mould dan emboss',
+                'DT7':  'Bencana Alam',
+                'DT8':  'Hari libur dan istirahat',
                 'DT10': 'Sanitasi',
                 'DT11': 'Warm up',
                 'DT12': 'Stop msn atas permint khusus',
@@ -239,7 +458,7 @@
                 'DT29': 'Cleaning Tooling',
                 'DT30': 'Cleaning Mesin dan Tools',
                 'DT31': 'Kegagalan Design Produk',
-                'DT32': 'Ketiadaan kelengkapan kerja'
+                'DT32': 'Ketiadaan kelengkapan kerja',
             };
 
             let reasonOptions = '<option value="">-- Pilih Alasan --</option>';
@@ -248,22 +467,71 @@
                 reasonOptions += `<option value="${val}" ${data.alasan_downtime === val ? 'selected' : ''}>${val}</option>`;
             }
 
+            const cardNum = container.querySelectorAll('.dt-card').length + 1;
+
             const html = `
-            <tr>
-                <td class="px-3">
-                    <select name="downtimes[${rowId}][alasan]" class="form-select form-select-sm">
-                        ${reasonOptions}
-                    </select>
-                </td>
-                <td><textarea name="downtimes[${rowId}][problem]" class="form-control form-control-sm" rows="2" placeholder="Problem...">${data.problem || ''}</textarea></td>
-                <td><textarea name="downtimes[${rowId}][action_plant]" class="form-control form-control-sm" rows="2" placeholder="Action Plant...">${data.action_plant || ''}</textarea></td>
-                <td><input type="datetime-local" name="downtimes[${rowId}][mulai]" value="${data.waktu_mulai ? data.waktu_mulai.replace(' ', 'T').substring(0,16) : ''}" class="form-control form-control-sm dt-mulai"></td>
-                <td><input type="datetime-local" name="downtimes[${rowId}][selesai]" value="${data.waktu_selesai ? data.waktu_selesai.replace(' ', 'T').substring(0,16) : ''}" class="form-control form-control-sm dt-selesai"></td>
-                <td><input type="number" name="downtimes[${rowId}][durasi]" value="${data.durasi_menit || ''}" class="form-control form-control-sm dt-durasi"></td>
-                <td class="text-center"><button type="button" class="btn btn-link btn-sm text-danger remove-dt">×</button></td>
-            </tr>
-        `;
-            tableBody.insertAdjacentHTML('beforeend', html);
+            <div class="dt-card">
+                <div class="dt-card-header">
+                    <span class="dt-card-title">
+                        <i class="fas fa-exclamation-circle me-2"></i>Downtime #${cardNum}
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-dt dt-remove-btn">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                <div class="dt-card-body">
+                    <div class="dt-field">
+                        <label class="dt-label">Alasan</label>
+                        <select name="downtimes[${rowId}][alasan]" class="form-select form-select-sm">
+                            ${reasonOptions}
+                        </select>
+                    </div>
+                    <div class="dt-field">
+                        <label class="dt-label">Problem</label>
+                        <textarea name="downtimes[${rowId}][problem]"
+                            class="form-control form-control-sm"
+                            rows="2"
+                            placeholder="Deskripsi problem...">${data.problem || ''}</textarea>
+                    </div>
+                    <div class="dt-field">
+                        <label class="dt-label">Action Plant</label>
+                        <textarea name="downtimes[${rowId}][action_plant]"
+                            class="form-control form-control-sm"
+                            rows="2"
+                            placeholder="Tindakan perbaikan...">${data.action_plant || ''}</textarea>
+                    </div>
+                    <div class="dt-field-row">
+                        <div class="dt-field">
+                            <label class="dt-label">Mulai</label>
+                            <input type="datetime-local"
+                                name="downtimes[${rowId}][mulai]"
+                                value="${data.waktu_mulai ? data.waktu_mulai.replace(' ', 'T').substring(0, 16) : ''}"
+                                class="form-control form-control-sm dt-mulai">
+                        </div>
+                        <div class="dt-field">
+                            <label class="dt-label">Selesai</label>
+                            <input type="datetime-local"
+                                name="downtimes[${rowId}][selesai]"
+                                value="${data.waktu_selesai ? data.waktu_selesai.replace(' ', 'T').substring(0, 16) : ''}"
+                                class="form-control form-control-sm dt-selesai">
+                        </div>
+                    </div>
+                    <div class="dt-field" style="max-width: 200px;">
+                        <label class="dt-label">Durasi (menit)</label>
+                        <input type="number"
+                            name="downtimes[${rowId}][durasi]"
+                            value="${data.durasi_menit || ''}"
+                            class="form-control form-control-sm dt-durasi"
+                            placeholder="0">
+                    </div>
+                </div>
+            </div>`;
+
+            // Sembunyikan empty state jika ada
+            const emptyState = container.querySelector('#dt_empty_state');
+            if (emptyState) emptyState.style.display = 'none';
+
+            container.insertAdjacentHTML('beforeend', html);
         };
 
         window.addRejectRow = function(tableBody, type = '', qty = '') {
@@ -292,6 +560,93 @@
             tableBody.insertAdjacentHTML('beforeend', html);
         };
 
+        /**
+         * Auto-fill batch_number dari nomor_mesin + tanggal + shift
+         * Format: {shift}{nomor_mesin}/{DD.MM.YYYY}
+         * Contoh: 1B01/08.09.2026
+         */
+        window.autofillBatchNumber = function(container) {
+            if (!container) return;
+            const nomorMesin = container.querySelector('.nomor_mesin_hidden')?.value || '';
+            const tanggal    = container.querySelector('.tanggal_hidden')?.value || '';   // format YYYY-MM-DD
+            if (!nomorMesin || !tanggal) return;
+
+            // Baca shift (prefix) — strip "extra_" jika ada, ambil nomor belakangnya saja
+            const shiftRaw = container.querySelector('.shift_hidden')?.value || '';
+            const shiftVal = shiftRaw.startsWith('extra_') ? shiftRaw.replace('extra_', '') : shiftRaw;
+
+            // Konversi YYYY-MM-DD → DD.MM.YYYY (pakai titik)
+            const parts = tanggal.split('-');
+            if (parts.length !== 3) return;
+            const [y, m, d] = parts;
+            const formatted  = `${d}.${m}.${y}`;
+            const prefix     = shiftVal ? `${shiftVal}` : '';
+            const batchValue = `${prefix}${nomorMesin}/${formatted}`;
+
+            const batchInput = container.querySelector('.batch_number');
+            if (batchInput) {
+                batchInput.value = batchValue;
+                console.log('[autofillBatchNumber] batch_number set to:', batchValue);
+            }
+        };
+
+        /**
+         * Kalkulasi KG per komposisi (hanya Becum)
+         * - Hitung total kg dari 4 input
+         * - Tampil warning jika total kg ≠ pemakaian, atau konfirmasi hijau jika sesuai
+         * - TIDAK menyentuh kolom persen sama sekali — keduanya independen
+         */
+        window.updateKomposisiKg = function(container) {
+            if (!container) return;
+            const kgInputs = container.querySelectorAll('.komposisi-kg-input');
+            if (!kgInputs.length) return; // bukan Becum, skip
+
+            // 1. Hitung total kg
+            let totalKg = 0;
+            kgInputs.forEach(inp => { totalKg += parseFloat(inp.value) || 0; });
+
+            // 2. Update display total kg
+            const totalKgDisplay = container.querySelector('.komposisi-total-kg');
+            if (totalKgDisplay) totalKgDisplay.textContent = totalKg.toFixed(3) + ' kg';
+
+            // 3. Validasi: bandingkan total kg vs pemakaian — tampil warning atau konfirmasi
+            const pemakaian = parseFloat(container.querySelector('.m_pemakaian')?.value) || 0;
+            const warningEl = container.querySelector('.komposisi-kg-warning');
+            if (!warningEl) return;
+
+            if (pemakaian > 0 && totalKg > 0) {
+                const diff = Math.abs(totalKg - pemakaian);
+                if (diff > 0.001) {
+                    // Tidak sesuai — kuning/merah
+                    warningEl.style.cssText = 'display:block; font-size:0.72rem; border-radius:4px; padding:0.25rem 0.5rem; margin-top:2px; color:#856404; background:#fff3cd; border:1px solid #ffc107;';
+                    warningEl.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Total KG (${totalKg.toFixed(3)}) belum sama dengan Pemakaian (${pemakaian} kg). Harus 100%.`;
+                } else {
+                    // Sesuai — hijau
+                    warningEl.style.cssText = 'display:block; font-size:0.72rem; border-radius:4px; padding:0.25rem 0.5rem; margin-top:2px; color:#155724; background:#d4edda; border:1px solid #c3e6cb;';
+                    warningEl.innerHTML = `<i class="fas fa-check-circle me-1"></i> Total KG sesuai dengan Pemakaian (${pemakaian} kg).`;
+                }
+            } else {
+                warningEl.style.display = 'none';
+                warningEl.innerHTML = '';
+            }
+        };
+
+        /**
+         * Update label nama di samping input KG saat nama komposisi berubah
+         * Sinkronisasi real-time antara input .komposisi_nama_X dan label di KG section
+         */
+        window.syncKomposisiKgLabels = function(container) {
+            if (!container) return;
+            for (let i = 1; i <= 4; i++) {
+                const namaInput = container.querySelector(`.komposisi_nama_${i}`);
+                const kgLabel   = container.querySelector(`.komposisi-kg-label-${i}`);
+                if (namaInput && kgLabel) {
+                    const val = namaInput.value.trim();
+                    kgLabel.textContent = val || `Nama ${i}`;
+                }
+            }
+        };
+
         window.updateTotals = function(container) {
             if (!container) return;
             let totalHasil = 0;
@@ -313,14 +668,21 @@
             const gBagusHidden = container.querySelector('.grand_total_bagus_hidden');
             if (gBagusHidden) gBagusHidden.value = totalBagus;
 
-            // Calculate Sisa PO: total_spk - total_bagus = sisa_po
+            // Calculate Sisa PO: total_spk - (kumulatif DB + total bagus form aktif ini) = sisa_po
             const totalSpkInput = container.querySelector('.total_spk');
             const sisaPoInput = container.querySelector('.sisa_po');
+            const sisaPoHidden = container.querySelector('.sisa_po_hidden');
             if (totalSpkInput && sisaPoInput) {
                 const totalSpk = parseInt(totalSpkInput.value) || 0;
-                const sisaPo = Math.max(0, totalSpk - totalBagus);
+                const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                const kumulatif = parseInt(kumulatifEl?.value) || 0;
+                const sisaPo = Math.max(0, totalSpk - kumulatif - totalBagus);
                 sisaPoInput.value = sisaPo;
-                console.log('Auto-calculated Sisa PO:', sisaPo, '(Total SPK:', totalSpk, '- Total Bagus:', totalBagus, ')');
+                if (sisaPoHidden) sisaPoHidden.value = sisaPo;
+                console.log('Auto-calculated Sisa PO:', sisaPo,
+                    '(Total SPK:', totalSpk,
+                    '- Kumulatif DB:', kumulatif,
+                    '- Bagus form aktif:', totalBagus, ')');
             }
         };
 
@@ -360,12 +722,16 @@
         }
 
         function fillProduksiFromPpic(container, data, spk) {
-            console.log('fillProduksiFromPpic called with:', { spk, data, container });
+            console.log('fillProduksiFromPpic called with:', {
+                spk,
+                data,
+                container
+            });
             spkAutofillLock = true;
 
             const nomorSpkSelect = container.querySelector('.nomor_spk');
             console.log('nomorSpkSelect found:', !!nomorSpkSelect);
-            
+
             if (nomorSpkSelect) {
                 let found = false;
                 for (let i = 0; i < nomorSpkSelect.options.length; i++) {
@@ -522,15 +888,29 @@
                 const rawTotalSpk = String(source.total_spk || '');
                 // Strip non-numeric characters: hapus titik ribuan, koma, spasi, huruf (mis: "5.000 pcs" → "5000")
                 const cleanTotalSpk = rawTotalSpk
-                    .replace(/\./g, '')      // hapus titik ribuan
-                    .replace(/,/g, '')       // hapus koma
+                    .replace(/\./g, '') // hapus titik ribuan
+                    .replace(/,/g, '') // hapus koma
                     .replace(/[^0-9]/g, ''); // hapus semua non-angka (termasuk "pcs", spasi, dll)
                 const totalSpkValue = cleanTotalSpk !== '' ? cleanTotalSpk : '';
                 totalSpkEl.value = totalSpkValue;
                 totalSpkHidden.value = totalSpkValue;
-                console.log('✓ total_spk synced:', { raw: rawTotalSpk, clean: totalSpkValue, visible: totalSpkEl.value, hidden: totalSpkHidden.value });
+                console.log('✓ total_spk synced:', {
+                    raw: rawTotalSpk,
+                    clean: totalSpkValue,
+                    visible: totalSpkEl.value,
+                    hidden: totalSpkHidden.value
+                });
             } else {
                 console.warn('⚠ total_spk elements not found - visible:', !!totalSpkEl, 'hidden:', !!totalSpkHidden);
+            }
+
+            // Set Komposisi dari revisi PPIC - textarea field
+            const komposisiEl = container.querySelector('.komposisi');
+            if (komposisiEl) {
+                const komposisiValue = source.revisi ?? source.komposisi ?? '';
+                komposisiEl.value = komposisiValue;
+                komposisiEl.textContent = komposisiValue; // For textarea content
+                console.log('✓ komposisi synced from PPIC:', komposisiValue);
             }
 
             // Set Shift - visible disabled field + hidden input
@@ -545,7 +925,9 @@
                     shiftEl.value = shiftValue;
                     shiftHidden.value = shiftValue;
                     // TRIGGER CHANGE EVENT untuk auto-fill TTD
-                    shiftEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    shiftEl.dispatchEvent(new Event('change', {
+                        bubbles: true
+                    }));
                 } else if (isEditMode) {
                     console.log('Edit mode: skipping shift override, keeping DB value:', shiftEl.value);
                 }
@@ -584,13 +966,17 @@
 
             spkAutofillLock = false;
             console.log('fillProduksiFromPpic complete');
+            // Panggil updateTotals agar sisa_po langsung dihitung setelah semua field terisi
+            updateTotals(container);
+            // Auto-fill batch_number dari nomor_mesin + tanggal
+            autofillBatchNumber(container);
         }
 
         function fillFromSpkOption(select, container) {
             console.log('fillFromSpkOption called');
             console.log('select element:', select);
             console.log('container element:', container);
-            
+
             if (!select || !select.options) {
                 console.log('Select element or options not available');
                 return;
@@ -598,7 +984,7 @@
 
             const opt = select.options[select.selectedIndex];
             console.log('Selected option:', opt);
-            
+
             if (!opt || !opt.value) {
                 console.log('No option or option value');
                 return;
@@ -616,25 +1002,50 @@
             const shif = opt.dataset.shif || opt.getAttribute('data-shif') || '';
             const packing = opt.dataset.packing || opt.getAttribute('data-packing') || '';
             let totalSpk = opt.dataset.totalSpk || opt.getAttribute('data-total-spk') || '';
+            const revisi = opt.dataset.revisi || opt.getAttribute('data-revisi') || '';
 
-            console.log('Extracted autofill data:', { mesin, produk, brand, grade, warna, nomorMesin, operator, targett, shif, packing, totalSpk });
+            console.log('Extracted autofill data:', {
+                mesin,
+                produk,
+                brand,
+                grade,
+                warna,
+                nomorMesin,
+                operator,
+                targett,
+                shif,
+                packing,
+                totalSpk
+            });
 
             // FALLBACK: If total_spk is empty from dropdown, fetch from PPIC via AJAX
             if (!totalSpk || totalSpk === '') {
                 console.log('total_spk empty from dropdown, fetching from PPIC...');
                 showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
-                
+
                 fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(opt.value))
                     .then(r => r.json())
                     .then(data => {
                         console.log('PPIC SPK Detail response:', data);
                         hideProduksiLoading(container);
-                        
+
                         if (data.ppic && data.ppic.total_spk) {
                             totalSpk = data.ppic.total_spk;
                             console.log('Got total_spk from PPIC API:', totalSpk);
                         }
-                        
+
+                        // Set total_bagus_kumulatif_hidden SEBELUM fillProduksiFromPpic
+                        // agar updateTotals() langsung bisa hitung sisa_po dengan benar
+                        const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                        if (kumulatifEl) {
+                            kumulatifEl.value = data.total_bagus_kumulatif ?? 0;
+                            console.log('Set total_bagus_kumulatif_hidden:', kumulatifEl.value);
+                        }
+
+                        // Display komposisi dari PPIC
+                        console.log('Komposisi data received:', data.komposisi);
+                        displayKomposisi(container, data.komposisi || []);
+
                         // Now fill the form with all data including total_spk from API
                         fillProduksiFromPpic(container, {
                             nama_mesin: mesin || data.ppic?.nama_mesin,
@@ -647,13 +1058,14 @@
                             targett: targett || data.ppic?.targett,
                             shif: shif || data.ppic?.shif,
                             packing: packing || data.ppic?.packing,
-                            total_spk: totalSpk
+                            total_spk: totalSpk,
+                            revisi: data.ppic?.revisi || data.revisi || revisi
                         }, opt.value);
                     })
                     .catch(err => {
                         console.error('Error fetching PPIC SPK detail:', err);
                         hideProduksiLoading(container);
-                        
+
                         // Still fill with available data even if API fails
                         fillProduksiFromPpic(container, {
                             nama_mesin: mesin,
@@ -666,10 +1078,11 @@
                             targett: targett,
                             shif: shif,
                             packing: packing,
-                            total_spk: totalSpk
+                            total_spk: totalSpk,
+                            revisi: revisi
                         }, opt.value);
                     });
-                
+
                 return; // Exit early, will continue in async callback
             }
 
@@ -685,7 +1098,8 @@
                 targett: targett,
                 shif: shif,
                 packing: packing,
-                total_spk: totalSpk
+                total_spk: totalSpk,
+                revisi: revisi
             }, opt.value);
         }
 
@@ -696,7 +1110,7 @@
             // Find the underlying select and get the option
             const select = container.querySelector('.nomor_spk');
             if (!select) return;
-            
+
             for (let i = 0; i < select.options.length; i++) {
                 if (select.options[i].value === value) {
                     const opt = select.options[i];
@@ -711,25 +1125,50 @@
                     const shif = opt.dataset.shif || opt.getAttribute('data-shif') || '';
                     const packing = opt.dataset.packing || opt.getAttribute('data-packing') || '';
                     let totalSpk = opt.dataset.totalSpk || opt.getAttribute('data-total-spk') || '';
+                    const revisi = opt.dataset.revisi || opt.getAttribute('data-revisi') || '';
 
-                    console.log('Alt autofill data:', { mesin, produk, brand, grade, warna, nomorMesin, operator, targett, shif, packing, totalSpk });
+                    console.log('Alt autofill data:', {
+                        mesin,
+                        produk,
+                        brand,
+                        grade,
+                        warna,
+                        nomorMesin,
+                        operator,
+                        targett,
+                        shif,
+                        packing,
+                        totalSpk
+                    });
 
                     // FALLBACK: If total_spk is empty from dropdown, fetch from PPIC via AJAX
                     if (!totalSpk || totalSpk === '') {
                         console.log('Alt method: total_spk empty, fetching from PPIC...');
                         showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
-                        
+
                         fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(value))
                             .then(r => r.json())
                             .then(data => {
                                 console.log('PPIC SPK Detail response (alt):', data);
                                 hideProduksiLoading(container);
-                                
+
                                 if (data.ppic && data.ppic.total_spk) {
                                     totalSpk = data.ppic.total_spk;
                                     console.log('Got total_spk from PPIC API (alt):', totalSpk);
                                 }
-                                
+
+                                // Set total_bagus_kumulatif_hidden SEBELUM fillProduksiFromPpic
+                                // agar updateTotals() langsung bisa hitung sisa_po dengan benar
+                                const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                                if (kumulatifEl) {
+                                    kumulatifEl.value = data.total_bagus_kumulatif ?? 0;
+                                    console.log('Set total_bagus_kumulatif_hidden (alt):', kumulatifEl.value);
+                                }
+
+                                // Display komposisi dari PPIC (alt method)
+                                console.log('Komposisi data received (alt):', data.komposisi);
+                                displayKomposisi(container, data.komposisi || []);
+
                                 // Now fill the form with all data including total_spk from API
                                 fillProduksiFromPpic(container, {
                                     nama_mesin: mesin || data.ppic?.nama_mesin,
@@ -742,13 +1181,14 @@
                                     targett: targett || data.ppic?.targett,
                                     shif: shif || data.ppic?.shif,
                                     packing: packing || data.ppic?.packing,
-                                    total_spk: totalSpk
+                                    total_spk: totalSpk,
+                                    revisi: data.ppic?.revisi || data.revisi || revisi
                                 }, value);
                             })
                             .catch(err => {
                                 console.error('Error fetching PPIC SPK detail (alt):', err);
                                 hideProduksiLoading(container);
-                                
+
                                 // Still fill with available data even if API fails
                                 fillProduksiFromPpic(container, {
                                     nama_mesin: mesin,
@@ -761,10 +1201,11 @@
                                     targett: targett,
                                     shif: shif,
                                     packing: packing,
-                                    total_spk: totalSpk
+                                    total_spk: totalSpk,
+                                    revisi: revisi
                                 }, value);
                             });
-                        
+
                         return; // Exit early, will continue in async callback
                     }
 
@@ -780,7 +1221,8 @@
                         targett: targett,
                         shif: shif,
                         packing: packing,
-                        total_spk: totalSpk
+                        total_spk: totalSpk,
+                        revisi: revisi
                     }, value);
                     break;
                 }
@@ -861,14 +1303,14 @@
 
             // Try to fetch last data from server (optional enhancement)
             // For now, just do basic autofill which already happened in fillFromSpkOption
-            
+
             showProduksiLoading(container, 'Memuat data SPK...');
 
             fetch('<?= base_url('produksi/get_last_data') ?>/' + encodeURIComponent(spk))
                 .then(r => r.json())
                 .then(data => {
                     hideProduksiLoading(container);
-                    
+
                     if (data.last || data.legacy) {
                         applyProduksiLastData(container, data);
                     }
@@ -881,9 +1323,10 @@
 
         window.loadProduksiSpkData = loadProduksiSpkData;
 
-        window.loadDynamicShifts = function(container, mesinName, nomorMesin) {
+        window.loadDynamicShifts = function(container, mesinName, nomorMesin, noSpk) {
             if (!container || !mesinName || !nomorMesin) return;
-            
+            noSpk = noSpk || '';
+
             const shiftSelect = container.querySelector('#shift_select') || container.querySelector('.shift-selector');
             if (!shiftSelect) {
                 console.log('Shift select not found');
@@ -898,9 +1341,10 @@
 
             console.log('loadDynamicShifts - mesinName:', mesinName, 'slug:', mesinSlug, 'nomorMesin:', nomorMesin);
 
-            const apiUrl = '<?= base_url('produksi/get-shifts') ?>'
-                + '?mesin=' + encodeURIComponent(mesinSlug)
-                + '&nomor_mesin=' + encodeURIComponent(nomorMesin);
+            const apiUrl = '<?= base_url('produksi/get-shifts') ?>' +
+                '?mesin=' + encodeURIComponent(mesinSlug) +
+                '&nomor_mesin=' + encodeURIComponent(nomorMesin) +
+                (noSpk ? '&no_spk=' + encodeURIComponent(noSpk) : '');
 
             console.log('Fetching shifts from:', apiUrl);
 
@@ -908,7 +1352,7 @@
                 .then(r => r.json())
                 .then(data => {
                     console.log('Shifts response:', data);
-                    
+
                     if (!data.shifts || Object.keys(data.shifts).length === 0) {
                         console.log('No shifts returned, keeping defaults');
                         return;
@@ -953,8 +1397,9 @@
                 });
         };
 
-        window.loadTargetByShift = function(container, mesinName, nomorMesin, shift) {
+        window.loadTargetByShift = function(container, mesinName, nomorMesin, shift, noSpk) {
             if (!container || !mesinName || !nomorMesin || !shift) return;
+            noSpk = noSpk || '';
 
             const targetInput = container.querySelector('.target');
             const targetHidden = container.querySelector('.target_hidden');
@@ -977,16 +1422,18 @@
                 if (shiftSelector) {
                     const selectedOption = shiftSelector.options[shiftSelector.selectedIndex];
                     const label = selectedOption?.dataset?.label || selectedOption?.textContent || shift;
-                    // Use "extra_" + label format for API
-                    shiftParam = 'extra_' + label.trim().replace(/\s+/g, '_');
+                    // Gunakan format "extra:" + rawurlencode(label) agar aman dari semua karakter spesial
+                    // encodeURIComponent handles (, ), spasi, dan karakter lainnya
+                    shiftParam = 'extra:' + encodeURIComponent(label.trim());
                     console.log('Extra shift detected - label:', label, 'param:', shiftParam);
                 }
             }
 
-            const apiUrl = '<?= base_url('produksi/get-target-by-shift') ?>'
-                + '?mesin=' + encodeURIComponent(mesinSlug)
-                + '&nomor_mesin=' + encodeURIComponent(nomorMesin)
-                + '&shift=' + encodeURIComponent(shiftParam);
+            const apiUrl = '<?= base_url('produksi/get-target-by-shift') ?>' +
+                '?mesin=' + encodeURIComponent(mesinSlug) +
+                '&nomor_mesin=' + encodeURIComponent(nomorMesin) +
+                '&shift=' + encodeURIComponent(shiftParam) +
+                (noSpk ? '&no_spk=' + encodeURIComponent(noSpk) : '');
 
             console.log('Fetching target from:', apiUrl);
 
@@ -994,7 +1441,7 @@
                 .then(r => r.json())
                 .then(data => {
                     console.log('Target response:', data);
-                    
+
                     if (data.target === null || data.target === undefined) {
                         console.log('No target found for this shift');
                         console.log('Debug info:', data.debug || '');
@@ -1055,8 +1502,8 @@
 
             // Add Downtime Row
             if (e.target.closest('.btn_add_dt')) {
-                const tableBody = e.target.closest('.modal-body').querySelector('.table_downtime_form tbody');
-                addDtRow(tableBody);
+                const container = e.target.closest('.modal-body').querySelector('#dt_list_container');
+                addDtRow(container);
             }
 
             // Remove Row
@@ -1065,8 +1512,8 @@
                 e.target.closest('tr').remove();
                 if (container) updateTotals(container);
             }
-            if (e.target.classList.contains('remove-dt')) {
-                e.target.closest('tr').remove();
+            if (e.target.closest('.remove-dt')) {
+                e.target.closest('.dt-card').remove();
             }
 
             // SPK Badge Click -> Open Add Modal with PPIC Data
@@ -1124,6 +1571,43 @@
                 e.target.closest('tr').remove();
             }
 
+            // Tambah sub-baris reject di dalam baris jam
+            if (e.target.closest('.btn-add-jam-reject')) {
+                e.preventDefault();
+                const btn = e.target.closest('.btn-add-jam-reject');
+                const rejectList = btn.previousElementSibling; // .jam-reject-list
+                let rejectOptions = '<option value="">-- Jenis --</option>';
+                getRejectTypesFromData().forEach(name => {
+                    rejectOptions += `<option value="${escHtml(name)}">${escHtml(name)}</option>`;
+                });
+                const newRow = document.createElement('div');
+                newRow.className = 'jam-reject-row d-flex gap-1 mb-1 align-items-center';
+                newRow.innerHTML = `
+                    <select class="form-select form-select-sm jam-reject-type flex-grow-1"
+                        style="font-size: 0.75rem; min-width: 110px;">
+                        ${rejectOptions}
+                    </select>
+                    <input type="number" min="0"
+                        class="form-control form-control-sm jam-reject-jumlah"
+                        placeholder="0" style="width: 60px; font-size: 0.75rem;">
+                    <button type="button"
+                        class="btn btn-sm btn-outline-danger btn-remove-jam-reject"
+                        style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">✕</button>`;
+                rejectList.appendChild(newRow);
+                const container = btn.closest('.modal-body') || document;
+                syncJamRejectToRejectSection(container);
+            }
+
+            // Hapus sub-baris reject
+            if (e.target.closest('.btn-remove-jam-reject')) {
+                e.preventDefault();
+                const btn = e.target.closest('.btn-remove-jam-reject');
+                const row = btn.closest('.jam-reject-row');
+                const container = btn.closest('.modal-body') || document;
+                row.remove();
+                syncJamRejectToRejectSection(container);
+            }
+
             // Edit Laporan (AJAX Fragment)
             if (e.target.closest('.btn_edit_laporan')) {
                 const btn = e.target.closest('.btn_edit_laporan');
@@ -1151,15 +1635,44 @@
                         // RESTORE EDIT DATA - SPK, Shift, TTD
                         setTimeout(() => {
                             console.log('=== POST-AJAX EDIT FORM INIT ===');
-                            
+
+                            // Initialize komposisi listeners AFTER form loaded via AJAX
+                            if (typeof initKomposisiListeners === 'function') {
+                                console.log('[EDIT] Initializing komposisi listeners');
+                                initKomposisiListeners(container);
+                            }
+
                             // Restore SPK selection and populate related fields
                             const spkSelect = container.querySelector('.nomor_spk');
                             if (spkSelect && spkSelect.value) {
                                 console.log('Restoring SPK:', spkSelect.value);
-                                const changeEvent = new Event('change', { bubbles: true });
+                                const changeEvent = new Event('change', {
+                                    bubbles: true
+                                });
                                 spkSelect.dispatchEvent(changeEvent);
                             }
-                            
+
+                            // Fetch total_bagus_kumulatif untuk mode edit (exclude row ini sendiri)
+                            // agar sisa_po tidak double-count produksi shift yang sedang diedit
+                            if (spkSelect && spkSelect.value) {
+                                const editId = btn.dataset.id;
+                                fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' +
+                                        encodeURIComponent(spkSelect.value) +
+                                        '&exclude_id=' + encodeURIComponent(editId))
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                                        if (kumulatifEl && data.total_bagus_kumulatif !== undefined) {
+                                            kumulatifEl.value = data.total_bagus_kumulatif;
+                                            console.log('[EDIT] total_bagus_kumulatif set:', data.total_bagus_kumulatif);
+                                            // Recalculate sisa_po setelah kumulatif terisi
+                                            const modalBody = container.querySelector('.modal-body') || container;
+                                            updateTotals(modalBody);
+                                        }
+                                    })
+                                    .catch(err => console.warn('[EDIT] Gagal fetch kumulatif:', err));
+                            }
+
                             // Load dynamic shifts based on machine (this will include extra shifts)
                             const mesinHiddenField = container.querySelector('input[name="nama_mesin"]');
                             const nomorMesinField = container.querySelector('input[name="nomor_mesin"]');
@@ -1171,14 +1684,18 @@
                                     loadDynamicShifts(container, mesinName, nomorMesin);
                                 }
                             }
-                            
+
                             // Restore Shift selection explicitly
                             const shiftSelector = container.querySelector('.shift-selector');
                             if (shiftSelector) {
                                 const savedShiftValue = shiftSelector.dataset.savedShift || shiftSelector.value;
                                 console.log('Shift selector current value:', savedShiftValue, 'type:', typeof savedShiftValue);
-                                console.log('All shift options:', Array.from(shiftSelector.options).map(o => ({ value: o.value, text: o.text, selected: o.selected })));
-                                
+                                console.log('All shift options:', Array.from(shiftSelector.options).map(o => ({
+                                    value: o.value,
+                                    text: o.text,
+                                    selected: o.selected
+                                })));
+
                                 // Make sure the value is properly set (with delay to allow API to load shifts first)
                                 setTimeout(() => {
                                     if (savedShiftValue && String(savedShiftValue).trim() !== '') {
@@ -1187,7 +1704,7 @@
                                     }
                                 }, 1000); // Wait longer for API to complete and render options
                             }
-                            
+
                             // Restore TTD display
                             const ttdHiddenInput = container.querySelector('#auto-user-ttd');
                             if (ttdHiddenInput && ttdHiddenInput.value) {
@@ -1195,7 +1712,7 @@
                                 const ttdPath = ttdHiddenInput.value;
                                 const preview = container.querySelector('#auto-ttd-preview');
                                 const placeholder = container.querySelector('#auto-ttd-placeholder');
-                                
+
                                 if (preview && ttdPath) {
                                     let imageUrl;
                                     if (ttdPath.startsWith('uploads/')) {
@@ -1203,12 +1720,12 @@
                                     } else {
                                         imageUrl = '<?= base_url('uploads/ttd/') ?>' + ttdPath;
                                     }
-                                    
+
                                     console.log('Loading TTD from:', imageUrl);
                                     preview.src = imageUrl;
                                     preview.style.display = 'block';
                                     if (placeholder) placeholder.style.display = 'none';
-                                    
+
                                     preview.onerror = function() {
                                         console.error('Failed to load TTD:', imageUrl);
                                         this.style.display = 'none';
@@ -1219,11 +1736,13 @@
                                     };
                                 }
                             }
-                            
+
                             // Trigger TTD auto-fill for shift if no saved TTD
                             if (shiftSelector && shiftSelector.value && !ttdHiddenInput?.value) {
                                 console.log('Triggering TTD auto-fill for shift:', shiftSelector.value);
-                                const changeEvent = new Event('change', { bubbles: true });
+                                const changeEvent = new Event('change', {
+                                    bubbles: true
+                                });
                                 shiftSelector.dispatchEvent(changeEvent);
                             }
                         }, 100); // Small delay to ensure all elements are rendered
@@ -1241,6 +1760,13 @@
                     .then(r => r.text())
                     .then(html => {
                         container.innerHTML = html;
+                        
+                        // Initialize komposisi listeners AFTER form loaded via AJAX
+                        if (typeof initKomposisiListeners === 'function') {
+                            setTimeout(() => {
+                                initKomposisiListeners(container);
+                            }, 100);
+                        }
                     });
             }
 
@@ -1256,10 +1782,12 @@
         document.addEventListener('change', function(e) {
             // Sync visible tanggal_input to hidden tanggal_hidden field
             if (e.target.classList.contains('tanggal_input')) {
-                const tanggalHidden = e.target.closest('form')?.querySelector('.tanggal_hidden') || e.target.closest('.modal-body')?.querySelector('.tanggal_hidden');
+                const container = e.target.closest('form') || e.target.closest('.modal-body');
+                const tanggalHidden = container?.querySelector('.tanggal_hidden');
                 if (tanggalHidden) {
                     tanggalHidden.value = e.target.value;
                     console.log('Tanggal updated to:', e.target.value);
+                    autofillBatchNumber(container);
                 }
             }
 
@@ -1274,15 +1802,15 @@
                 if (!spk) return;
                 const container = e.target.closest('form') || e.target.closest('.modal-body');
                 if (!container) return;
-                
+
                 // Try to fill from the option's data attributes (direct autofill)
                 console.log('Calling fillFromSpkOption...');
                 fillFromSpkOption(e.target, container);
-                
+
                 // Also try alternative method in case Select2 wrapped the select
                 console.log('Calling fillFromSpkOptionAlt...');
                 fillFromSpkOptionAlt(spk, container);
-                
+
                 // Then, optionally fetch additional data from server for last data
                 console.log('Calling loadProduksiSpkData...');
                 loadProduksiSpkData(container, spk);
@@ -1292,27 +1820,28 @@
                 const selectedOpt = e.target.options[e.target.selectedIndex];
                 const mesinName = selectedOpt?.dataset.mesin || nomorMesinInput?.value || '';
                 const nomorMesin = selectedOpt?.dataset.nomorMesin || '';
-                
+
                 if (mesinName && nomorMesin) {
                     console.log('Loading shifts for mesin:', mesinName, 'nomor_mesin:', nomorMesin);
-                    loadDynamicShifts(container, mesinName, nomorMesin);
+                    const spkVal = container.querySelector('.nomor_spk')?.value || '';
+                    loadDynamicShifts(container, mesinName, nomorMesin, spkVal);
                 }
             }
 
             // AUTO-FILL TTD & TARGET BERDASARKAN SHIFT
             if (e.target.classList.contains('shift-selector')) {
                 const shift = e.target.value;
-                
+
                 console.log('=== SHIFT CHANGE EVENT ===');
                 console.log('Shift value:', shift);
-                
+
                 if (!shift) {
                     console.log('Empty shift - resetting TTD display');
                     ttdAutoFillInProgress = false;
                     const preview = document.querySelector('#auto-ttd-preview');
                     const placeholder = document.querySelector('#auto-ttd-placeholder');
                     const hiddenInput = document.querySelector('#auto-user-ttd');
-                    
+
                     if (preview) preview.style.display = 'none';
                     if (placeholder) {
                         placeholder.innerHTML = '<i class="fas fa-pen-fancy" style="font-size: 1.5rem; margin-bottom: 5px; display: block;"></i><small>Pilih shift untuk melihat tanda tangan</small>';
@@ -1326,14 +1855,15 @@
                 const formContext = e.target.closest('form') || e.target.closest('.modal-body') || document;
                 const mesinHiddenField = formContext.querySelector('input[name="nama_mesin"]');
                 const nomorMesinField = formContext.querySelector('input[name="nomor_mesin"]');
-                
+
                 if (mesinHiddenField && nomorMesinField) {
                     const mesinName = mesinHiddenField.value;
                     const nomorMesin = nomorMesinField.value;
-                    
+
                     if (mesinName && nomorMesin) {
                         console.log('Calling loadTargetByShift - mesin:', mesinName, 'nomor:', nomorMesin, 'shift:', shift);
-                        loadTargetByShift(formContext, mesinName, nomorMesin, shift);
+                        const spkVal = formContext.querySelector('.nomor_spk')?.value || '';
+                        loadTargetByShift(formContext, mesinName, nomorMesin, shift, spkVal);
                     } else {
                         console.log('Mesin info not available yet for target auto-fill');
                     }
@@ -1359,35 +1889,37 @@
                     console.log('Standard shift selected:', apiShiftParam);
                 }
 
-                // Fetch user TTD dari API - API menggunakan shift value untuk logging saja
-                const apiUrl = '<?= base_url('produksi/get-user-ttd') ?>/' + encodeURIComponent(apiShiftParam);
+                // Fetch user TTD dari API - kirim shift sebagai query string agar aman dari karakter spesial
+                const apiUrl = '<?= base_url('produksi/get-user-ttd') ?>?shift=' + encodeURIComponent(apiShiftParam);
                 console.log('Fetching TTD from:', apiUrl);
-                
+
                 // Show loading state
                 const placeholder = document.querySelector('#auto-ttd-placeholder');
                 if (placeholder) {
                     placeholder.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div><small class="d-block mt-2">Mengambil tanda tangan...</small>';
                     placeholder.style.display = 'block';
                 }
-                
+
                 fetch(apiUrl, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'same-origin' // Include cookies/session
-                })
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin' // Include cookies/session
+                    })
                     .then(async r => {
                         console.log('TTD Response status:', r.status, r.statusText);
-                        
+
                         let data;
                         try {
                             data = await r.json();
                         } catch (e) {
-                            data = { message: r.statusText };
+                            data = {
+                                message: r.statusText
+                            };
                         }
-                        
+
                         // Return response object along with data
                         return {
                             ok: r.ok,
@@ -1398,29 +1930,29 @@
                     })
                     .then(response => {
                         console.log('Response object:', response);
-                        
+
                         if (!response.ok) {
                             const errorMsg = response.data?.message || response.statusText || 'Unknown error';
                             console.error(`API Error HTTP ${response.status}: ${errorMsg}`);
                             ttdAutoFillInProgress = false;
                             throw new Error(`HTTP ${response.status}: ${errorMsg}`);
                         }
-                        
+
                         const data = response.data;
                         console.log('TTD fetch response:', data);
-                        
+
                         if (!data.success) {
                             console.log('API returned success=false:', data.message);
                             ttdAutoFillInProgress = false;
                             const preview = document.querySelector('#auto-ttd-preview');
                             const placeholder = document.querySelector('#auto-ttd-placeholder');
-                            
+
                             if (preview) preview.style.display = 'none';
                             if (placeholder) {
                                 placeholder.innerHTML = '<i class="fas fa-exclamation-triangle text-warning" style="font-size: 1.5rem; margin-bottom: 5px; display: block;"></i><small class="text-warning">' + (data.message || 'TTD belum di-upload') + '<br><a href="<?= base_url('profile') ?>" target="_blank" class="text-decoration-underline">Upload di Profile</a></small>';
                                 placeholder.style.display = 'block';
                             }
-                            
+
                             const hiddenInput = document.querySelector('#auto-user-ttd');
                             if (hiddenInput) hiddenInput.value = '';
                             return;
@@ -1444,11 +1976,11 @@
                                 // Just filename, need to add uploads/ttd/
                                 imageUrl = '<?= base_url('uploads/ttd/') ?>' + ttdPath;
                             }
-                            
+
                             console.log('Full image URL:', imageUrl);
                             preview.src = imageUrl;
                             preview.style.display = 'block';
-                            
+
                             // Add error handling untuk image load
                             preview.onerror = function() {
                                 console.error('Failed to load TTD image:', imageUrl);
@@ -1458,7 +1990,7 @@
                                     placeholder.style.display = 'block';
                                 }
                             };
-                            
+
                             // Add success handler
                             preview.onload = function() {
                                 console.log('TTD image loaded successfully');
@@ -1466,11 +1998,11 @@
                                 ttdAutoFillInProgress = false;
                             };
                         }
-                        
+
                         if (placeholder) {
                             placeholder.style.display = 'none';
                         }
-                        
+
                         if (hiddenInput) {
                             hiddenInput.value = ttdPath;
                             console.log('Updated hidden TTD input to:', ttdPath);
@@ -1484,13 +2016,13 @@
                         ttdAutoFillInProgress = false;
                         const preview = document.querySelector('#auto-ttd-preview');
                         const placeholder = document.querySelector('#auto-ttd-placeholder');
-                        
+
                         if (preview) preview.style.display = 'none';
                         if (placeholder) {
                             placeholder.innerHTML = '<i class="fas fa-exclamation-circle text-danger" style="font-size: 1.5rem; margin-bottom: 5px; display: block;"></i><small class="text-danger">' + err.message + '</small>';
                             placeholder.style.display = 'block';
                         }
-                        
+
                         const hiddenInput = document.querySelector('#auto-user-ttd');
                         if (hiddenInput) hiddenInput.value = '';
                     });
@@ -1506,6 +2038,19 @@
                     shiftHidden.value = valueToStore;
                     console.log('Updated shift_hidden to:', valueToStore, 'form context:', shiftForm?.id || 'document');
                 }
+
+                // Re-generate batch number dengan shift prefix baru
+                const batchContainer = shiftForm || e.target.closest('.modal-body') || document;
+                window.autofillBatchNumber(batchContainer);
+            }
+
+            // Komposisi Nama dropdowns berubah — sync label di KG section (Becum)
+            if (e.target.classList.contains('komposisi_nama_1') ||
+                e.target.classList.contains('komposisi_nama_2') ||
+                e.target.classList.contains('komposisi_nama_3') ||
+                e.target.classList.contains('komposisi_nama_4')) {
+                const container = e.target.closest('form') || e.target.closest('.modal-body') || document;
+                window.syncKomposisiKgLabels(container);
             }
         }, true); // Use capture phase to ensure we fire first before Select2
 
@@ -1513,6 +2058,14 @@
         document.addEventListener('input', function(e) {
             if (e.target.classList.contains('jam-hasil') || e.target.classList.contains('isi')) {
                 updateTotals(e.target.closest('.modal-body'));
+            }
+
+            // Reject inline per jam — update total reject real-time (Becum/Powerjet)
+            if (e.target.classList.contains('jam-reject-jumlah') ||
+                e.target.classList.contains('jam-reject-type')) {
+                const container = e.target.closest('.modal-body') || document;
+                syncJamRejectToRejectSection(container);
+                updateTotals(container);
             }
 
             // Total SPK input - trigger sisa_po calculation via updateTotals
@@ -1527,12 +2080,41 @@
                 updateRejectInlineTotals(root);
             }
 
+            // Meter awal/akhir — kalkulasi pemakaian = akhir - awal
+            if (e.target.classList.contains('meter_awal') ||
+                e.target.classList.contains('meter_akhir')) {
+                const container = e.target.closest('form') || e.target.closest('.modal-body') || document;
+                const awal    = parseFloat(container.querySelector('.meter_awal')?.value)  || 0;
+                const akhir   = parseFloat(container.querySelector('.meter_akhir')?.value) || 0;
+                const hasil   = akhir - awal;
+                const pemakaianDisplay = container.querySelector('.meter_pemakaian');
+                const pemakaianHidden  = container.querySelector('.meter_pemakaian_hidden');
+                if (pemakaianDisplay) pemakaianDisplay.value = hasil.toFixed(2);
+                if (pemakaianHidden)  pemakaianHidden.value  = hasil.toFixed(2);
+            }
+
+            // KG komposisi input — kalkulasi otomatis (hanya Becum)
+            if (e.target.classList.contains('komposisi-kg-input') ||
+                e.target.classList.contains('m_pemakaian')) {
+                const container = e.target.closest('form') || e.target.closest('.modal-body') || document;
+                window.updateKomposisiKg(container);
+            }
+
+            // Nama komposisi berubah — sync label di KG section (handle both input dan select change)
+            if (e.target.classList.contains('komposisi_nama_1') ||
+                e.target.classList.contains('komposisi_nama_2') ||
+                e.target.classList.contains('komposisi_nama_3') ||
+                e.target.classList.contains('komposisi_nama_4')) {
+                const container = e.target.closest('form') || e.target.closest('.modal-body') || document;
+                window.syncKomposisiKgLabels(container);
+            }
+
             // Downtime Duration Calculation
             if (e.target.classList.contains('dt-mulai') || e.target.classList.contains('dt-selesai')) {
-                const row = e.target.closest('tr');
-                const mulai = row.querySelector('.dt-mulai').value;
-                const selesai = row.querySelector('.dt-selesai').value;
-                const durasiInput = row.querySelector('.dt-durasi');
+                const card = e.target.closest('.dt-card');
+                const mulai = card.querySelector('.dt-mulai').value;
+                const selesai = card.querySelector('.dt-selesai').value;
+                const durasiInput = card.querySelector('.dt-durasi');
 
                 if (mulai && selesai) {
                     const start = new Date(mulai);
@@ -1627,11 +2209,11 @@
             formAddLaporan.addEventListener('submit', function() {
                 // Sync display field values ke hidden inputs sebelum submit
                 const rejectDisplay = formAddLaporan.querySelector('.grand_total_reject');
-                const rejectHidden  = formAddLaporan.querySelector('.grand_total_reject_hidden');
+                const rejectHidden = formAddLaporan.querySelector('.grand_total_reject_hidden');
                 if (rejectDisplay && rejectHidden) rejectHidden.value = rejectDisplay.value;
 
                 const bagusDisplay = formAddLaporan.querySelector('.grand_total_bagus');
-                const bagusHidden  = formAddLaporan.querySelector('.grand_total_bagus_hidden');
+                const bagusHidden = formAddLaporan.querySelector('.grand_total_bagus_hidden');
                 if (bagusDisplay && bagusHidden) bagusHidden.value = bagusDisplay.value;
             });
         }
@@ -1645,15 +2227,23 @@
                     initializeRejectSection(container);
                 }
 
+                // Initialize komposisi listeners dengan setTimeout untuk memastikan DOM siap
+                if (container && typeof initKomposisiListeners === 'function') {
+                    setTimeout(() => {
+                        console.log('[addDataModal shown] Initializing komposisi listeners after 50ms');
+                        initKomposisiListeners(container);
+                    }, 50);
+                }
+
                 // Trigger sisa_po calculation on modal show via updateTotals
                 if (container && typeof updateTotals === 'function') {
                     updateTotals(container);
                 }
 
                 // Auto-load TTD on modal open — no shift required
-                const preview     = addModalEl.querySelector('#auto-ttd-preview');
+                const preview = addModalEl.querySelector('#auto-ttd-preview');
                 const placeholder = addModalEl.querySelector('#auto-ttd-placeholder');
-                const ttdInput    = addModalEl.querySelector('#auto-user-ttd');
+                const ttdInput = addModalEl.querySelector('#auto-user-ttd');
 
                 // Skip if already loaded
                 if (ttdInput && ttdInput.value && preview && preview.style.display !== 'none') return;
@@ -1664,36 +2254,42 @@
                 }
 
                 fetch('<?= base_url('produksi/get-user-ttd') ?>', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                    credentials: 'same-origin'
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success && data.tanda_tangan) {
-                        let imageUrl = data.tanda_tangan.startsWith('uploads/')
-                            ? '<?= base_url() ?>' + data.tanda_tangan
-                            : '<?= base_url('uploads/ttd/') ?>' + data.tanda_tangan;
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success && data.tanda_tangan) {
+                            let imageUrl = data.tanda_tangan.startsWith('uploads/') ?
+                                '<?= base_url() ?>' + data.tanda_tangan :
+                                '<?= base_url('uploads/ttd/') ?>' + data.tanda_tangan;
 
-                        if (preview) { preview.src = imageUrl; preview.style.display = 'block'; }
-                        if (placeholder) placeholder.style.display = 'none';
-                        if (ttdInput) ttdInput.value = data.tanda_tangan;
-                    } else {
-                        if (preview) preview.style.display = 'none';
+                            if (preview) {
+                                preview.src = imageUrl;
+                                preview.style.display = 'block';
+                            }
+                            if (placeholder) placeholder.style.display = 'none';
+                            if (ttdInput) ttdInput.value = data.tanda_tangan;
+                        } else {
+                            if (preview) preview.style.display = 'none';
+                            if (placeholder) {
+                                placeholder.innerHTML = '<i class="fas fa-exclamation-triangle text-warning" style="font-size:1.5rem;display:block;margin-bottom:5px;"></i>' +
+                                    '<small class="text-warning">' + (data.message || 'TTD belum di-upload') + '<br>' +
+                                    '<a href="<?= base_url('profile') ?>" target="_blank" class="text-decoration-underline">Upload di Profile</a></small>';
+                                placeholder.style.display = 'block';
+                            }
+                            if (ttdInput) ttdInput.value = '';
+                        }
+                    })
+                    .catch(() => {
                         if (placeholder) {
-                            placeholder.innerHTML = '<i class="fas fa-exclamation-triangle text-warning" style="font-size:1.5rem;display:block;margin-bottom:5px;"></i>'
-                                + '<small class="text-warning">' + (data.message || 'TTD belum di-upload') + '<br>'
-                                + '<a href="<?= base_url('profile') ?>" target="_blank" class="text-decoration-underline">Upload di Profile</a></small>';
+                            placeholder.innerHTML = '<i class="fas fa-times-circle text-danger" style="font-size:1.5rem;display:block;margin-bottom:5px;"></i><small class="text-danger">Gagal memuat tanda tangan</small>';
                             placeholder.style.display = 'block';
                         }
-                        if (ttdInput) ttdInput.value = '';
-                    }
-                })
-                .catch(() => {
-                    if (placeholder) {
-                        placeholder.innerHTML = '<i class="fas fa-times-circle text-danger" style="font-size:1.5rem;display:block;margin-bottom:5px;"></i><small class="text-danger">Gagal memuat tanda tangan</small>';
-                        placeholder.style.display = 'block';
-                    }
-                });
+                    });
             });
         }
 
@@ -1703,6 +2299,14 @@
                 const container = editModalEl.querySelector('.modal-body');
                 if (container && typeof initializeRejectSection === 'function') {
                     initializeRejectSection(container);
+                }
+
+                // Initialize komposisi listeners dengan setTimeout untuk memastikan DOM siap
+                if (container && typeof initKomposisiListeners === 'function') {
+                    setTimeout(() => {
+                        console.log('[editModal shown] Initializing komposisi listeners after 50ms');
+                        initKomposisiListeners(container);
+                    }, 50);
                 }
             });
         }
@@ -1770,12 +2374,40 @@
 
                 // Sync grand_total_bagus
                 const rejectDisplay = e.target.querySelector('.grand_total_reject');
-                const rejectHidden  = e.target.querySelector('.grand_total_reject_hidden');
+                const rejectHidden = e.target.querySelector('.grand_total_reject_hidden');
                 if (rejectDisplay && rejectHidden) rejectHidden.value = rejectDisplay.value;
 
                 const bagusDisplay = e.target.querySelector('.grand_total_bagus');
-                const bagusHidden  = e.target.querySelector('.grand_total_bagus_hidden');
+                const bagusHidden = e.target.querySelector('.grand_total_bagus_hidden');
                 if (bagusDisplay && bagusHidden) bagusHidden.value = bagusDisplay.value;
+
+                // Inject hidden inputs dari jam-reject (Becum/Powerjet)
+                if (IS_JAM_REJECT_MESIN) {
+                    // Hapus hidden reject lama agar tidak duplikat
+                    e.target.querySelectorAll('input[name^="rejects["]').forEach(el => el.remove());
+
+                    // Baca rejectMap dari dataset form (diisi oleh syncJamRejectToRejectSection)
+                    const rejectMap = JSON.parse(e.target.dataset.jamRejectMap || '{}');
+                    let idx = 0;
+                    for (const [jenis, jumlah] of Object.entries(rejectMap)) {
+                        const inputJenis = document.createElement('input');
+                        inputJenis.type  = 'hidden';
+                        inputJenis.name  = `rejects[${idx}][jenis_reject]`;
+                        inputJenis.value = jenis;
+                        e.target.appendChild(inputJenis);
+
+                        const inputJumlah = document.createElement('input');
+                        inputJumlah.type  = 'hidden';
+                        inputJumlah.name  = `rejects[${idx}][jumlah]`;
+                        inputJumlah.value = jumlah;
+                        e.target.appendChild(inputJumlah);
+
+                        idx++;
+                    }
+                    console.log('Jam-reject injected:', rejectMap, 'total entries:', idx);
+                }
+
+                console.log('All hidden fields synced before submission');
             }
         });
 
@@ -1804,23 +2436,23 @@
         // TTD AUTO-FILL INITIALIZATION
         // ============================================
         console.log('=== Produksi Scripts Loaded ===');
-        
+
         // ============================================
         // SPK DROPDOWN AUTO-FILL ON CHANGE
         // ============================================
         // Handle SPK dropdown change to auto-fill form fields
         // Gunakan event delegation agar bekerja meski Select2 di-init belakangan
-        
+
         function handleSpkChange(selectEl) {
             if (!selectEl || !selectEl.value) return;
-            
+
             // Find nearest form container
-            const container = selectEl.closest('form') 
-                || selectEl.closest('[role="dialog"]')?.querySelector('form') 
-                || document;
-            
+            const container = selectEl.closest('form') ||
+                selectEl.closest('[role="dialog"]')?.querySelector('form') ||
+                document;
+
             console.log('[SPK-AUTOFILL] SPK changed to:', selectEl.value, '| container:', container?.id || container?.tagName);
-            
+
             try {
                 fillFromSpkOption(selectEl, container);
             } catch (err) {
@@ -1831,7 +2463,7 @@
                 }
             }
         }
-        
+
         // 1. Attach to all existing .nomor_spk selects (native change)
         document.querySelectorAll('.nomor_spk').forEach(select => {
             if (!select.dataset.autofillBound) {
@@ -1841,11 +2473,11 @@
                 });
             }
         });
-        
+
         // 2. Attach Select2 event setelah delay (Select2 init biasanya selesai 300-500ms setelah DOM)
         setTimeout(function() {
             if (typeof jQuery === 'undefined') return;
-            
+
             jQuery('.nomor_spk').each(function() {
                 const $sel = jQuery(this);
                 if ($sel.hasClass('select2-hidden-accessible') && !this.dataset.select2AutofillBound) {
@@ -1865,33 +2497,35 @@
         shiftSelectors.forEach((selector, i) => {
             console.log(`Shift selector ${i}:`, selector, 'Value:', selector.value, 'Classes:', Array.from(selector.classList));
         });
-        
+
         // Debug: Log TTD elements
         const ttdPreview = document.querySelector('#auto-ttd-preview');
         const ttdPlaceholder = document.querySelector('#auto-ttd-placeholder');
         const ttdHidden = document.querySelector('#auto-user-ttd');
         console.log('TTD Elements:', {
             preview: !!ttdPreview,
-            placeholder: !!ttdPlaceholder, 
+            placeholder: !!ttdPlaceholder,
             hidden: !!ttdHidden
         });
-        
+
         // Initialize TTD auto-fill for edit mode AND restore SPK data
         const isEditMode = document.querySelector('[data-is-edit="1"]');
         if (isEditMode) {
             console.log('Edit mode detected, restoring edit data...');
-            
+
             // First, restore SPK selection and trigger autofill to populate related fields
             const spkSelect = document.querySelector('.nomor_spk');
             if (spkSelect && spkSelect.value) {
                 console.log('Found saved SPK value:', spkSelect.value);
                 // Trigger change to populate all related fields
                 setTimeout(() => {
-                    const changeEvent = new Event('change', { bubbles: true });
+                    const changeEvent = new Event('change', {
+                        bubbles: true
+                    });
                     spkSelect.dispatchEvent(changeEvent);
                 }, 300);
             }
-            
+
             // Load dynamic shifts based on machine (this will include extra shifts)
             setTimeout(() => {
                 const mesinHiddenField = document.querySelector('input[name="nama_mesin"]');
@@ -1905,18 +2539,21 @@
                     }
                 }
             }, 500);
-            
+
             // Restore Shift selection explicitly and ensure it's set
             // WITH DELAY to allow API to load extra shifts first
             const shiftSelector = document.querySelector('.shift-selector');
             if (shiftSelector) {
                 const savedShiftValue = shiftSelector.dataset.savedShift || shiftSelector.value;
                 console.log('Shift selector - saved shift from data-attr:', shiftSelector.dataset.savedShift, 'current value:', shiftSelector.value, 'type:', typeof savedShiftValue);
-                
+
                 // Delay to wait for loadDynamicShifts to complete
                 setTimeout(() => {
-                    console.log('Shift options after API load:', Array.from(shiftSelector.options).map(o => ({ value: o.value, text: o.text })));
-                    
+                    console.log('Shift options after API load:', Array.from(shiftSelector.options).map(o => ({
+                        value: o.value,
+                        text: o.text
+                    })));
+
                     if (savedShiftValue && String(savedShiftValue).trim() !== '') {
                         // Ensure value is string for proper comparison
                         shiftSelector.value = String(savedShiftValue).trim();
@@ -1924,18 +2561,18 @@
                     }
                 }, 1200); // Wait for loadDynamicShifts (500ms) + buffer
             }
-            
+
             const ttdHiddenInput = document.querySelector('#auto-user-ttd');
-            
+
             // First, check if there's a saved TTD value from DB
             if (ttdHiddenInput && ttdHiddenInput.value) {
                 console.log('Found saved TTD value:', ttdHiddenInput.value);
                 const ttdPath = ttdHiddenInput.value;
-                
+
                 // Display the saved TTD image
                 const preview = document.querySelector('#auto-ttd-preview');
                 const placeholder = document.querySelector('#auto-ttd-placeholder');
-                
+
                 if (preview && ttdPath) {
                     let imageUrl;
                     if (ttdPath.startsWith('uploads/')) {
@@ -1943,11 +2580,11 @@
                     } else {
                         imageUrl = '<?= base_url('uploads/ttd/') ?>' + ttdPath;
                     }
-                    
+
                     console.log('Loading saved TTD from:', imageUrl);
                     preview.src = imageUrl;
                     preview.style.display = 'block';
-                    
+
                     preview.onerror = function() {
                         console.error('Failed to load saved TTD:', imageUrl);
                         this.style.display = 'none';
@@ -1956,20 +2593,22 @@
                             placeholder.style.display = 'block';
                         }
                     };
-                    
+
                     preview.onload = function() {
                         console.log('Saved TTD loaded successfully');
                         if (placeholder) placeholder.style.display = 'none';
                     };
                 }
             }
-            
+
             // Then, trigger TTD auto-fill for shift selection (only if no saved TTD exists)
             if (shiftSelector && shiftSelector.value && !ttdHiddenInput?.value) {
                 console.log('Found existing shift value:', shiftSelector.value, 'triggering TTD auto-fill...');
                 // Trigger TTD auto-fill for existing shift value
                 setTimeout(() => {
-                    const changeEvent = new Event('change', { bubbles: true });
+                    const changeEvent = new Event('change', {
+                        bubbles: true
+                    });
                     shiftSelector.dispatchEvent(changeEvent);
                 }, 1000); // Delay untuk memastikan semua element sudah ready
             }
@@ -2043,16 +2682,40 @@
 
             // Sync grand_total_bagus
             const rejectDisplay = e.target.querySelector('.grand_total_reject');
-            const rejectHidden  = e.target.querySelector('.grand_total_reject_hidden');
+            const rejectHidden = e.target.querySelector('.grand_total_reject_hidden');
             if (rejectDisplay && rejectHidden) rejectHidden.value = rejectDisplay.value;
 
             const bagusDisplay = e.target.querySelector('.grand_total_bagus');
-            const bagusHidden  = e.target.querySelector('.grand_total_bagus_hidden');
+            const bagusHidden = e.target.querySelector('.grand_total_bagus_hidden');
             if (bagusDisplay && bagusHidden) bagusHidden.value = bagusDisplay.value;
+
+            // Inject hidden inputs dari jam-reject (Becum/Powerjet)
+            if (IS_JAM_REJECT_MESIN) {
+                // Hapus hidden reject lama agar tidak duplikat
+                e.target.querySelectorAll('input[name^="rejects["]').forEach(el => el.remove());
+
+                // Baca rejectMap dari dataset form (diisi oleh syncJamRejectToRejectSection)
+                const rejectMap = JSON.parse(e.target.dataset.jamRejectMap || '{}');
+                let idx = 0;
+                for (const [jenis, jumlah] of Object.entries(rejectMap)) {
+                    const inputJenis = document.createElement('input');
+                    inputJenis.type  = 'hidden';
+                    inputJenis.name  = `rejects[${idx}][jenis_reject]`;
+                    inputJenis.value = jenis;
+                    e.target.appendChild(inputJenis);
+
+                    const inputJumlah = document.createElement('input');
+                    inputJumlah.type  = 'hidden';
+                    inputJumlah.name  = `rejects[${idx}][jumlah]`;
+                    inputJumlah.value = jumlah;
+                    e.target.appendChild(inputJumlah);
+
+                    idx++;
+                }
+                console.log('Jam-reject injected:', rejectMap, 'total entries:', idx);
+            }
 
             console.log('All hidden fields synced before submission');
         }
     });
-
-
 </script>

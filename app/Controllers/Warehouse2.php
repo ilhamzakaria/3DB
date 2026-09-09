@@ -877,8 +877,8 @@ class Warehouse2 extends BaseController
             if (empty($data['nama_pembeli'])) {
                 $errors['nama_pembeli'] = 'Nama pembeli is required';
             }
-            if (empty($data['kode_barang'])) {
-                $errors['kode_barang'] = 'Kode barang is required';
+            if (empty($data['nomor_po'])) {
+                $errors['nomor_po'] = 'Nomor PO is required';
             }
             if (empty($data['nama_barang'])) {
                 $errors['nama_barang'] = 'Nama barang is required';
@@ -1000,8 +1000,8 @@ class Warehouse2 extends BaseController
             if (empty($data['nama_pembeli'])) {
                 $errors['nama_pembeli'] = 'Nama pembeli is required';
             }
-            if (empty($data['kode_barang'])) {
-                $errors['kode_barang'] = 'Kode barang is required';
+            if (empty($data['nomor_po'])) {
+                $errors['nomor_po'] = 'Nomor PO is required';
             }
             if (empty($data['nama_barang'])) {
                 $errors['nama_barang'] = 'Nama barang is required';
@@ -1183,7 +1183,8 @@ class Warehouse2 extends BaseController
                 'Harga Satuan',
                 'Total Harga',
                 'No SO',
-                'No Invoice',
+                'Nomor PO',
+                'Surat Jalan',
                 'Status',
                 'Catatan'
             ];
@@ -1192,7 +1193,7 @@ class Warehouse2 extends BaseController
             if (!empty($data)) {
                 foreach ($data as $row) {
                     $exportData[] = [
-                        $row['nomor_spk'] ?? '',
+                        $row['nomor_lot'] ?? '',
                         $row['tanggal'] ?? '',
                         $row['nama_pembeli'] ?? '',
                         $row['nama_barang'] ?? '',
@@ -1201,7 +1202,8 @@ class Warehouse2 extends BaseController
                         $row['harga_satuan'] ?? 0,
                         $row['total_harga'] ?? 0,
                         $row['no_so'] ?? '',
-                        $row['no_invoice'] ?? '',
+                        $row['nomor_po'] ?? '',
+                        $row['surat_jalan'] ?? '',
                         $row['status'] ?? '',
                         $row['catatan'] ?? '',
                     ];

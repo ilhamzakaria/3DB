@@ -38,7 +38,7 @@
     <?php endif; ?>
 
     <!-- Produksi -->
-    <?php if (in_array($role, ['manager', 'admin', 'produksi', 'ppic', 'operator'])): ?>
+    <?php if (in_array($role, ['manager', 'admin', 'produksi', 'ppic', 'operator', 'operator_produksi', 'operator_produksi1', 'operator_produksi2'])): ?>
         <li class="nav-item <?= ($uri->getSegment(1) == 'produksi') ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('produksi') ?>">
                 <i class="fas fa-fw fa-industry"></i>

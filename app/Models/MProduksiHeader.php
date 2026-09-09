@@ -13,11 +13,11 @@ class MProduksiHeader extends BaseProduksiModel
     protected $useSoftDeletes   = true;
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'nomor_spk', 'nama_mesin', 'nama_produk', 'batch_number', 'shift', 'grup', 
+        'nomor_spk', 'nama_mesin', 'nama_produk', 'batch_number', 'type_produk', 'shift', 'grup', 
         'nomor_mesin', 'packing', 'cycle_time', 'target', 'isi', 'tanggal', 
         'operator', 'catatan', 'brand', 'warna', 'grade', 'total_spk',
         'grand_total_bagus', 'grand_total_reject', 
-        'total_downtime', 'sisa_po', 'hold', 'gumpalan', 'selesai_spk', 'tercapai',
+        'total_downtime', 'sisa_po', 'hold', 'gumpalan', 'plash_kotor', 'sapuan', 'selesai_spk', 'tercapai',
         'ttd_shift_1', 'ttd_shift_2', 'ttd_shift_3', 'ttd_spv', 'auto_user_ttd'
     ];
 

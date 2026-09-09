@@ -1,7 +1,7 @@
 <div class="card-header py-3 bg-white">
     <div class="production-toolbar">
         <?php
-        $canWrite  = in_array(session('role'), ['admin', 'manager', 'produksi', 'manager_warehouse2']);
+        $canWrite  = in_array(session('role'), ['admin', 'manager', 'produksi', 'manager_warehouse2', 'operator', 'operator_produksi', 'operator_produksi1', 'operator_produksi2']);
         $baseUrl   = $base_url ?? base_url('produksi/mesin_' . ($mesin_slug ?? ''));
         $mesinSlug = $mesin_slug ?? '';
         ?>

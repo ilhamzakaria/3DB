@@ -61,15 +61,23 @@ $machines = [
 }
 </style>
 
+<div class="machine-links-wrapper">
 <div class="machine-btn-group">
     <span class="small text-muted font-weight-bold d-flex align-items-center mr-1">
         <i class="fas fa-cog mr-1"></i> LOG MESIN:
     </span>
 
     <?php foreach ($machines as $slug => $machine): ?>
+        <?php
+        // Sembunyikan mesin yang bukan milik plant role ini
+        $currentRole  = session('role');
+        $allowedPlant = \App\Controllers\Produksi::getPlantMesin($currentRole);
+        if ($allowedPlant !== null && !in_array($slug, $allowedPlant, true)) continue;
+        ?>
         <a href="<?= base_url($machine['url']) ?>"
            class="machine-link-btn btn btn-sm <?= $currentMachine === $slug ? 'btn-primary' : 'btn-outline-primary' ?>">
             <i class="<?= esc($machine['icon']) ?>"></i> <?= esc($machine['label']) ?>
         </a>
     <?php endforeach; ?>
+</div>
 </div>

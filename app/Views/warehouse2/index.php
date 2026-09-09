@@ -20,6 +20,18 @@
         color: #0056b3;
     }
 
+    /* Mobile: Compact tab menu */
+    @media (max-width: 576px) {
+        .nav-tabs .nav-link {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.72rem;
+        }
+
+        .nav-tabs .nav-link i {
+            display: none;
+        }
+    }
+
     .tab-content {
         display: none;
     }
@@ -251,6 +263,745 @@
         background-color: #e9ecef;
         cursor: not-allowed;
     }
+
+    /* ===== MOBILE RESPONSIVE CSS ===== */
+
+    /* Tab Navigation — Scrollable Horizontal di Mobile */
+    @media (max-width: 768px) {
+        .nav-tabs {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+            display: flex;
+            flex-wrap: nowrap;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .nav-tabs .nav-link i {
+            display: none;
+        }
+    }
+
+    /* Toolbar — Stack Vertically di Mobile */
+    @media (max-width: 576px) {
+        .card-header.py-3 {
+            padding: 0.75rem !important;
+        }
+
+        .card-header > div {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn-group,
+        .d-flex.align-items-center {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .btn-group .btn,
+        .btn-group-sm .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .btn-group .btn:last-child,
+        .btn-group-sm .btn:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Search Box — Full Width */
+        .input-group {
+            width: 100% !important;
+        }
+
+        .input-group.input-group-sm {
+            width: 100% !important;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group-sm .form-control {
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        /* Filter Button */
+        .btn-light {
+            width: 100%;
+        }
+
+        /* Badge — Hidden on Small Screens */
+        .badge {
+            font-size: 0.65rem;
+        }
+    }
+
+    /* Button Touch Targets — Min 44x44px on Mobile */
+    @media (max-width: 768px) {
+        .btn {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-sm {
+            min-height: 36px;
+            font-size: 0.85rem;
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.4rem 0.6rem;
+        }
+    }
+
+    /* Table Responsiveness — Will be transformed to cards in Task 2 */
+    @media (max-width: 767px) {
+        .table-responsive {
+            border: none;
+        }
+
+        .table {
+            font-size: 0.85rem;
+        }
+
+        .table th {
+            font-size: 0.75rem;
+        }
+
+        .data-table thead {
+            display: none;
+        }
+
+        .data-table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .data-table tbody tr:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .data-table tbody td {
+            display: block;
+            text-align: right;
+            padding: 0.75rem 1rem;
+            border: none;
+            background-color: #fff;
+        }
+
+        .data-table tbody td::before {
+            content: attr(data-label);
+            float: left;
+            font-weight: 600;
+            color: #495057;
+            text-transform: capitalize;
+        }
+    }
+
+    /* Pagination — Compact di Mobile */
+    @media (max-width: 576px) {
+        .pagination {
+            margin: 1rem 0;
+            gap: 0.25rem;
+        }
+
+        .pagination .page-link {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        .pagination .page-item span,
+        .pagination .page-item a {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        /* Hide verbose pagination text */
+        .pagination .page-item:not(.disabled):not(.active) .page-link::after {
+            content: attr(data-short-label);
+        }
+
+        .page-item select.form-select-sm {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.5rem;
+            margin-left: 0.5rem !important;
+        }
+    }
+
+    /* Modal — Fullscreen Bottom Sheet di Mobile */
+    @media (max-width: 576px) {
+        .form-modal .modal-dialog {
+            margin: 0;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .form-modal .modal-content {
+            border-radius: 1.5rem 1.5rem 0 0;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-modal .modal-header {
+            padding: 1rem;
+            border-radius: 1.5rem 1.5rem 0 0;
+            background-color: #f8f9fa;
+        }
+
+        .form-modal .modal-body {
+            padding: 1rem;
+            max-height: calc(90vh - 140px);
+            overflow-y: auto;
+        }
+
+        .form-modal .modal-footer {
+            padding: 0.75rem 1rem;
+            gap: 0.5rem;
+            position: sticky;
+            bottom: 0;
+            background-color: #fff;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .form-modal .modal-footer .btn {
+            flex: 1;
+            min-height: 44px;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Modal Form Fields — Better Mobile Layout */
+    @media (max-width: 576px) {
+        .form-modal .row.g-3 {
+            gap: 0.75rem !important;
+        }
+
+        .form-modal .col-md-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .form-modal .col-md-4 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .form-modal .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-modal .form-control,
+        .form-modal .form-select {
+            min-height: 44px;
+            font-size: 1rem;
+            padding: 0.6rem 0.8rem;
+        }
+
+        .form-modal .input-group-sm .form-control,
+        .form-modal .input-group-sm .form-select {
+            min-height: 38px;
+        }
+
+        .form-modal textarea {
+            min-height: 100px;
+            font-size: 1rem;
+        }
+    }
+
+    /* Trash Modals — Fullscreen on Mobile */
+    @media (max-width: 576px) {
+        .modal-xl,
+        .modal-lg,
+        .modal-dialog-scrollable {
+            --bs-modal-width: 100%;
+            margin: 0;
+        }
+
+        .modal-dialog-scrollable .modal-content {
+            border-radius: 1.5rem 1.5rem 0 0;
+            max-height: 90vh;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            border-radius: 1.5rem 1.5rem 0 0;
+        }
+
+        .modal-body {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .modal-footer {
+            padding: 0.75rem 1rem;
+        }
+    }
+
+    /* Form Fields — Larger Touch Targets */
+    @media (max-width: 768px) {
+        .form-control,
+        .form-select {
+            min-height: 44px;
+            font-size: 1rem;
+            padding: 0.6rem 0.8rem;
+        }
+
+        .form-control-sm {
+            min-height: 36px;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .input-group-sm .form-control,
+        .input-group-sm .form-select {
+            min-height: 38px;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Offcanvas Filter — Better Mobile UX */
+    @media (max-width: 768px) {
+        .offcanvas {
+            --bs-offcanvas-width: 100%;
+        }
+
+        .offcanvas-body {
+            padding: 1rem;
+        }
+
+        .offcanvas-body .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .offcanvas-body .form-control,
+        .offcanvas-body .form-select {
+            min-height: 44px;
+            font-size: 1rem;
+        }
+
+        .offcanvas-body .btn {
+            min-height: 44px;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Empty State — Better Visibility */
+    @media (max-width: 768px) {
+        .empty-state {
+            padding: 2rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+        }
+    }
+
+    /* Badge & Status — Better Readability */
+    @media (max-width: 768px) {
+        .badge {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.7rem;
+            display: inline-block;
+        }
+
+        .badge i {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Card Container — Better Spacing */
+    @media (max-width: 768px) {
+        .card {
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-body {
+            padding: 0.75rem;
+        }
+
+        .card-header {
+            padding: 0.75rem;
+        }
+    }
+
+    /* Summary Badges — Stack Vertically */
+    @media (max-width: 576px) {
+        #totalBagusDisplay,
+        #totalRejectDisplay {
+            display: block;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+    }
+
+    /* Dropdown Menu — Better Mobile UX */
+    @media (max-width: 768px) {
+        .dropdown-menu {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown-item {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Task 4: Pagination, Filter, Search — Better Mobile UX */
+
+    /* Filter Drawer — Fullscreen di Mobile */
+    @media (max-width: 576px) {
+        .offcanvas-end {
+            --bs-offcanvas-width: 100%;
+        }
+
+        .offcanvas-header {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 1.5rem 1.5rem 0 0;
+        }
+
+        .offcanvas-body .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .offcanvas-body .form-control,
+        .offcanvas-body .form-select {
+            min-height: 44px;
+            font-size: 1rem;
+        }
+
+        .offcanvas-body .d-grid {
+            gap: 0.5rem;
+        }
+
+        .offcanvas-body .btn {
+            width: 100%;
+        }
+    }
+
+    /* Search & Filter Row — Stack Vertically on Mobile */
+    @media (max-width: 576px) {
+        .d-flex.gap-2.flex-wrap > .input-group {
+            width: 100%;
+        }
+
+        .d-flex.gap-2.flex-wrap > .btn-light {
+            width: 100%;
+        }
+
+        .d-flex.gap-2.flex-wrap > .dropdown {
+            width: 100%;
+        }
+
+        .d-flex.gap-2.flex-wrap > .dropdown > .btn {
+            width: 100%;
+        }
+    }
+
+    /* Summary Badges — Responsive Stack */
+    @media (max-width: 576px) {
+        .d-flex.align-items-center.gap-2.ms-2 {
+            flex-direction: column;
+            width: 100%;
+            gap: 0.5rem !important;
+        }
+
+        .d-flex.align-items-center.gap-2.ms-2 .badge {
+            width: 100%;
+            text-align: center;
+        }
+    }
+
+    /* Pagination — Mobile Abbreviated Text */
+    @media (max-width: 576px) {
+        .pagination {
+            margin: 1rem 0;
+        }
+
+        .pagination .page-link {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.75rem;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Shorten pagination text labels */
+        .pagination [data-label="Sebelumnya"]::before {
+            content: "< Prev";
+            font-size: 0.65rem;
+        }
+
+        .pagination [data-label="Selanjutnya"]::before {
+            content: "Next >";
+            font-size: 0.65rem;
+        }
+    }
+
+    /* Per-page select — Compact */
+    @media (max-width: 576px) {
+        .page-item select.form-select-sm {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.35rem;
+            margin-left: 0.25rem !important;
+        }
+    }
+
+    /* ===== PAGINATION FIXES ===== */
+    
+    /* Pagination Container */
+    .pagination-container {
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    /* Pagination Nav Buttons */
+    .pagination-nav-btn {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
+        min-height: 32px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        white-space: nowrap;
+    }
+
+    /* Pagination Text (hide on mobile) */
+    .pagination-text {
+        display: inline;
+    }
+
+    /* Pagination Info Display */
+    .pagination-info {
+        min-width: 50px;
+        text-align: center;
+    }
+
+    /* Pagination Per-Page Select */
+    .pagination-per-page {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.35rem;
+        max-width: 80px;
+    }
+
+    /* Mobile: Hide pagination text labels */
+    @media (max-width: 576px) {
+        .pagination-text {
+            display: none;
+        }
+
+        .pagination-nav-btn {
+            padding: 0.4rem 0.5rem;
+            min-height: 36px;
+        }
+
+        .pagination-info small {
+            font-size: 0.7rem;
+        }
+
+        .pagination-per-page {
+            font-size: 0.7rem;
+        }
+    }
+
+    /* ===== ACTION BUTTONS (Edit/Delete) ===== */
+
+    /* Mobile: Icon-only action buttons */
+    @media (max-width: 576px) {
+        .btn-group-sm .btn {
+            padding: 0.4rem;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 !important;
+        }
+
+        .btn-group-sm .btn i {
+            margin: 0;
+            font-size: 0.875rem;
+        }
+
+        .btn-group-sm {
+            display: flex;
+            gap: 0.25rem;
+            justify-content: center;
+        }
+    }
+
+    /* Floating Action Button (FAB) — Mobile Only */
+    .fab-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 50;
+        display: none;
+    }
+
+    @media (max-width: 576px) {
+        .fab-container {
+            display: block;
+        }
+
+        .fab-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+
+        .fab-btn:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 16px rgba(0, 123, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        .fab-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Adjust page padding to avoid FAB overlap */
+        body {
+            padding-bottom: 80px;
+        }
+
+        .container-fluid {
+            padding-bottom: 20px;
+        }
+    }
+
+    /* ===== FIX: PAGINATION CONTAINER MUST STAY HORIZONTAL ===== */
+    /* Override any broad flex-direction: column rules that affect pagination */
+    @media (max-width: 576px) {
+        nav[aria-label="Pagination"] {
+            display: flex;
+            flex-direction: row !important;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        nav[aria-label="Pagination"] .pagination-container {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.5rem !important;
+            flex-wrap: wrap !important;
+            width: auto !important;
+        }
+
+        nav[aria-label="Pagination"] .pagination-nav-btn {
+            flex-shrink: 0;
+        }
+
+        nav[aria-label="Pagination"] .pagination-info {
+            flex-shrink: 0;
+        }
+
+        nav[aria-label="Pagination"] .pagination-per-page {
+            flex-shrink: 0;
+        }
+    }
+
+    /* ===== FIX: BUTTON GROUP MUST STAY HORIZONTAL ===== */
+    @media (max-width: 576px) {
+        .btn-group-sm {
+            display: flex !important;
+            flex-direction: row !important;
+            width: auto !important;
+            gap: 0.25rem !important;
+        }
+
+        .btn-group-sm .btn {
+            width: 44px !important;
+            height: 44px !important;
+            padding: 0.5rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            flex-shrink: 0;
+        }
+
+        .btn-group-sm .btn i {
+            margin: 0 !important;
+            font-size: 1rem !important;
+        }
+    }
+
+    /* ===== FIX: ACTION BUTTONS IN TABLE CELLS — ICON ONLY ===== */
+    @media (max-width: 767px) {
+        /* Tombol aksi di tabel — ukuran icon kecil, tidak stretch */
+        .data-table .btn-group-sm {
+            display: inline-flex !important;
+            width: auto !important;
+            gap: 0.25rem !important;
+        }
+
+        .data-table .btn-group-sm .btn {
+            width: 44px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            padding: 0.5rem !important;
+            flex: 0 0 44px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+        }
+
+        .data-table .btn-group-sm .btn i {
+            margin: 0 !important;
+            font-size: 1rem !important;
+        }
+
+        /* td Aksi — tidak stretch full width */
+        .data-table td[data-label="Aksi"] {
+            text-align: center !important;
+            padding: 0.5rem !important;
+        }
+    }
+
 </style>
 
 <?php
@@ -364,24 +1115,33 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
                 <!-- Pagination -->
                 <nav aria-label="Pagination" id="paginationContainerPemasok" class="mt-4">
-                    <ul class="pagination pagination-sm justify-content-center">
-                        <li class="page-item disabled" id="prevBtnPemasok">
-                            <a class="page-link" href="#" tabindex="-1">Sebelumnya</a>
-                        </li>
-                        <li class="page-item active" id="currentPagePemasok">
-                            <span class="page-link">Halaman <span id="currentPageNumPemasok">1</span> dari <span id="totalPagesPemasok">1</span></span>
-                        </li>
-                        <li class="page-item" id="nextBtnPemasok">
-                            <a class="page-link" href="#">Selanjutnya</a>
-                        </li>
-                        <li class="page-item">
-                            <select class="form-select form-select-sm" id="perPageSelectPemasok" style="width: 80px; margin-left: 10px;">
-                                <option value="10">10 / hal</option>
-                                <option value="25">25 / hal</option>
-                                <option value="50">50 / hal</option>
-                            </select>
-                        </li>
-                    </ul>
+                    <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pagination-container">
+                        <!-- Prev Button -->
+                        <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="prevBtnPemasok" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            <span class="pagination-text">Sebelumnya</span>
+                        </button>
+                        
+                        <!-- Page Info -->
+                        <div class="text-center pagination-info">
+                            <small class="text-muted">
+                                <span id="currentPageNumPemasok">1</span>/<span id="totalPagesPemasok">1</span>
+                            </small>
+                        </div>
+                        
+                        <!-- Next Button -->
+                        <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="nextBtnPemasok">
+                            <span class="pagination-text">Selanjutnya</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        
+                        <!-- Per Page Select -->
+                        <select class="form-select form-select-sm pagination-per-page" id="perPageSelectPemasok">
+                            <option value="10">10/hal</option>
+                            <option value="25">25/hal</option>
+                            <option value="50">50/hal</option>
+                        </select>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -464,24 +1224,33 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
                 <!-- Pagination -->
                 <nav aria-label="Pagination" id="paginationContainerProduksi" class="mt-4">
-                    <ul class="pagination pagination-sm justify-content-center">
-                        <li class="page-item disabled" id="prevBtnProduksi">
-                            <a class="page-link" href="#" tabindex="-1">Sebelumnya</a>
-                        </li>
-                        <li class="page-item active" id="currentPageProduksi">
-                            <span class="page-link">Halaman <span id="currentPageNumProduksi">1</span> dari <span id="totalPagesProduksi">1</span></span>
-                        </li>
-                        <li class="page-item" id="nextBtnProduksi">
-                            <a class="page-link" href="#">Selanjutnya</a>
-                        </li>
-                        <li class="page-item">
-                            <select class="form-select form-select-sm" id="perPageSelectProduksi" style="width: 80px; margin-left: 10px;">
-                                <option value="10">10 / hal</option>
-                                <option value="25">25 / hal</option>
-                                <option value="50">50 / hal</option>
-                            </select>
-                        </li>
-                    </ul>
+                    <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pagination-container">
+                        <!-- Prev Button -->
+                        <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="prevBtnProduksi" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            <span class="pagination-text">Sebelumnya</span>
+                        </button>
+                        
+                        <!-- Page Info -->
+                        <div class="text-center pagination-info">
+                            <small class="text-muted">
+                                <span id="currentPageNumProduksi">1</span>/<span id="totalPagesProduksi">1</span>
+                            </small>
+                        </div>
+                        
+                        <!-- Next Button -->
+                        <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="nextBtnProduksi">
+                            <span class="pagination-text">Selanjutnya</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        
+                        <!-- Per Page Select -->
+                        <select class="form-select form-select-sm pagination-per-page" id="perPageSelectProduksi">
+                            <option value="10">10/hal</option>
+                            <option value="25">25/hal</option>
+                            <option value="50">50/hal</option>
+                        </select>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -540,10 +1309,10 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                                 <th style="width: 90px;">Tanggal</th>
                                 <th style="width: 100px;">Nomor Lot</th>
                                 <th style="width: 120px;">Pembeli</th>
-                                <th style="width: 80px;">Kode Barang</th>
+                                <th style="width: 80px;">Nomor PO</th>
                                 <th style="width: 100px;">Barang</th>
                                 <th style="width: 70px;">Jumlah</th>
-                                <th style="width: 100px;">No Invoice</th>
+                                <th style="width: 100px;">Surat Jalan</th>
                                 <th style="width: 150px;">Alamat Pengiriman</th>
                                 <th style="width: 150px;">Catatan</th>
                                 <th style="width: 70px;">Status</th>
@@ -563,24 +1332,33 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
                 <!-- Pagination -->
                 <nav aria-label="Pagination" id="paginationContainerPembeli" class="mt-4">
-                    <ul class="pagination pagination-sm justify-content-center">
-                        <li class="page-item disabled" id="prevBtnPembeli">
-                            <a class="page-link" href="#" tabindex="-1">Sebelumnya</a>
-                        </li>
-                        <li class="page-item active" id="currentPagePembeli">
-                            <span class="page-link">Halaman <span id="currentPageNumPembeli">1</span> dari <span id="totalPagesPembeli">1</span></span>
-                        </li>
-                        <li class="page-item" id="nextBtnPembeli">
-                            <a class="page-link" href="#">Selanjutnya</a>
-                        </li>
-                        <li class="page-item">
-                            <select class="form-select form-select-sm" id="perPageSelectPembeli" style="width: 80px; margin-left: 10px;">
-                                <option value="10">10 / hal</option>
-                                <option value="25">25 / hal</option>
-                                <option value="50">50 / hal</option>
-                            </select>
-                        </li>
-                    </ul>
+                    <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pagination-container">
+                        <!-- Prev Button -->
+                        <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="prevBtnPembeli" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            <span class="pagination-text">Sebelumnya</span>
+                        </button>
+                        
+                        <!-- Page Info -->
+                        <div class="text-center pagination-info">
+                            <small class="text-muted">
+                                <span id="currentPageNumPembeli">1</span>/<span id="totalPagesPembeli">1</span>
+                            </small>
+                        </div>
+                        
+                        <!-- Next Button -->
+                        <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="nextBtnPembeli">
+                            <span class="pagination-text">Selanjutnya</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        
+                        <!-- Per Page Select -->
+                        <select class="form-select form-select-sm pagination-per-page" id="perPageSelectPembeli">
+                            <option value="10">10/hal</option>
+                            <option value="25">25/hal</option>
+                            <option value="50">50/hal</option>
+                        </select>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -694,24 +1472,33 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
             <!-- Pagination -->
             <nav aria-label="Pagination" id="paginationContainer" class="mt-4">
-                <ul class="pagination pagination-sm justify-content-center">
-                    <li class="page-item disabled" id="prevBtn">
-                        <a class="page-link" href="#" tabindex="-1">Sebelumnya</a>
-                    </li>
-                    <li class="page-item active" id="currentPage">
-                        <span class="page-link">Halaman <span id="currentPageNum">1</span> dari <span id="totalPages">1</span></span>
-                    </li>
-                    <li class="page-item" id="nextBtn">
-                        <a class="page-link" href="#">Selanjutnya</a>
-                    </li>
-                    <li class="page-item">
-                        <select class="form-select form-select-sm" id="perPageSelect" style="width: 80px; margin-left: 10px;">
-                            <option value="10">10 / hal</option>
-                            <option value="25">25 / hal</option>
-                            <option value="50">50 / hal</option>
-                        </select>
-                    </li>
-                </ul>
+                <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap pagination-container">
+                    <!-- Prev Button -->
+                    <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="prevBtn" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                        <span class="pagination-text">Sebelumnya</span>
+                    </button>
+                    
+                    <!-- Page Info -->
+                    <div class="text-center pagination-info">
+                        <small class="text-muted">
+                            <span id="currentPageNum">1</span>/<span id="totalPages">1</span>
+                        </small>
+                    </div>
+                    
+                    <!-- Next Button -->
+                    <button class="btn btn-sm btn-outline-primary pagination-nav-btn" id="nextBtn">
+                        <span class="pagination-text">Selanjutnya</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    
+                    <!-- Per Page Select -->
+                    <select class="form-select form-select-sm pagination-per-page" id="perPageSelect">
+                        <option value="10">10/hal</option>
+                        <option value="25">25/hal</option>
+                        <option value="50">50/hal</option>
+                    </select>
+                </div>
             </nav>
 
 
@@ -1047,7 +1834,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 </div>
 
 <div class="modal fade form-modal" id="modalPemasok" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Tambah Barang Masuk Pemasok</h5>
@@ -1123,7 +1910,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
 <!-- Modal Form: Barang Masuk Produksi -->
 <div class="modal fade form-modal" id="modalProduksi" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalProduksiTitle">Tambah Barang Masuk Produksi</h5>
@@ -1195,7 +1982,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
 <!-- Modal Form: Barang Keluar Pembeli -->
 <div class="modal fade form-modal" id="modalPembeli" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalPembeliTitle">Tambah Barang Keluar Pembeli</h5>
@@ -1218,7 +2005,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <input type="text" class="form-control" id="namaPembeli" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Kode Barang *</label>
+                            <label class="form-label">Nomor PO *</label>
                             <input type="text" class="form-control" id="kodeBarangPembeli" required>
                         </div>
                         <div class="col-md-6">
@@ -1234,7 +2021,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <input type="number" class="form-control" id="jumlahPembeli" step="1" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">No Invoice</label>
+                            <label class="form-label">Surat Jalan</label>
                             <input type="text" class="form-control" id="noInvoicePembeli">
                         </div>
                         <div class="col-12">
@@ -1266,7 +2053,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
 <!-- Modal Form: Barang Masuk dari Produksi -->
 <div class="modal fade form-modal" id="modalMasukProduksi" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Tambah Barang Masuk dari Produksi</h5>
@@ -1341,7 +2128,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
 <!-- Modal Form: Orowarehouse (Barang Masuk dari Produksi - dengan field detail) -->
 <div class="modal fade form-modal" id="modalOrowarehouse" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalOrowarehouseTitle">Tambah Barang Masuk dari Produksi</h5>
@@ -2006,11 +2793,11 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             nomor_spk: document.getElementById('noDokumenPembeli').value,
             tanggal: document.getElementById('tanggalPembeli').value,
             nama_pembeli: document.getElementById('namaPembeli').value,
-            kode_barang: document.getElementById('kodeBarangPembeli').value,
+            nomor_po: document.getElementById('kodeBarangPembeli').value,
             nama_barang: document.getElementById('namaBarangPembeli').value,
             satuan: document.getElementById('satuanPembeli').value,
             jumlah: document.getElementById('jumlahPembeli').value,
-            no_invoice: document.getElementById('noInvoicePembeli').value,
+            surat_jalan: document.getElementById('noInvoicePembeli').value,
             alamat_pengiriman: document.getElementById('alamatPengirimanPembeli').value,
             catatan: document.getElementById('catatanPembeli').value,
             status: document.getElementById('statusPembeli').value
@@ -2150,11 +2937,11 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             document.getElementById('noDokumenPembeli').value = item.nomor_lot || '';
             document.getElementById('tanggalPembeli').value = item.tanggal ? item.tanggal.split(' ')[0] : '';
             document.getElementById('namaPembeli').value = item.nama_pembeli || '';
-            document.getElementById('kodeBarangPembeli').value = item.kode_barang || '';
+            document.getElementById('kodeBarangPembeli').value = item.nomor_po || '';
             document.getElementById('namaBarangPembeli').value = item.nama_barang || '';
             document.getElementById('satuanPembeli').value = item.satuan || '';
             document.getElementById('jumlahPembeli').value = parseInt(item.jumlah) || '';
-            document.getElementById('noInvoicePembeli').value = item.no_invoice || '';
+            document.getElementById('noInvoicePembeli').value = item.surat_jalan || '';
             document.getElementById('alamatPengirimanPembeli').value = item.alamat_pengiriman || '';
             document.getElementById('catatanPembeli').value = item.catatan || '';
             document.getElementById('statusPembeli').value = item.status || 'pending';
@@ -2471,12 +3258,12 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         let html = '';
         data.forEach(item => {
             html += `<tr>
-            <td>${formatDate(item.tanggal)}</td>
-            <td><strong>${item.spk}</strong></td>
-            <td>${item.produk}</td>
-            <td>${item.shift}</td>
-            <td>${item.grup || '-'}</td>
-            <td>
+            <td data-label="Tanggal">${formatDate(item.tanggal)}</td>
+            <td data-label="SPK"><strong>${item.spk}</strong></td>
+            <td data-label="Produk">${item.produk}</td>
+            <td data-label="Shift">${item.shift}</td>
+            <td data-label="Grup">${item.grup || '-'}</td>
+            <td data-label="Aksi">
                 <div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-success btn-sm" onclick="restoreOrowarehouseRecord(${item.id})" title="Pulihkan">
                         <i class="fas fa-undo"></i>
@@ -2614,21 +3401,21 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         data.forEach(item => {
             const statusBadge = getStatusBadge(item.status);
             html += `<tr>
-            <td>${formatDate(item.tanggal)}</td>
-            <td><strong>${item.spk}</strong></td>
-            <td>${item.nomor_lot || '-'}</td>
-            <td>${item.nomor_mesin || '-'}</td>
-            <td>${item.produk}</td>
-            <td>${item.shift}</td>
-            <td>${item.grup || '-'}</td>
-            <td>${parseInt(item.hasil_bagus)}</td>
-            <td>${parseInt(item.hasil_reject)}</td>
-            <td>${item.material || '-'}</td>
-            <td>${item.colorant || '-'}</td>
-            <td>${item.packaging || '-'}</td>
-            <td>${item.operator || '-'}</td>
-            <td>${statusBadge}</td>
-            <td>
+            <td data-label="Tanggal">${formatDate(item.tanggal)}</td>
+            <td data-label="SPK"><strong>${item.spk}</strong></td>
+            <td data-label="Nomor Lot">${item.nomor_lot || '-'}</td>
+            <td data-label="Nomor Mesin">${item.nomor_mesin || '-'}</td>
+            <td data-label="Produk">${item.produk}</td>
+            <td data-label="Shift">${item.shift}</td>
+            <td data-label="Grup">${item.grup || '-'}</td>
+            <td data-label="Bagus">${parseInt(item.hasil_bagus)}</td>
+            <td data-label="Reject">${parseInt(item.hasil_reject)}</td>
+            <td data-label="Material">${item.material || '-'}</td>
+            <td data-label="Colorant">${item.colorant || '-'}</td>
+            <td data-label="Packaging">${item.packaging || '-'}</td>
+            <td data-label="Operator">${item.operator || '-'}</td>
+            <td data-label="Status">${statusBadge}</td>
+            <td data-label="Aksi">
                 ${canEdit ? `<div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-primary btn-sm" onclick='editOrowarehouse(${JSON.stringify(item)})'><i class="fas fa-edit"></i></button>
                     <button class="btn btn-outline-danger btn-sm" onclick="deleteOrowarehouseRecord(${item.id})"><i class="fas fa-trash"></i></button>
@@ -2679,25 +3466,25 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         // Update prev button
         const prevBtn = document.getElementById('prevBtn');
         if (pager.has_prev) {
-            prevBtn.classList.remove('disabled');
-            prevBtn.querySelector('a').onclick = (e) => {
+            prevBtn.disabled = false;
+            prevBtn.onclick = (e) => {
                 e.preventDefault();
                 loadOrowarehouseData(pager.current_page - 1);
             };
         } else {
-            prevBtn.classList.add('disabled');
+            prevBtn.disabled = true;
         }
 
         // Update next button
         const nextBtn = document.getElementById('nextBtn');
         if (pager.has_next) {
-            nextBtn.classList.remove('disabled');
-            nextBtn.querySelector('a').onclick = (e) => {
+            nextBtn.disabled = false;
+            nextBtn.onclick = (e) => {
                 e.preventDefault();
                 loadOrowarehouseData(pager.current_page + 1);
             };
         } else {
-            nextBtn.classList.add('disabled');
+            nextBtn.disabled = true;
         }
     }
 
@@ -2968,17 +3755,17 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         data.forEach(item => {
             const statusBadge = getStatusBadgeForPembeli(item.status);
             html += `<tr>
-                <td>${formatDateForPembeli(item.tanggal)}</td>
-                <td><strong>${item.nomor_lot || '-'}</strong></td>
-                <td>${item.nama_pembeli}</td>
-                <td>${item.kode_barang || '-'}</td>
-                <td>${item.nama_barang}</td>
-                <td>${item.jumlah} ${item.satuan}</td>
-                <td>${item.no_invoice || '-'}</td>
-                <td>${item.alamat_pengiriman || '-'}</td>
-                <td>${item.catatan || '-'}</td>
-                <td>${statusBadge}</td>
-                <td>
+                <td data-label="Tanggal">${formatDateForPembeli(item.tanggal)}</td>
+                <td data-label="Nomor Lot"><strong>${item.nomor_lot || '-'}</strong></td>
+                <td data-label="Pembeli">${item.nama_pembeli}</td>
+                <td data-label="Nomor PO">${item.nomor_po || '-'}</td>
+                <td data-label="Nama Barang">${item.nama_barang}</td>
+                <td data-label="Jumlah">${item.jumlah} ${item.satuan}</td>
+                <td data-label="Surat Jalan">${item.surat_jalan || '-'}</td>
+                <td data-label="Alamat Pengiriman">${item.alamat_pengiriman || '-'}</td>
+                <td data-label="Catatan">${item.catatan || '-'}</td>
+                <td data-label="Status">${statusBadge}</td>
+                <td data-label="Aksi">
                     ${canEdit ? `<div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary btn-sm" onclick="editPembeli(${item.id})"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-outline-danger btn-sm" onclick="deleteData('pembeli', ${item.id})"><i class="fas fa-trash"></i></button>
@@ -2999,24 +3786,24 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
         const prevBtn = document.getElementById('prevBtnPembeli');
         if (pager.has_prev) {
-            prevBtn.classList.remove('disabled');
-            prevBtn.querySelector('a').onclick = (e) => {
+            prevBtn.disabled = false;
+            prevBtn.onclick = (e) => {
                 e.preventDefault();
                 loadPembeliData(pager.current_page - 1);
             };
         } else {
-            prevBtn.classList.add('disabled');
+            prevBtn.disabled = true;
         }
 
         const nextBtn = document.getElementById('nextBtnPembeli');
         if (pager.has_next) {
-            nextBtn.classList.remove('disabled');
-            nextBtn.querySelector('a').onclick = (e) => {
+            nextBtn.disabled = false;
+            nextBtn.onclick = (e) => {
                 e.preventDefault();
                 loadPembeliData(pager.current_page + 1);
             };
         } else {
-            nextBtn.classList.add('disabled');
+            nextBtn.disabled = true;
         }
     }
 
@@ -3439,18 +4226,18 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
              <button class="btn btn-outline-danger btn-sm" onclick="deletePemasokRecord(${item.id})" title="Hapus"><i class="fas fa-trash"></i></button>` :
                 '';
             html += `<tr>
-            <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
-            <td><strong>${item.nomor_lot || '-'}</strong></td>
-            <td>${item.nama_pemasok}</td>
-            <td>${item.kode_barang || '-'}</td>
-            <td>${item.nama_barang}</td>
-            <td>${item.satuan || '-'}</td>
-            <td>${parseInt(item.jumlah || 0).toLocaleString('id-ID')}</td>
-            <td>${item.no_po || '-'}</td>
-            <td>${item.no_surat_jalan || '-'}</td>
-            <td>${item.catatan || '-'}</td>
-            <td><span class="badge bg-${statusColor}">${statusLabel}</span></td>
-            <td>
+            <td data-label="Tanggal">${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
+            <td data-label="Nomor Lot"><strong>${item.nomor_lot || '-'}</strong></td>
+            <td data-label="Pemasok">${item.nama_pemasok}</td>
+            <td data-label="Kode Barang">${item.kode_barang || '-'}</td>
+            <td data-label="Nama Barang">${item.nama_barang}</td>
+            <td data-label="Satuan">${item.satuan || '-'}</td>
+            <td data-label="Jumlah">${parseInt(item.jumlah || 0).toLocaleString('id-ID')}</td>
+            <td data-label="No PO">${item.no_po || '-'}</td>
+            <td data-label="No Surat Jalan">${item.no_surat_jalan || '-'}</td>
+            <td data-label="Catatan">${item.catatan || '-'}</td>
+            <td data-label="Status"><span class="badge bg-${statusColor}">${statusLabel}</span></td>
+            <td data-label="Aksi">
                 <div class="btn-group btn-group-sm">
                     ${actionButtons}
                 </div>
@@ -3467,24 +4254,24 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
         const prevBtn = document.getElementById('prevBtnPemasok');
         if (pager.has_prev) {
-            prevBtn.classList.remove('disabled');
-            prevBtn.querySelector('a').onclick = (e) => {
+            prevBtn.disabled = false;
+            prevBtn.onclick = (e) => {
                 e.preventDefault();
                 loadPemasokData(pager.current_page - 1);
             };
         } else {
-            prevBtn.classList.add('disabled');
+            prevBtn.disabled = true;
         }
 
         const nextBtn = document.getElementById('nextBtnPemasok');
         if (pager.has_next) {
-            nextBtn.classList.remove('disabled');
-            nextBtn.querySelector('a').onclick = (e) => {
+            nextBtn.disabled = false;
+            nextBtn.onclick = (e) => {
                 e.preventDefault();
                 loadPemasokData(pager.current_page + 1);
             };
         } else {
-            nextBtn.classList.add('disabled');
+            nextBtn.disabled = true;
         }
     }
 
@@ -3637,18 +4424,18 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
              <button class="btn btn-outline-danger btn-sm" onclick="deleteProduksiRecord(${item.id})" title="Hapus"><i class="fas fa-trash"></i></button>` :
                 '';
             html += `<tr>
-            <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
-            <td><strong>${item.nomor_spk || '-'}</strong></td>
-            <td>${item.nomor_lot || '-'}</td>
-            <td>${item.kode_barang || '-'}</td>
-            <td>${item.nama_barang}</td>
-            <td>${item.satuan || '-'}</td>
-            <td>${parseInt(item.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
-            <td>${item.jumlah_terima ? parseInt(item.jumlah_terima).toLocaleString('id-ID') : '-'}</td>
-            <td>${item.nama_penerima || '-'}</td>
-            <td>${item.catatan || '-'}</td>
-            <td><span class="badge bg-${statusColor}">${statusLabel}</span></td>
-            <td>
+            <td data-label="Tanggal">${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
+            <td data-label="Nomor SPK"><strong>${item.nomor_spk || '-'}</strong></td>
+            <td data-label="Nomor Lot">${item.nomor_lot || '-'}</td>
+            <td data-label="Kode Barang">${item.kode_barang || '-'}</td>
+            <td data-label="Nama Barang">${item.nama_barang}</td>
+            <td data-label="Satuan">${item.satuan || '-'}</td>
+            <td data-label="Keluar">${parseInt(item.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
+            <td data-label="Terima">${item.jumlah_terima ? parseInt(item.jumlah_terima).toLocaleString('id-ID') : '-'}</td>
+            <td data-label="Nama Penerima">${item.nama_penerima || '-'}</td>
+            <td data-label="Catatan">${item.catatan || '-'}</td>
+            <td data-label="Status"><span class="badge bg-${statusColor}">${statusLabel}</span></td>
+            <td data-label="Aksi">
                 <div class="btn-group btn-group-sm">
                     ${actionButtons}
                 </div>
@@ -3665,24 +4452,24 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
         const prevBtn = document.getElementById('prevBtnProduksi');
         if (pager.has_prev) {
-            prevBtn.classList.remove('disabled');
-            prevBtn.querySelector('a').onclick = (e) => {
+            prevBtn.disabled = false;
+            prevBtn.onclick = (e) => {
                 e.preventDefault();
                 loadProduksiData(pager.current_page - 1);
             };
         } else {
-            prevBtn.classList.add('disabled');
+            prevBtn.disabled = true;
         }
 
         const nextBtn = document.getElementById('nextBtnProduksi');
         if (pager.has_next) {
-            nextBtn.classList.remove('disabled');
-            nextBtn.querySelector('a').onclick = (e) => {
+            nextBtn.disabled = false;
+            nextBtn.onclick = (e) => {
                 e.preventDefault();
                 loadProduksiData(pager.current_page + 1);
             };
         } else {
-            nextBtn.classList.add('disabled');
+            nextBtn.disabled = true;
         }
     }
 
