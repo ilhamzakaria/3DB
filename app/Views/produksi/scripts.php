@@ -861,13 +861,10 @@
             // Only update if SPK has specific operator data
             const operatorEl = container.querySelector('.operator');
             const operatorHidden = container.querySelector('.operator_hidden');
-            if (operatorEl && operatorHidden && source.operator) {
-                console.log('Operator from SPK data:', source.operator);
-                operatorEl.value = source.operator;
-                operatorHidden.value = source.operator;
-            } else if (operatorEl && operatorHidden) {
-                console.log('Keeping existing operator value:', operatorEl.value);
-                // Keep the current value, don't clear it
+            // Operator TIDAK di-override dari SPK data — selalu pakai username session
+            if (operatorEl && operatorHidden) {
+                console.log('Keeping operator from session:', operatorEl.value);
+                // Keep existing value (sudah di-set dari session di PHP)
             }
 
             // Set Target - visible disabled field + hidden input
@@ -1273,12 +1270,8 @@
                 const el = container.querySelector('.isi');
                 if (el) el.value = d.isi;
             }
-            if (d.operator) {
-                const el = container.querySelector('.operator');
-                const elHidden = container.querySelector('.operator_hidden');
-                if (el) el.value = d.operator;
-                if (elHidden) elHidden.value = d.operator;
-            }
+            // Operator TIDAK di-override dari last data — selalu pakai username session
+            // if (d.operator) { ... } — dihapus intentionally
             if (d.shift || d.shif) {
                 const el = container.querySelector('.shift');
                 const elHidden = container.querySelector('.shift_hidden');
