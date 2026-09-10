@@ -9,7 +9,7 @@ use CodeIgniter\Filters\FilterInterface;
 /**
  * Warehouse2 routes - akses lintas role
  * Full access  : admin, manager, operator, manager_warehouse2, operator_produksi
- * Read-only    : ppic, manager_ppic, operator_ppic, produksi, warehouse2
+ * Read-only    : ppic, manager_ppic, operator_ppic, produksi, warehouse2, leader_plant1, leader_plant2
  */
 class RoleReadOnlyWarehouse2 implements FilterInterface
 {
@@ -21,14 +21,14 @@ class RoleReadOnlyWarehouse2 implements FilterInterface
 
         $role = session()->get('role');
 
-        $allowed = ['admin', 'manager', 'operator', 'ppic', 'manager_ppic', 'operator_ppic', 'produksi', 'warehouse2', 'operator_produksi', 'manager_warehouse2'];
+        $allowed = ['admin', 'manager', 'operator', 'ppic', 'manager_ppic', 'operator_ppic', 'produksi', 'warehouse2', 'operator_produksi', 'manager_warehouse2', 'leader_plant1', 'leader_plant2'];
 
         if (!in_array($role, $allowed)) {
             return redirect()->to('/home')->with('error', 'Akses terbatas');
         }
 
         // ppic, manager_ppic, operator_ppic, produksi, warehouse2 hanya boleh GET (view)
-        $readOnlyRoles = ['ppic', 'manager_ppic', 'operator_ppic', 'produksi', 'warehouse2'];
+        $readOnlyRoles = ['ppic', 'manager_ppic', 'operator_ppic', 'produksi', 'warehouse2', 'leader_plant1', 'leader_plant2'];
         if (in_array($role, $readOnlyRoles)) {
             $method = $request->getMethod();
             if (in_array($method, ['post', 'put', 'delete'])) {

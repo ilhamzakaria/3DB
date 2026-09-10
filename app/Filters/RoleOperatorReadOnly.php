@@ -9,7 +9,7 @@ use CodeIgniter\Filters\FilterInterface;
 /**
  * PPIC routes - akses lintas role
  * Full access  : admin, manager, manager_ppic, ppic, operator_produksi, manager_warehouse2
- * Read-only    : operator_ppic, produksi, warehouse2, gudang
+ * Read-only    : operator_ppic, produksi, warehouse2, gudang, leader_plant1, leader_plant2
  */
 class RoleOperatorReadOnly implements FilterInterface
 {
@@ -21,14 +21,14 @@ class RoleOperatorReadOnly implements FilterInterface
 
         $role = session()->get('role');
 
-        $allowed = ['admin', 'manager', 'manager_ppic', 'ppic', 'operator_ppic', 'produksi', 'warehouse2', 'operator_produksi', 'manager_warehouse2', 'gudang'];
+        $allowed = ['admin', 'manager', 'manager_ppic', 'ppic', 'operator_ppic', 'produksi', 'warehouse2', 'operator_produksi', 'manager_warehouse2', 'gudang', 'leader_plant1', 'leader_plant2'];
 
         if (!in_array($role, $allowed)) {
             return redirect()->to('/home')->with('error', 'Akses terbatas');
         }
 
         // Read-only roles: boleh GET saja, tidak boleh POST/PUT/DELETE
-        $readOnlyRoles = ['operator_ppic', 'produksi', 'warehouse2', 'gudang'];
+        $readOnlyRoles = ['operator_ppic', 'produksi', 'warehouse2', 'gudang', 'leader_plant1', 'leader_plant2'];
         if (in_array($role, $readOnlyRoles)) {
             $method = $request->getMethod();
             if (in_array($method, ['post', 'put', 'delete'])) {

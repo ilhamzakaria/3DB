@@ -28,7 +28,7 @@
     <?php endif; ?>
 
     <!-- PPIC -->
-    <?php if (in_array($role, ['manager', 'admin', 'ppic', 'operator'])): ?>
+    <?php if (in_array($role, ['manager', 'admin', 'ppic', 'operator', 'leader_plant1', 'leader_plant2'])): ?>
         <li class="nav-item <?= ($uri->getSegment(1) == 'ppic') ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('ppic') ?>">
                 <i class="fas fa-fw fa-tasks"></i>
@@ -58,7 +58,7 @@
     <?php endif; ?>
 
     <!-- Warehouse 2 -->
-    <?php if (in_array($role, ['manager', 'admin', 'gudang', 'operator'])): ?>
+    <?php if (in_array($role, ['manager', 'admin', 'gudang', 'operator', 'leader_plant1', 'leader_plant2'])): ?>
         <li class="nav-item <?= ($uri->getSegment(1) == 'warehouse2') ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('warehouse2') ?>">
                 <i class="fas fa-fw fa-cube"></i>
