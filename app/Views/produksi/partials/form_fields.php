@@ -813,12 +813,12 @@ if ($isEdit) {
                     <hr class="my-1" style="opacity: 0.15;">
                 </div>
                 <?php if ($isBecumMesin): ?>
-                <!-- TB IN & TB OUT — Becum: list 4 items dengan Nama, Persen, Lot -->
+                <!-- TB IN & TB OUT — Becum: list 4 items dengan 2-row layout (Nama+Persen / Lot) -->
                 <div class="col-12">
                     <!-- TB IN -->
                     <div class="d-flex align-items-center mb-2">
                         <span class="badge bg-primary me-2" style="font-size: 0.65rem;">TB IN</span>
-                        <span class="text-muted" style="font-size: 0.7rem;">Nama · Persen · Lot</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Nama · Persen | Lot</span>
                     </div>
                     <?php
                     $tbInData = [];
@@ -837,31 +837,37 @@ if ($isEdit) {
                     for ($i = 0; $i < 4; $i++):
                         $item = $tbInData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
                     ?>
-                    <div class="row g-1 mb-1 align-items-center p-1 border rounded" style="background: #f0f7ff;">
-                        <div class="col-5">
-                            <select name="colorants[0][tb_in][<?= $i ?>][nama]" class="form-select form-select-sm tb-in-nama" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">
-                                <option value="">-- Nama <?= $i+1 ?> --</option>
-                                <?php foreach ($tbNamaOptions as $opt): ?>
-                                <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-3">
-                            <div class="input-group input-group-sm">
-                                <input type="number" step="0.01" min="0" max="100"
-                                    name="colorants[0][tb_in][<?= $i ?>][persen]"
-                                    class="form-control form-control-sm tb-in-persen"
-                                    placeholder="%" style="font-size: 0.7rem;"
-                                    value="<?= esc($item['persen'] ?? '') ?>">
-                                <span class="input-group-text bg-white" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">%</span>
+                    <div class="p-2 border rounded mb-1" style="background: #f0f7ff; border-color: #cce5ff !important;">
+                        <!-- Row 1: Nama (3 cols) + Persen (remainder) -->
+                        <div class="row g-1 mb-1 align-items-center">
+                            <div class="col-8">
+                                <select name="colorants[0][tb_in][<?= $i ?>][nama]" class="form-select form-select-sm tb-in-nama" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;">
+                                    <option value="">-- Nama <?= $i+1 ?> --</option>
+                                    <?php foreach ($tbNamaOptions as $opt): ?>
+                                    <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.01" min="0" max="100"
+                                        name="colorants[0][tb_in][<?= $i ?>][persen]"
+                                        class="form-control form-control-sm tb-in-persen"
+                                        placeholder="0" style="font-size: 0.75rem; height: 32px;"
+                                        value="<?= esc($item['persen'] ?? '') ?>">
+                                    <span class="input-group-text bg-white" style="font-size: 0.65rem; padding: 0.3rem 0.4rem;">%</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <input type="text"
-                                name="colorants[0][tb_in][<?= $i ?>][lot]"
-                                class="form-control form-control-sm tb-in-lot"
-                                placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.7rem;"
-                                value="<?= esc($item['lot'] ?? '') ?>">
+                        <!-- Row 2: Lot (full width) -->
+                        <div class="row g-1">
+                            <div class="col-12">
+                                <input type="text"
+                                    name="colorants[0][tb_in][<?= $i ?>][lot]"
+                                    class="form-control form-control-sm tb-in-lot"
+                                    placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;"
+                                    value="<?= esc($item['lot'] ?? '') ?>">
+                            </div>
                         </div>
                     </div>
                     <?php endfor; ?>
@@ -869,7 +875,7 @@ if ($isEdit) {
                     <!-- TB OUT -->
                     <div class="d-flex align-items-center mb-2 mt-3">
                         <span class="badge bg-danger me-2" style="font-size: 0.65rem;">TB OUT</span>
-                        <span class="text-muted" style="font-size: 0.7rem;">Nama · Persen · Lot</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Nama · Persen | Lot</span>
                     </div>
                     <?php
                     $tbOutData = [];
@@ -879,31 +885,37 @@ if ($isEdit) {
                     for ($i = 0; $i < 4; $i++):
                         $item = $tbOutData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
                     ?>
-                    <div class="row g-1 mb-1 align-items-center p-1 border rounded" style="background: #fff3f3;">
-                        <div class="col-5">
-                            <select name="colorants[0][tb_out][<?= $i ?>][nama]" class="form-select form-select-sm tb-out-nama" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">
-                                <option value="">-- Nama <?= $i+1 ?> --</option>
-                                <?php foreach ($tbNamaOptions as $opt): ?>
-                                <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-3">
-                            <div class="input-group input-group-sm">
-                                <input type="number" step="0.01" min="0" max="100"
-                                    name="colorants[0][tb_out][<?= $i ?>][persen]"
-                                    class="form-control form-control-sm tb-out-persen"
-                                    placeholder="%" style="font-size: 0.7rem;"
-                                    value="<?= esc($item['persen'] ?? '') ?>">
-                                <span class="input-group-text bg-white" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">%</span>
+                    <div class="p-2 border rounded mb-1" style="background: #fff3f3; border-color: #ffc9d0 !important;">
+                        <!-- Row 1: Nama (3 cols) + Persen (remainder) -->
+                        <div class="row g-1 mb-1 align-items-center">
+                            <div class="col-8">
+                                <select name="colorants[0][tb_out][<?= $i ?>][nama]" class="form-select form-select-sm tb-out-nama" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;">
+                                    <option value="">-- Nama <?= $i+1 ?> --</option>
+                                    <?php foreach ($tbNamaOptions as $opt): ?>
+                                    <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.01" min="0" max="100"
+                                        name="colorants[0][tb_out][<?= $i ?>][persen]"
+                                        class="form-control form-control-sm tb-out-persen"
+                                        placeholder="0" style="font-size: 0.75rem; height: 32px;"
+                                        value="<?= esc($item['persen'] ?? '') ?>">
+                                    <span class="input-group-text bg-white" style="font-size: 0.65rem; padding: 0.3rem 0.4rem;">%</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <input type="text"
-                                name="colorants[0][tb_out][<?= $i ?>][lot]"
-                                class="form-control form-control-sm tb-out-lot"
-                                placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.7rem;"
-                                value="<?= esc($item['lot'] ?? '') ?>">
+                        <!-- Row 2: Lot (full width) -->
+                        <div class="row g-1">
+                            <div class="col-12">
+                                <input type="text"
+                                    name="colorants[0][tb_out][<?= $i ?>][lot]"
+                                    class="form-control form-control-sm tb-out-lot"
+                                    placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;"
+                                    value="<?= esc($item['lot'] ?? '') ?>">
+                            </div>
                         </div>
                     </div>
                     <?php endfor; ?>
