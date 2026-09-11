@@ -224,7 +224,42 @@ foreach ($downtimes as $dt) {
                     <strong>Pemakaian:</strong> <?= !empty($colorants) ? $colorants[0]['pemakaian'] . ' kg' : '-' ?>
                 </p>
                 <p class="mb-1 small"><strong>Lot:</strong> <?= !empty($colorants) ? esc($colorants[0]['nomor_lot']) : '-' ?></p>
-                <?php if (!empty($colorants[0]['tb_in']) || !empty($colorants[0]['tb_out'])): ?>
+                <?php 
+                $detailHasTbDetails = !empty($colorants[0]['tb_in_details']) || !empty($colorants[0]['tb_out_details']);
+                if ($detailHasTbDetails): 
+                    // Becum: tampilkan TB details sebagai tabel
+                    $tbInItems  = json_decode($colorants[0]['tb_in_details']  ?? '[]', true) ?: [];
+                    $tbOutItems = json_decode($colorants[0]['tb_out_details'] ?? '[]', true) ?: [];
+                    $tbInItems  = array_filter($tbInItems,  fn($x) => !empty($x['nama']));
+                    $tbOutItems = array_filter($tbOutItems, fn($x) => !empty($x['nama']));
+                ?>
+                <?php if (!empty($tbInItems)): ?>
+                <div class="mt-2">
+                    <span class="badge bg-primary mb-1" style="font-size: 0.6rem;">TB IN</span>
+                    <table class="table table-sm table-bordered mb-0" style="font-size: 0.75rem;">
+                        <thead class="bg-light"><tr><th>Nama</th><th class="text-center">%</th><th>Lot</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($tbInItems as $item): ?>
+                            <tr><td><?= esc($item['nama']) ?></td><td class="text-center"><?= esc($item['persen']) ?></td><td><?= esc($item['lot']) ?></td></tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($tbOutItems)): ?>
+                <div class="mt-2">
+                    <span class="badge bg-danger mb-1" style="font-size: 0.6rem;">TB OUT</span>
+                    <table class="table table-sm table-bordered mb-0" style="font-size: 0.75rem;">
+                        <thead class="bg-light"><tr><th>Nama</th><th class="text-center">%</th><th>Lot</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($tbOutItems as $item): ?>
+                            <tr><td><?= esc($item['nama']) ?></td><td class="text-center"><?= esc($item['persen']) ?></td><td><?= esc($item['lot']) ?></td></tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+                <?php elseif (!empty($colorants[0]['tb_in']) || !empty($colorants[0]['tb_out'])): ?>
                 <p class="mb-1 small">
                     <strong>TB in:</strong> <?= esc($colorants[0]['tb_in'] ?: '-') ?>
                     &nbsp;|&nbsp;

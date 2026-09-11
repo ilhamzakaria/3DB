@@ -490,13 +490,33 @@ class Produksi extends BaseController
             $colorants = $this->request->getPost('colorants');
             if ($colorants) {
                 foreach ($colorants as $col) {
+                    // TB in/out: untuk Becum berupa array, untuk mesin lain berupa string
+                    $tbIn  = null;
+                    $tbOut = null;
+                    $tbInDetails  = null;
+                    $tbOutDetails = null;
+
+                    if (isset($col['tb_in']) && is_array($col['tb_in'])) {
+                        $tbInDetails = json_encode(array_values($col['tb_in']));
+                    } else {
+                        $tbIn = $col['tb_in'] ?? null;
+                    }
+
+                    if (isset($col['tb_out']) && is_array($col['tb_out'])) {
+                        $tbOutDetails = json_encode(array_values($col['tb_out']));
+                    } else {
+                        $tbOut = $col['tb_out'] ?? null;
+                    }
+
                     $this->colorantModel->insert([
                         'produksi_header_id' => $headerId,
                         'code'               => $col['code'],
                         'nomor_lot'          => $col['nomor_lot'],
                         'pemakaian'          => $col['pemakaian'],
-                        'tb_in'              => $col['tb_in']  ?? null,
-                        'tb_out'             => $col['tb_out'] ?? null,
+                        'tb_in'              => $tbIn,
+                        'tb_out'             => $tbOut,
+                        'tb_in_details'      => $tbInDetails,
+                        'tb_out_details'     => $tbOutDetails,
                     ]);
                 }
             }
@@ -711,13 +731,33 @@ class Produksi extends BaseController
         $colorants = $this->request->getPost('colorants');
         if ($colorants) {
             foreach ($colorants as $col) {
+                // TB in/out: untuk Becum berupa array, untuk mesin lain berupa string
+                $tbIn  = null;
+                $tbOut = null;
+                $tbInDetails  = null;
+                $tbOutDetails = null;
+
+                if (isset($col['tb_in']) && is_array($col['tb_in'])) {
+                    $tbInDetails = json_encode(array_values($col['tb_in']));
+                } else {
+                    $tbIn = $col['tb_in'] ?? null;
+                }
+
+                if (isset($col['tb_out']) && is_array($col['tb_out'])) {
+                    $tbOutDetails = json_encode(array_values($col['tb_out']));
+                } else {
+                    $tbOut = $col['tb_out'] ?? null;
+                }
+
                 $this->colorantModel->insert([
                     'produksi_header_id' => $id,
                     'code'               => $col['code'],
                     'nomor_lot'          => $col['nomor_lot'],
                     'pemakaian'          => $col['pemakaian'],
-                    'tb_in'              => $col['tb_in']  ?? null,
-                    'tb_out'             => $col['tb_out'] ?? null,
+                    'tb_in'              => $tbIn,
+                    'tb_out'             => $tbOut,
+                    'tb_in_details'      => $tbInDetails,
+                    'tb_out_details'     => $tbOutDetails,
                 ]);
             }
         }

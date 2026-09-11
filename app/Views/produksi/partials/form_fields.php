@@ -812,6 +812,104 @@ if ($isEdit) {
                 <div class="col-12 mt-1">
                     <hr class="my-1" style="opacity: 0.15;">
                 </div>
+                <?php if ($isBecumMesin): ?>
+                <!-- TB IN & TB OUT — Becum: list 4 items dengan Nama, Persen, Lot -->
+                <div class="col-12">
+                    <!-- TB IN -->
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2" style="font-size: 0.65rem;">TB IN</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Nama · Persen · Lot</span>
+                    </div>
+                    <?php
+                    $tbInData = [];
+                    if ($isEdit && $col && !empty($col['tb_in_details'])) {
+                        $tbInData = json_decode($col['tb_in_details'], true) ?: [];
+                    }
+                    $tbNamaOptions = [
+                        'Novarex M 7027 BF', 'Makrolon WB 1239',
+                        'WB2032-9109 (Wanhua)', 'LEXAN PK2870-21317',
+                        'OR', 'OR+', 'OT', 'OT+', 'OTV', 'OU', 'OS', 'OS+', 'OUV',
+                        'RR', 'RS IKRAMA', 'RT', 'RS VICA',
+                        'Plast Trans Blue MFPC 15023', 'Plast Trans Violet MFPC 15999 (A)',
+                        'Renol Blue PC-C7216R', 'Renol Blue PC- D8997', 'Renol Violet PC-D87226 MG',
+                    ];
+                    $lotLabels = ['A', 'B', 'C', 'D'];
+                    for ($i = 0; $i < 4; $i++):
+                        $item = $tbInData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
+                    ?>
+                    <div class="row g-1 mb-1 align-items-center p-1 border rounded" style="background: #f0f7ff;">
+                        <div class="col-5">
+                            <select name="colorants[0][tb_in][<?= $i ?>][nama]" class="form-select form-select-sm tb-in-nama" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">
+                                <option value="">-- Nama <?= $i+1 ?> --</option>
+                                <?php foreach ($tbNamaOptions as $opt): ?>
+                                <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <div class="input-group input-group-sm">
+                                <input type="number" step="0.01" min="0" max="100"
+                                    name="colorants[0][tb_in][<?= $i ?>][persen]"
+                                    class="form-control form-control-sm tb-in-persen"
+                                    placeholder="%" style="font-size: 0.7rem;"
+                                    value="<?= esc($item['persen'] ?? '') ?>">
+                                <span class="input-group-text bg-white" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">%</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <input type="text"
+                                name="colorants[0][tb_in][<?= $i ?>][lot]"
+                                class="form-control form-control-sm tb-in-lot"
+                                placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.7rem;"
+                                value="<?= esc($item['lot'] ?? '') ?>">
+                        </div>
+                    </div>
+                    <?php endfor; ?>
+
+                    <!-- TB OUT -->
+                    <div class="d-flex align-items-center mb-2 mt-3">
+                        <span class="badge bg-danger me-2" style="font-size: 0.65rem;">TB OUT</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">Nama · Persen · Lot</span>
+                    </div>
+                    <?php
+                    $tbOutData = [];
+                    if ($isEdit && $col && !empty($col['tb_out_details'])) {
+                        $tbOutData = json_decode($col['tb_out_details'], true) ?: [];
+                    }
+                    for ($i = 0; $i < 4; $i++):
+                        $item = $tbOutData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
+                    ?>
+                    <div class="row g-1 mb-1 align-items-center p-1 border rounded" style="background: #fff3f3;">
+                        <div class="col-5">
+                            <select name="colorants[0][tb_out][<?= $i ?>][nama]" class="form-select form-select-sm tb-out-nama" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">
+                                <option value="">-- Nama <?= $i+1 ?> --</option>
+                                <?php foreach ($tbNamaOptions as $opt): ?>
+                                <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <div class="input-group input-group-sm">
+                                <input type="number" step="0.01" min="0" max="100"
+                                    name="colorants[0][tb_out][<?= $i ?>][persen]"
+                                    class="form-control form-control-sm tb-out-persen"
+                                    placeholder="%" style="font-size: 0.7rem;"
+                                    value="<?= esc($item['persen'] ?? '') ?>">
+                                <span class="input-group-text bg-white" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">%</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <input type="text"
+                                name="colorants[0][tb_out][<?= $i ?>][lot]"
+                                class="form-control form-control-sm tb-out-lot"
+                                placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.7rem;"
+                                value="<?= esc($item['lot'] ?? '') ?>">
+                        </div>
+                    </div>
+                    <?php endfor; ?>
+                </div>
+                <?php else: ?>
+                <!-- Mesin lain: TB in/out tetap input text biasa -->
                 <div class="col-6">
                     <input type="text"
                         name="colorants[0][tb_in]"
@@ -826,6 +924,7 @@ if ($isEdit) {
                         class="form-control form-control-sm tb_out"
                         value="<?= $col ? esc($col['tb_out'] ?? '') : '' ?>">
                 </div>
+                <?php endif; ?>
                 <div class="col-12 mt-2">
                     <label class="form-label text-xs fw-bold mb-2 text-muted d-block">Komposisi (dari PPIC)</label>
                     <textarea name="komposisi" class="form-control form-control-sm komposisi" placeholder="Komposisi akan terisi otomatis dari PPIC" rows="4" style="resize: vertical; font-size: 0.8rem;"><?= $isEdit ? esc($header['komposisi'] ?? '') : '' ?></textarea>
