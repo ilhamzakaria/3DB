@@ -813,158 +813,237 @@ if ($isEdit) {
                     <hr class="my-1" style="opacity: 0.15;">
                 </div>
                 <?php if ($isBecumMesin): ?>
-                <!-- TB IN & TB OUT — Becum: list 4 items dengan 2-row layout (Nama+Persen / Lot) -->
-                <div class="col-12">
-                    <!-- TB IN Section -->
-                    <div class="mb-3">
-                        <!-- Section Header with Badge and Title -->
-                        <div class="d-flex align-items-center mb-3">
-                            <span class="badge bg-primary me-2" style="font-size: 0.75rem; padding: 0.4rem 0.7rem;">TB IN</span>
-                            <span class="text-muted fw-500" style="font-size: 0.8rem; letter-spacing: 0.3px;">Bahan Baku Masuk</span>
+                <!-- TB IN/OUT Collapsible Cards (Becum Only) -->
+                
+                <!-- TB IN Collapsible Card -->
+                <div class="col-12 mt-3">
+                    <div class="card mb-2 shadow-sm border-0" style="border-radius: 8px; overflow: hidden;">
+                        <!-- Clickable Header -->
+                        <div class="card-header d-flex justify-content-between align-items-center p-3" 
+                             data-bs-toggle="collapse" 
+                             data-bs-target="#tbInCollapse"
+                             aria-expanded="false"
+                             style="cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; user-select: none;">
+                            <span class="fw-bold text-white" style="font-size: 0.9rem;">
+                                <i class="fas fa-arrow-circle-down me-2"></i> TB IN - Bahan Baku Masuk
+                            </span>
+                            <i class="fas fa-chevron-down text-white toggle-icon-tb-in" style="transition: transform 0.3s; font-size: 0.85rem;"></i>
                         </div>
                         
-                        <!-- TB IN Items -->
-                        <?php
-                        $tbInData = [];
-                        if ($isEdit && $col && !empty($col['tb_in_details'])) {
-                            $tbInData = json_decode($col['tb_in_details'], true) ?: [];
-                        }
-                        $tbNamaOptions = [
-                            'Novarex M 7027 BF', 'Makrolon WB 1239',
-                            'WB2032-9109 (Wanhua)', 'LEXAN PK2870-21317',
-                            'OR', 'OR+', 'OT', 'OT+', 'OTV', 'OU', 'OS', 'OS+', 'OUV',
-                            'RR', 'RS IKRAMA', 'RT', 'RS VICA',
-                            'Plast Trans Blue MFPC 15023', 'Plast Trans Violet MFPC 15999 (A)',
-                            'Renol Blue PC-C7216R', 'Renol Blue PC- D8997', 'Renol Violet PC-D87226 MG',
-                        ];
-                        $lotLabels = ['A', 'B', 'C', 'D'];
-                        for ($i = 0; $i < 4; $i++):
-                            $item = $tbInData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
-                        ?>
-                        <div class="p-2 border rounded mb-1" style="background: #f0f7ff; border-color: #cce5ff !important;">
-                            <!-- Row 1: Nama (3 cols) + Persen (remainder) -->
-                            <div class="row g-1 mb-1 align-items-center">
-                                <div class="col-8">
-                                    <select name="colorants[0][tb_in][<?= $i ?>][nama]" class="form-select form-select-sm tb-in-nama" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;">
-                                        <option value="">-- Nama <?= $i+1 ?> --</option>
-                                        <?php foreach ($tbNamaOptions as $opt): ?>
-                                        <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-4">
-                                    <div class="input-group input-group-sm">
-                                        <input type="number" step="0.01" min="0" max="100"
-                                            name="colorants[0][tb_in][<?= $i ?>][persen]"
-                                            class="form-control form-control-sm tb-in-persen"
-                                            placeholder="0" style="font-size: 0.75rem; height: 32px;"
-                                            value="<?= esc($item['persen'] ?? '') ?>">
-                                        <span class="input-group-text bg-white" style="font-size: 0.65rem; padding: 0.3rem 0.4rem;">%</span>
+                        <!-- Collapsible Body -->
+                        <div id="tbInCollapse" class="collapse <?= ($isEdit && $col && !empty($col['tb_in_details'])) ? 'show' : '' ?>">
+                            <div class="card-body p-3" style="background: #f8f9fc;">
+                                <?php 
+                                $tbInData = [];
+                                if ($isEdit && $col && !empty($col['tb_in_details'])) {
+                                    $tbInData = json_decode($col['tb_in_details'], true) ?: [];
+                                }
+                                
+                                $tbNamaOptions = [
+                                    'Novarex M 7027 BF', 'Makrolon WB 1239',
+                                    'WB2032-9109 (Wanhua)', 'LEXAN PK2870-21317',
+                                    'OR', 'OR+', 'OT', 'OT+', 'OTV', 'OU', 'OS', 'OS+', 'OUV',
+                                    'RR', 'RS IKRAMA', 'RT', 'RS VICA',
+                                    'Plast Trans Blue MFPC 15023', 'Plast Trans Violet MFPC 15999 (A)',
+                                    'Renol Blue PC-C7216R', 'Renol Blue PC- D8997', 'Renol Violet PC-D87226 MG',
+                                ];
+                                $lotLabels = ['A', 'B', 'C', 'D'];
+                                
+                                for ($i = 0; $i < 4; $i++):
+                                    $item = $tbInData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
+                                    $lotLabel = $lotLabels[$i];
+                                    $itemNum = $i + 1;
+                                ?>
+                                
+                                <!-- Item Row -->
+                                <div class="mb-3 p-2 border rounded" style="background: white; border-color: #cce5ff !important;">
+                                    <div class="row g-2 align-items-end">
+                                        <!-- Item Label -->
+                                        <div class="col-12 mb-1">
+                                            <small class="text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                                <i class="fas fa-circle" style="font-size: 0.35rem; color: #667eea;"></i> ITEM <?= $itemNum ?>
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Dropdown Nama -->
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label mb-2 text-muted" style="font-size: 0.75rem;">Nama Material</label>
+                                            <select name="colorants[0][tb_in][<?= $i ?>][nama]" 
+                                                    class="form-select form-select-sm tb-in-nama"
+                                                    style="font-size: 0.8rem; height: 36px;">
+                                                <option value="">-- Pilih Nama --</option>
+                                                <?php foreach ($tbNamaOptions as $opt): ?>
+                                                <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>>
+                                                    <?= esc($opt) ?>
+                                                </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Persentase & Lot (same row) -->
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label mb-2 text-muted" style="font-size: 0.75rem;">Persentase</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" 
+                                                       step="0.01" 
+                                                       min="0"
+                                                       max="100"
+                                                       name="colorants[0][tb_in][<?= $i ?>][persen]" 
+                                                       class="form-control form-control-sm tb-in-persen" 
+                                                       placeholder="0.00"
+                                                       style="font-size: 0.8rem; height: 36px;"
+                                                       value="<?= esc($item['persen'] ?? '') ?>">
+                                                <span class="input-group-text bg-white" style="font-size: 0.75rem;">%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label mb-2 text-muted" style="font-size: 0.75rem;">Lot <?= $lotLabel ?></label>
+                                            <input type="text" 
+                                                   name="colorants[0][tb_in][<?= $i ?>][lot]" 
+                                                   class="form-control form-control-sm tb-in-lot" 
+                                                   placeholder="Lot <?= $lotLabel ?>"
+                                                   style="font-size: 0.8rem; height: 36px;"
+                                                   value="<?= esc($item['lot'] ?? '') ?>">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <!-- Row 2: Lot (full width) -->
-                            <div class="row g-1 mb-1">
-                                <div class="col-12">
+                                
+                                <?php endfor; ?>
+                                
+                                <!-- TB IN Value Field -->
+                                <div class="mt-3 p-2 border rounded" style="background: #e7f1ff; border-color: #667eea !important;">
+                                    <label class="form-label mb-2 text-muted fw-bold" style="font-size: 0.75rem;">TB IN (Summary)</label>
                                     <input type="text"
-                                        name="colorants[0][tb_in][<?= $i ?>][lot]"
-                                        class="form-control form-control-sm tb-in-lot"
-                                        placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;"
-                                        value="<?= esc($item['lot'] ?? '') ?>">
+                                        name="colorants[0][tb_in]"
+                                        class="form-control form-control-sm"
+                                        placeholder="Contoh: A100, B200, C150, D180"
+                                        style="font-size: 0.8rem; height: 36px;"
+                                        value="<?= $col ? esc($col['tb_in'] ?? '') : '' ?>">
                                 </div>
                             </div>
                         </div>
-                        <?php endfor; ?>
-                        
-                        <!-- TB IN Value Field (below all items) -->
-                        <div class="mt-2">
-                            <input type="text"
-                                name="colorants[0][tb_in]"
-                                class="form-control form-control-sm"
-                                placeholder="TB IN"
-                                style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px; background: #e7f1ff;"
-                                value="<?= $col ? esc($col['tb_in'] ?? '') : '' ?>">
-                        </div>
                     </div>
+                </div>
 
-                    <!-- TB OUT Section -->
-                    <div class="mb-0">
-                        <!-- Section Header with Badge and Title -->
-                        <div class="d-flex align-items-center mb-3 mt-2">
-                            <span class="badge bg-danger me-2" style="font-size: 0.75rem; padding: 0.4rem 0.7rem;">TB OUT</span>
-                            <span class="text-muted fw-500" style="font-size: 0.8rem; letter-spacing: 0.3px;">Bahan Baku Keluar</span>
+                <!-- TB OUT Collapsible Card -->
+                <div class="col-12 mt-2">
+                    <div class="card mb-2 shadow-sm border-0" style="border-radius: 8px; overflow: hidden;">
+                        <!-- Clickable Header -->
+                        <div class="card-header d-flex justify-content-between align-items-center p-3" 
+                             data-bs-toggle="collapse" 
+                             data-bs-target="#tbOutCollapse"
+                             aria-expanded="false"
+                             style="cursor: pointer; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; user-select: none;">
+                            <span class="fw-bold text-white" style="font-size: 0.9rem;">
+                                <i class="fas fa-arrow-circle-up me-2"></i> TB OUT - Bahan Baku Keluar
+                            </span>
+                            <i class="fas fa-chevron-down text-white toggle-icon-tb-out" style="transition: transform 0.3s; font-size: 0.85rem;"></i>
                         </div>
                         
-                        <!-- TB OUT Items -->
-                        <?php
-                        $tbOutData = [];
-                        if ($isEdit && $col && !empty($col['tb_out_details'])) {
-                            $tbOutData = json_decode($col['tb_out_details'], true) ?: [];
-                        }
-                        for ($i = 0; $i < 4; $i++):
-                            $item = $tbOutData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
-                        ?>
-                        <div class="p-2 border rounded mb-1" style="background: #fff3f3; border-color: #ffc9d0 !important;">
-                            <!-- Row 1: Nama (3 cols) + Persen (remainder) -->
-                            <div class="row g-1 mb-1 align-items-center">
-                                <div class="col-8">
-                                    <select name="colorants[0][tb_out][<?= $i ?>][nama]" class="form-select form-select-sm tb-out-nama" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;">
-                                        <option value="">-- Nama <?= $i+1 ?> --</option>
-                                        <?php foreach ($tbNamaOptions as $opt): ?>
-                                        <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>><?= esc($opt) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-4">
-                                    <div class="input-group input-group-sm">
-                                        <input type="number" step="0.01" min="0" max="100"
-                                            name="colorants[0][tb_out][<?= $i ?>][persen]"
-                                            class="form-control form-control-sm tb-out-persen"
-                                            placeholder="0" style="font-size: 0.75rem; height: 32px;"
-                                            value="<?= esc($item['persen'] ?? '') ?>">
-                                        <span class="input-group-text bg-white" style="font-size: 0.65rem; padding: 0.3rem 0.4rem;">%</span>
+                        <!-- Collapsible Body -->
+                        <div id="tbOutCollapse" class="collapse <?= ($isEdit && $col && !empty($col['tb_out_details'])) ? 'show' : '' ?>">
+                            <div class="card-body p-3" style="background: #fff8f7;">
+                                <?php 
+                                $tbOutData = [];
+                                if ($isEdit && $col && !empty($col['tb_out_details'])) {
+                                    $tbOutData = json_decode($col['tb_out_details'], true) ?: [];
+                                }
+                                
+                                for ($i = 0; $i < 4; $i++):
+                                    $item = $tbOutData[$i] ?? ['nama' => '', 'persen' => '', 'lot' => ''];
+                                    $lotLabel = $lotLabels[$i];
+                                    $itemNum = $i + 1;
+                                ?>
+                                
+                                <!-- Item Row -->
+                                <div class="mb-3 p-2 border rounded" style="background: white; border-color: #ffc9d0 !important;">
+                                    <div class="row g-2 align-items-end">
+                                        <!-- Item Label -->
+                                        <div class="col-12 mb-1">
+                                            <small class="text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                                <i class="fas fa-circle" style="font-size: 0.35rem; color: #f5576c;"></i> ITEM <?= $itemNum ?>
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Dropdown Nama -->
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label mb-2 text-muted" style="font-size: 0.75rem;">Nama Material</label>
+                                            <select name="colorants[0][tb_out][<?= $i ?>][nama]" 
+                                                    class="form-select form-select-sm tb-out-nama"
+                                                    style="font-size: 0.8rem; height: 36px;">
+                                                <option value="">-- Pilih Nama --</option>
+                                                <?php foreach ($tbNamaOptions as $opt): ?>
+                                                <option value="<?= esc($opt) ?>" <?= ($item['nama'] === $opt) ? 'selected' : '' ?>>
+                                                    <?= esc($opt) ?>
+                                                </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Persentase & Lot (same row) -->
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label mb-2 text-muted" style="font-size: 0.75rem;">Persentase</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" 
+                                                       step="0.01" 
+                                                       min="0"
+                                                       max="100"
+                                                       name="colorants[0][tb_out][<?= $i ?>][persen]" 
+                                                       class="form-control form-control-sm tb-out-persen" 
+                                                       placeholder="0.00"
+                                                       style="font-size: 0.8rem; height: 36px;"
+                                                       value="<?= esc($item['persen'] ?? '') ?>">
+                                                <span class="input-group-text bg-white" style="font-size: 0.75rem;">%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label mb-2 text-muted" style="font-size: 0.75rem;">Lot <?= $lotLabel ?></label>
+                                            <input type="text" 
+                                                   name="colorants[0][tb_out][<?= $i ?>][lot]" 
+                                                   class="form-control form-control-sm tb-out-lot" 
+                                                   placeholder="Lot <?= $lotLabel ?>"
+                                                   style="font-size: 0.8rem; height: 36px;"
+                                                   value="<?= esc($item['lot'] ?? '') ?>">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <!-- Row 2: Lot (full width) -->
-                            <div class="row g-1 mb-1">
-                                <div class="col-12">
+                                
+                                <?php endfor; ?>
+                                
+                                <!-- TB OUT Value Field -->
+                                <div class="mt-3 p-2 border rounded" style="background: #ffe7e7; border-color: #f5576c !important;">
+                                    <label class="form-label mb-2 text-muted fw-bold" style="font-size: 0.75rem;">TB OUT (Summary)</label>
                                     <input type="text"
-                                        name="colorants[0][tb_out][<?= $i ?>][lot]"
-                                        class="form-control form-control-sm tb-out-lot"
-                                        placeholder="Lot <?= $lotLabels[$i] ?>" style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px;"
-                                        value="<?= esc($item['lot'] ?? '') ?>">
+                                        name="colorants[0][tb_out]"
+                                        class="form-control form-control-sm"
+                                        placeholder="Contoh: A95, B195, C145, D175"
+                                        style="font-size: 0.8rem; height: 36px;"
+                                        value="<?= $col ? esc($col['tb_out'] ?? '') : '' ?>">
                                 </div>
                             </div>
-                        </div>
-                        <?php endfor; ?>
-                        
-                        <!-- TB OUT Value Field (below all items) -->
-                        <div class="mt-2">
-                            <input type="text"
-                                name="colorants[0][tb_out]"
-                                class="form-control form-control-sm"
-                                placeholder="TB OUT"
-                                style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px; background: #ffe7e7;"
-                                value="<?= $col ? esc($col['tb_out'] ?? '') : '' ?>">
                         </div>
                     </div>
                 </div>
+
                 <?php else: ?>
-                <!-- Mesin lain: TB in/out tetap input text biasa -->
+                <!-- Non-Becum: Simple text inputs -->
                 <div class="col-6">
-                    <input type="text"
-                        name="colorants[0][tb_in]"
-                        placeholder="TB in"
-                        class="form-control form-control-sm tb_in"
-                        value="<?= $col ? esc($col['tb_in'] ?? '') : '' ?>">
+                    <input type="text" 
+                           name="colorants[0][tb_in]" 
+                           placeholder="TB in" 
+                           class="form-control form-control-sm tb_in" 
+                           value="<?= $col ? esc($col['tb_in'] ?? '') : '' ?>"
+                           style="font-size: 0.8rem; height: 36px;">
                 </div>
                 <div class="col-6">
-                    <input type="text"
-                        name="colorants[0][tb_out]"
-                        placeholder="TB out"
-                        class="form-control form-control-sm tb_out"
-                        value="<?= $col ? esc($col['tb_out'] ?? '') : '' ?>">
+                    <input type="text" 
+                           name="colorants[0][tb_out]" 
+                           placeholder="TB out" 
+                           class="form-control form-control-sm tb_out" 
+                           value="<?= $col ? esc($col['tb_out'] ?? '') : '' ?>"
+                           style="font-size: 0.8rem; height: 36px;">
                 </div>
                 <?php endif; ?>
                 <div class="col-12 mt-2">

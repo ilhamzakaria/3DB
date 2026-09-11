@@ -2711,4 +2711,29 @@
             console.log('All hidden fields synced before submission');
         }
     });
+
+    // ============================================
+    // TB IN/OUT COLLAPSE ICON ANIMATION
+    // ============================================
+    document.addEventListener('shown.bs.collapse', function(e) {
+        if (e.target.id === 'tbInCollapse') {
+            const icon = document.querySelector('.toggle-icon-tb-in');
+            if (icon) icon.style.transform = 'rotate(180deg)';
+        }
+        if (e.target.id === 'tbOutCollapse') {
+            const icon = document.querySelector('.toggle-icon-tb-out');
+            if (icon) icon.style.transform = 'rotate(180deg)';
+        }
+    });
+
+    document.addEventListener('hidden.bs.collapse', function(e) {
+        if (e.target.id === 'tbInCollapse') {
+            const icon = document.querySelector('.toggle-icon-tb-in');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+        if (e.target.id === 'tbOutCollapse') {
+            const icon = document.querySelector('.toggle-icon-tb-out');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+    });
 </script>
