@@ -234,8 +234,11 @@ foreach ($downtimes as $dt) {
                     $tbOutItems = array_filter($tbOutItems, fn($x) => !empty($x['nama']));
                 ?>
                 <?php if (!empty($tbInItems)): ?>
-                <div class="mt-2">
-                    <span class="badge bg-primary mb-1" style="font-size: 0.6rem;">TB IN</span>
+                <div class="mt-3 p-2 border rounded" style="background: #f0f7ff; border-color: #cce5ff !important;">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2" style="font-size: 0.75rem; padding: 0.4rem 0.7rem;">TB IN</span>
+                        <span class="text-primary fw-500" style="font-size: 0.8rem; letter-spacing: 0.3px;">Bahan Baku Masuk</span>
+                    </div>
                     <table class="table table-sm table-bordered mb-0" style="font-size: 0.75rem;">
                         <thead class="bg-light"><tr><th>Nama</th><th class="text-center">%</th><th>Lot</th></tr></thead>
                         <tbody>
@@ -247,8 +250,11 @@ foreach ($downtimes as $dt) {
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($tbOutItems)): ?>
-                <div class="mt-2">
-                    <span class="badge bg-danger mb-1" style="font-size: 0.6rem;">TB OUT</span>
+                <div class="mt-3 p-2 border rounded" style="background: #fff3f3; border-color: #ffc9d0 !important;">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-danger me-2" style="font-size: 0.75rem; padding: 0.4rem 0.7rem;">TB OUT</span>
+                        <span class="text-danger fw-500" style="font-size: 0.8rem; letter-spacing: 0.3px;">Bahan Baku Keluar</span>
+                    </div>
                     <table class="table table-sm table-bordered mb-0" style="font-size: 0.75rem;">
                         <thead class="bg-light"><tr><th>Nama</th><th class="text-center">%</th><th>Lot</th></tr></thead>
                         <tbody>
