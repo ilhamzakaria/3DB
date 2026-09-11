@@ -864,7 +864,7 @@ if ($isEdit) {
                                 </div>
                             </div>
                             <!-- Row 2: Lot (full width) -->
-                            <div class="row g-1">
+                            <div class="row g-1 mb-1">
                                 <div class="col-12">
                                     <input type="text"
                                         name="colorants[0][tb_in][<?= $i ?>][lot]"
@@ -875,6 +875,16 @@ if ($isEdit) {
                             </div>
                         </div>
                         <?php endfor; ?>
+                        
+                        <!-- TB IN Value Field (below all items) -->
+                        <div class="mt-2">
+                            <input type="text"
+                                name="colorants[0][tb_in]"
+                                class="form-control form-control-sm"
+                                placeholder="TB IN"
+                                style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px; background: #e7f1ff;"
+                                value="<?= $col ? esc($col['tb_in'] ?? '') : '' ?>">
+                        </div>
                     </div>
 
                     <!-- TB OUT Section -->
@@ -917,7 +927,7 @@ if ($isEdit) {
                                 </div>
                             </div>
                             <!-- Row 2: Lot (full width) -->
-                            <div class="row g-1">
+                            <div class="row g-1 mb-1">
                                 <div class="col-12">
                                     <input type="text"
                                         name="colorants[0][tb_out][<?= $i ?>][lot]"
@@ -928,6 +938,16 @@ if ($isEdit) {
                             </div>
                         </div>
                         <?php endfor; ?>
+                        
+                        <!-- TB OUT Value Field (below all items) -->
+                        <div class="mt-2">
+                            <input type="text"
+                                name="colorants[0][tb_out]"
+                                class="form-control form-control-sm"
+                                placeholder="TB OUT"
+                                style="font-size: 0.75rem; padding: 0.3rem 0.4rem; height: 32px; background: #ffe7e7;"
+                                value="<?= $col ? esc($col['tb_out'] ?? '') : '' ?>">
+                        </div>
                     </div>
                 </div>
                 <?php else: ?>
