@@ -120,11 +120,17 @@ $formatDate = static function ($value): string {
     <!-- MESIN_CONTENT_START -->
 <div class="card-body" id="mesin-content">
         <?php if (session()->getFlashdata('success')) : ?>
-            <div class="alert alert-success alert-dismissible fade show"><?= session()->getFlashdata('success') ?><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert" style="border-radius: 8px;">
+                <?= session()->getFlashdata('success') ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         <?php endif; ?>
 
         <?php if (session()->getFlashdata('error')) : ?>
-            <div class="alert alert-danger alert-dismissible fade show"><?= session()->getFlashdata('error') ?><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert" style="border-radius: 8px;">
+                <?= session()->getFlashdata('error') ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         <?php endif; ?>
 
         <!-- Top scroll mirror -->
@@ -149,13 +155,13 @@ $formatDate = static function ($value): string {
                         <th colspan="4" class="bg-info text-white">Jumlah Target Produksi (pcs)</th>
                         <?php if (!($is_ppic_context ?? false)) : ?>
                         <th colspan="2" class="bg-success text-white">Waktu Realisasi Produksi</th>
-                        <?php endif; ?>
-                        <th colspan="<?= ($is_ppic_context ?? false) ? 4 : 3 ?>" class="bg-success text-white">
+                        <th colspan="3" class="bg-success text-white">Jumlah Realisasi Produksi (pcs)</th>
+                        <?php else : ?>
+                        <th colspan="4" class="bg-success text-white">
                             Jumlah Realisasi Produksi (pcs)
-                            <?php if ($is_ppic_context ?? false) : ?>
                             <br><small class="font-weight-normal">(dari Produksi)</small>
-                            <?php endif; ?>
                         </th>
+                        <?php endif; ?>
                         <th rowspan="2">Berat</th>
                         <th rowspan="2">Komposisi</th>
                         <th rowspan="2">Total SPK</th>
@@ -175,11 +181,13 @@ $formatDate = static function ($value): string {
                         <?php if (!($is_ppic_context ?? false)) : ?>
                         <th class="bg-success text-white">Awal</th>
                         <th class="bg-success text-white">Akhir</th>
-                        <?php endif; ?>
                         <th class="bg-success text-white">Shift 1<br><small>06.00–14.00</small></th>
                         <th class="bg-success text-white">Shift 2<br><small>14.00–22.00</small></th>
                         <th class="bg-success text-white">Shift 3<br><small>22.00–06.00</small></th>
-                        <?php if ($is_ppic_context ?? false) : ?>
+                        <?php else : ?>
+                        <th class="bg-success text-white">Shift 1<br><small>06.00–14.00</small></th>
+                        <th class="bg-success text-white">Shift 2<br><small>14.00–22.00</small></th>
+                        <th class="bg-success text-white">Shift 3<br><small>22.00–06.00</small></th>
                         <th class="bg-success text-white">Shift Lainnya</th>
                         <?php endif; ?>
                     </tr>
@@ -383,7 +391,7 @@ $formatDate = static function ($value): string {
         <h5 class="modal-title"><i class="fas fa-plus mr-2"></i>Tambah Data Becum</h5>
         <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
       </div>
-      <form action="<?= base_url(($is_ppic_context ?? false) ? 'ppic/' . ($current_machine ?? 'mesin_becum') . '/tambahData' : 'gudang/mesin_becum/tambahData') ?>" method="post">
+      <form id="formTambahBecum" action="<?= base_url(($is_ppic_context ?? false) ? 'ppic/' . ($current_machine ?? 'mesin_becum') . '/tambahData' : 'gudang/mesin_becum/tambahData') ?>" method="post">
         <?= csrf_field() ?>
         <div class="modal-body">
 
@@ -460,7 +468,7 @@ $formatDate = static function ($value): string {
           </div>
           <?php endif; ?>
 
-          <!-- Baris 5: Info Tambahan -->
+          <!-- Baris 6: Info Tambahan -->
           <hr class="my-2">
           <div class="row">
             <div class="col-md-3">
@@ -501,7 +509,7 @@ $formatDate = static function ($value): string {
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i>Simpan</button>
+          <button type="submit" id="btnTambahBecum" class="btn btn-primary"><i class="fas fa-save mr-1"></i>Simpan</button>
         </div>
       </form>
     </div>
@@ -594,7 +602,7 @@ $formatDate = static function ($value): string {
           </div>
           <?php endif; ?>
 
-          <!-- Baris 5: Info Tambahan -->
+          <!-- Baris 6: Info Tambahan -->
           <hr class="my-2">
           <div class="row">
             <div class="col-md-3">
@@ -635,7 +643,7 @@ $formatDate = static function ($value): string {
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-          <button type="submit" class="btn btn-warning"><i class="fas fa-save mr-1"></i>Update</button>
+          <button type="submit" id="btnEditBecum" class="btn btn-warning"><i class="fas fa-save mr-1"></i>Update</button>
         </div>
       </form>
     </div>
@@ -1020,6 +1028,59 @@ $formatDate = static function ($value): string {
         document.getElementById('edit_keterangan').value           = data.getAttribute('data-keterangan') || '';
         document.getElementById('edit_selesai_spk').checked        = data.getAttribute('data-selesai_spk') == '1';
         document.getElementById('formEdit').action = data.getAttribute('data-action');
+
+        // Load penimbangan data via AJAX
+        loadPenimbanganForEdit(data.getAttribute('data-id'));
+    }
+
+    /**
+     * Load penimbangan section for edit modal via AJAX
+     * 
+     * @param {string|number} becumId - The becum record ID
+     */
+    function loadPenimbanganForEdit(becumId) {
+        const container = document.getElementById('edit_penimbangan_section_container');
+        if (!container) return;
+
+        // Show loading state
+        container.innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat data penimbangan...</div>';
+
+        const baseUrl = '<?= base_url(($is_ppic_context ?? false) ? 'ppic/mesin_becum' : 'gudang/mesin_becum') ?>';
+        
+        fetch(baseUrl + '/getPenimbanganSection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: new URLSearchParams({
+                id: becumId,
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
+            }),
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.html) {
+                    container.innerHTML = data.html;
+                    // Re-run JavaScript in the loaded content
+                    updatePenimbanganCalculations();
+                } else {
+                    container.innerHTML = '<div class="alert alert-warning small mb-0">' +
+                        '<i class="fas fa-info-circle mr-1"></i>' +
+                        'Gagal memuat data penimbangan. Silakan refresh halaman.' +
+                        '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading penimbangan:', error);
+                container.innerHTML = '<div class="alert alert-danger small mb-0">' +
+                    '<i class="fas fa-exclamation-circle mr-1"></i>' +
+                    'Error: ' + error.message +
+                    '</div>';
+            });
     }
 
     // -----------------------------------------------------------------------
@@ -1222,7 +1283,76 @@ $formatDate = static function ($value): string {
 
         // Re-sync width on window resize
         window.addEventListener('resize', syncWidth);
+
+        // ===== PENIMBANGAN FORM VALIDATION =====
+        const addForm = document.querySelector('#addDataModal form');
+        const editForm = document.getElementById('formEdit');
+
+        if (addForm) {
+            addForm.addEventListener('submit', function(e) {
+                if (!validatePenimbanganFormSubmit()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                if (!validatePenimbanganFormSubmit()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
     });
+
+    /**
+     * Validate penimbangan form data before submission
+     * Checks that all inputs are within valid range (0-999.99)
+     * 
+     * @returns {boolean} true if validation passes, false if validation fails
+     */
+    function validatePenimbanganFormSubmit() {
+        const galonInputs = document.querySelectorAll('.penimbangan-galon-input');
+        const flashInputs = document.querySelectorAll('.penimbangan-flash-input');
+        const errors = [];
+
+        // Validate galon inputs
+        galonInputs.forEach((input, index) => {
+            const value = parseFloat(input.value) || 0;
+            const hour = input.getAttribute('data-hour');
+            
+            if (value < 0 || value > 999.99) {
+                errors.push(`Galon Jam ${hour} harus antara 0 dan 999.99`);
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+
+        // Validate flash inputs
+        flashInputs.forEach((input, index) => {
+            const value = parseFloat(input.value) || 0;
+            const hour = input.getAttribute('data-hour');
+            
+            if (value < 0 || value > 999.99) {
+                errors.push(`Flash Jam ${hour} harus antara 0 dan 999.99`);
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+
+        // If there are errors, show alert and return false
+        if (errors.length > 0) {
+            const errorMessage = 'Validasi Penimbangan Gagal:\n\n' + errors.join('\n');
+            alert(errorMessage);
+            return false;
+        }
+
+        return true;
+    }
 </script>
 <?= view('shared/spk_produksi_autofill') ?>
 
@@ -1368,5 +1498,112 @@ $formatDate = static function ($value): string {
         </div>
     </div>
 </div>
+
+<script>
+/* ── Becum Toast Progress ─────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    /* ── Toast engine ── */
+    function showBecumToast(message, type) {
+        type = type || 'info';
+        var cfg = {
+            success : { bg: '#198754', icon: 'fas fa-check-circle' },
+            error   : { bg: '#dc3545', icon: 'fas fa-exclamation-circle' },
+            info    : { bg: '#0d6efd', icon: 'fas fa-info-circle' },
+            warning : { bg: '#e6a817', icon: 'fas fa-exclamation-triangle' }
+        }[type] || { bg: '#0d6efd', icon: 'fas fa-info-circle' };
+
+        var container = document.getElementById('becumToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'becumToastContainer';
+            container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+            document.body.appendChild(container);
+        }
+
+        var id  = 'bt_' + Date.now();
+        var toast = document.createElement('div');
+        toast.style.cssText = [
+            'background:' + cfg.bg,
+            'color:#fff',
+            'padding:14px 18px',
+            'border-radius:10px',
+            'box-shadow:0 6px 20px rgba(0,0,0,.2)',
+            'display:flex',
+            'align-items:center',
+            'gap:12px',
+            'min-width:280px',
+            'max-width:360px',
+            'transform:translateX(420px)',
+            'transition:transform .3s cubic-bezier(.25,.8,.25,1)',
+            'font-size:14px'
+        ].join(';');
+
+        toast.innerHTML =
+            '<i class="' + cfg.icon + '" style="font-size:17px;flex-shrink:0;"></i>' +
+            '<div style="flex-grow:1">' +
+                '<div style="font-weight:600;margin-bottom:5px;">' + message + '</div>' +
+                '<div style="height:3px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden;">' +
+                    '<div id="' + id + '" style="height:100%;background:rgba(255,255,255,.75);width:100%;transition:width 2.8s linear;"></div>' +
+                '</div>' +
+            '</div>';
+
+        container.appendChild(toast);
+
+        /* Slide in */
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                toast.style.transform = 'translateX(0)';
+                var bar = document.getElementById(id);
+                if (bar) requestAnimationFrame(function () { bar.style.width = '0%'; });
+            });
+        });
+
+        /* Slide out */
+        setTimeout(function () {
+            toast.style.transform = 'translateX(420px)';
+            toast.style.opacity   = '0';
+            toast.style.transition += ',opacity .3s';
+            setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 350);
+        }, 3200);
+    }
+
+    /* ── Attach listeners ── */
+    function bindForm(formId, btnId, msg) {
+        var form = document.getElementById(formId);
+        var btn  = document.getElementById(btnId);
+        if (!form || !btn || form.__toastBound) return;
+        form.__toastBound = true;
+        form.addEventListener('submit', function () {
+            showBecumToast(msg, 'info');
+            btn.disabled    = true;
+            btn.innerHTML   = '<i class="fas fa-spinner fa-spin mr-1"></i>Menyimpan...';
+        });
+    }
+
+    function init() {
+        bindForm('formTambahBecum', 'btnTambahBecum', 'Menyimpan data...');
+        bindForm('formEdit',        'btnEditBecum',   'Menyimpan perubahan...');
+    }
+
+    /* Jalankan saat modal dibuka (Bootstrap 4 / 5) */
+    document.addEventListener('show.bs.modal', function (e) {
+        var id = e.target && e.target.id;
+        if (id === 'addDataModal' || id === 'editDataModal') setTimeout(init, 60);
+    });
+    /* Fallback Bootstrap 4 jQuery */
+    if (window.jQuery) {
+        jQuery(document).on('show.bs.modal', '#addDataModal, #editDataModal', function () { setTimeout(init, 60); });
+    }
+
+    /* Juga coba langsung */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
 
 <?= $this->endSection() ?>

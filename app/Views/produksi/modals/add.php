@@ -6,7 +6,7 @@
                 <h5 class="modal-title font-weight-bold text-primary">
                     <i class="fas fa-plus-circle mr-2"></i> Tambah Laporan Produksi
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
             </div>
             <div class="modal-body p-4">
                 <style>

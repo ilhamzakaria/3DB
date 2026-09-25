@@ -7,7 +7,7 @@
                 </h5>
             </div>
 
-            <form id="formEdit" method="POST" action="<?= base_url('ppic/update') ?>">
+            <form id="formEditPpic" method="POST" action="<?= base_url('ppic/update') ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="id" id="edit_id">
 
@@ -138,9 +138,36 @@
 
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button class="btn btn-light px-4" type="button" data-bs-dismiss="modal" style="border-radius: 10px;">Batal</button>
-                    <button class="btn btn-primary px-4 shadow-sm" type="submit" style="border-radius: 10px;">Simpan Perubahan</button>
+                    <button class="btn btn-primary px-4 shadow-sm" type="submit" id="btnSimpanEdit" style="border-radius: 10px;">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    'use strict';
+
+    function attachEditListener() {
+        var form = document.getElementById('formEditPpic');
+        var btn  = document.getElementById('btnSimpanEdit');
+        if (!form || form.__toastBound) return;
+        form.__toastBound = true;
+
+        form.addEventListener('submit', function() {
+            if (window.showPpicToast) showPpicToast('Menyimpan perubahan...', 'info');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+        });
+    }
+
+    document.addEventListener('show.bs.modal', function(e) {
+        if (e.target && e.target.id === 'modalEdit') {
+            setTimeout(attachEditListener, 50);
+        }
+    });
+
+    attachEditListener();
+})();
+</script>

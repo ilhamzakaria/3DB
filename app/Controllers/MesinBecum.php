@@ -9,6 +9,7 @@ use App\Models\MMesinBecum;
 use App\Models\MPpicMesinBecum;
 use App\Models\MMesinBrand;
 use App\Models\MMesinKomposisi;
+use App\Repositories\PenimbanganJamRepository;
 
 class MesinBecum extends BaseController
 {
@@ -68,6 +69,54 @@ class MesinBecum extends BaseController
         $this->MMesin     = new MMesinBecum();
         $this->MMesinPpic = new MPpicMesinBecum();
         helper(['form', 'url']);
+    }
+
+    /**
+     * AJAX endpoint: Get penimbangan data for edit modal prefill
+     * Returns HTML-rendered penimbangan section with existing data populated
+     * 
+     * @return string JSON response with rendered HTML
+     */
+    public function getPenimbanganSection($id = null)
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(403)->setBody('Forbidden');
+        }
+
+        $id = $id ?: $this->request->getPost('id');
+        if (empty($id)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID tidak ditemukan',
+                'html' => '',
+            ]);
+        }
+
+        try {
+            $penimbanganRepo = new \App\Repositories\PenimbanganJamRepository();
+            $penimbanganData = $penimbanganRepo->getPenimbanganForForm((int)$id);
+
+            // Render the penimbangan section with edit mode and existing data
+            $html = view('gudang/partials/penimbangan_jam_section', [
+                'mode' => 'edit',
+                'penimbanganData' => $penimbanganData,
+                'errors' => [],
+            ]);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Data penimbangan berhasil dimuat',
+                'html' => $html,
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'getPenimbanganSection error: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'html' => '',
+            ]);
+        }
     }
 
     public function index()
@@ -132,10 +181,28 @@ class MesinBecum extends BaseController
             return redirect()->to($this->indexRoute());
         }
 
+        // Validate penimbangan data (skip for PPIC context — no penimbangan form there)
+        if (!$this->isPpicContext()) {
+            $validationResult = $this->validatePenimbanganFromRequest();
+            if (!$validationResult['success']) {
+                session()->setFlashdata('error', 'Validasi Penimbangan Gagal: ' . implode(', ', $validationResult['errors']));
+                return redirect()->back()->withInput();
+            }
+        }
+
         $data = $this->getBecumFields();
 
         if ($this->activeMesin()->insert($data)) {
-            session()->setFlashdata('success', 'Data mesin becum berhasil ditambahkan');
+            $insertId = $this->activeMesin()->getInsertID();
+            
+            // Save penimbangan data if insert was successful
+            $penimbanganResult = (new PenimbanganJamRepository())->savePenimbanganFromForm((int)$insertId, $this->request->getPost());
+            
+            if ($penimbanganResult['success']) {
+                session()->setFlashdata('success', 'Data mesin becum dan penimbangan berhasil ditambahkan');
+            } else {
+                session()->setFlashdata('warning', 'Data mesin becum ditambahkan, tapi penimbangan gagal: ' . $penimbanganResult['message']);
+            }
         } else {
             session()->setFlashdata('error', 'Gagal menambahkan data');
         }
@@ -149,16 +216,72 @@ class MesinBecum extends BaseController
             return redirect()->to($this->indexRoute());
         }
 
+        // Validate penimbangan data (skip for PPIC context — no penimbangan form there)
+        if (!$this->isPpicContext()) {
+            $validationResult = $this->validatePenimbanganFromRequest();
+            if (!$validationResult['success']) {
+                session()->setFlashdata('error', 'Validasi Penimbangan Gagal: ' . implode(', ', $validationResult['errors']));
+                return redirect()->back()->withInput();
+            }
+        }
+
         $id = $id ?: $this->request->getPost('id');
         $data = $this->getBecumFields();
 
         if ($this->activeMesin()->update($id, $data)) {
-            session()->setFlashdata('success', 'Data mesin becum berhasil diupdate');
+            // Save penimbangan data if update was successful
+            $penimbanganResult = (new PenimbanganJamRepository())->savePenimbanganFromForm((int)$id, $this->request->getPost());
+            
+            if ($penimbanganResult['success']) {
+                session()->setFlashdata('success', 'Data mesin becum dan penimbangan berhasil diupdate');
+            } else {
+                session()->setFlashdata('warning', 'Data mesin becum diupdate, tapi penimbangan gagal: ' . $penimbanganResult['message']);
+            }
         } else {
             session()->setFlashdata('error', 'Gagal mengupdate data');
         }
 
         return redirect()->to($this->indexRoute());
+    }
+
+    /**
+     * Validate penimbangan data from POST request
+     * 
+     * @return array ['success' => bool, 'errors' => array]
+     */
+    private function validatePenimbanganFromRequest(): array
+    {
+        $formData = $this->request->getPost();
+        $penimbanganData = $formData['penimbangan_jam'] ?? [];
+        $errors = [];
+
+        if (empty($penimbanganData)) {
+            $errors[] = 'Data penimbangan tidak boleh kosong';
+            return ['success' => false, 'errors' => $errors];
+        }
+
+        // Validate each hour
+        for ($hour = 1; $hour <= 8; $hour++) {
+            $galonKey = "jam_{$hour}_galon";
+            $flashKey = "jam_{$hour}_flash";
+
+            $galon = isset($penimbanganData[$galonKey]) ? (float)$penimbanganData[$galonKey] : 0;
+            $flash = isset($penimbanganData[$flashKey]) ? (float)$penimbanganData[$flashKey] : 0;
+
+            // Validate ranges
+            if (!is_numeric($penimbanganData[$galonKey] ?? 0) || $galon < 0 || $galon > 999.99) {
+                $errors[] = "Galon jam {$hour} harus antara 0 dan 999.99";
+            }
+
+            if (!is_numeric($penimbanganData[$flashKey] ?? 0) || $flash < 0 || $flash > 999.99) {
+                $errors[] = "Flash jam {$hour} harus antara 0 dan 999.99";
+            }
+        }
+
+        return [
+            'success' => count($errors) === 0,
+            'errors' => $errors,
+        ];
     }
 
     /**
@@ -169,6 +292,12 @@ class MesinBecum extends BaseController
      *   extra_shift_label[]  — e.g. ["Shift 4", "Shift Malam"]
      *   extra_shift_target[] — e.g. ["500", "300"]
      * They are merged into a JSON array stored in extra_target_shifts.
+     * 
+     * Penimbangan data arrives as:
+     *   penimbangan_jam[jam_1_galon] → "10.5"
+     *   penimbangan_jam[jam_1_flash] → "8.2"
+     *   ... etc for hours 1-8
+     * Validation is performed, but saving is delegated to savePenimbanganData().
      */
     private function getBecumFields(): array
     {
@@ -393,12 +522,10 @@ class MesinBecum extends BaseController
             }
 
             // -----------------------------------------------------------------
-            // Query 3 — EXTRA SHIFTS: collect all extra shift realisasi per
-            // SPK+tanggal+extra_shift_label.
-            // Extra shifts are stored in produksi_headers.shift column with pattern
-            // like "extra_Shift_4", "extra_Malam", etc.
+            // Query 3 — EXTRA SHIFTS: collect extra shift realisasi from JSON
+            // stored in produksi_headers.extra_realisasi_shifts column.
             // -----------------------------------------------------------------
-            // ["normSpk|extraShiftLabel"] => int total  (no tanggal filter)
+            // ["normSpk|label"] => int total
             $byExtraShift = [];
 
             if (!empty($spkList)) {
@@ -414,13 +541,12 @@ class MesinBecum extends BaseController
                 $sql3 = "
                     SELECT
                         nomor_spk,
-                        shift,
-                        SUM(grand_total_bagus) AS total_bagus
+                        extra_realisasi_shifts
                     FROM produksi_headers
                     WHERE deleted_at IS NULL
-                      AND shift LIKE 'extra_%'
+                      AND extra_realisasi_shifts IS NOT NULL
+                      AND extra_realisasi_shifts != '[]'
                       AND (nomor_spk IN ($inPlaceholders) $castClause)
-                    GROUP BY nomor_spk, shift
                 ";
 
                 $bindings3 = array_merge(
@@ -431,10 +557,26 @@ class MesinBecum extends BaseController
                 $rows3 = $db->query($sql3, $bindings3)->getResultArray();
 
                 foreach ($rows3 as $r) {
-                    $normKey    = (string)(int)trim((string)$r['nomor_spk']);
-                    $shiftLabel = trim((string)$r['shift']);
-                    $key        = "$normKey|$shiftLabel";
-                    $byExtraShift[$key] = ($byExtraShift[$key] ?? 0) + (int)$r['total_bagus'];
+                    $normKey = (string)(int)trim((string)$r['nomor_spk']);
+                    
+                    // Decode JSON array of extra shifts
+                    try {
+                        $extraShifts = json_decode($r['extra_realisasi_shifts'], true);
+                        if (is_array($extraShifts)) {
+                            foreach ($extraShifts as $extraShift) {
+                                if (isset($extraShift['label']) && isset($extraShift['realisasi'])) {
+                                    $label = trim((string)$extraShift['label']);
+                                    $realisasi = (int)$extraShift['realisasi'];
+                                    if (!empty($label) && $realisasi > 0) {
+                                        $key = "$normKey|$label";
+                                        $byExtraShift[$key] = ($byExtraShift[$key] ?? 0) + $realisasi;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Invalid JSON, skip this row
+                    }
                 }
             }
 

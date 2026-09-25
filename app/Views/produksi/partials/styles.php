@@ -178,6 +178,36 @@
         background-color: #ffffff;
     }
 
+    .shift-subtotal-row > td {
+        background-color: #f0f7f1;
+        border-top: 1px solid #c3e6cb !important;
+        border-bottom: 2px solid #c3e6cb !important;
+    }
+
+    .shift-subtotal-row:hover > td {
+        background-color: #e4f2e7 !important;
+    }
+
+    /* Mobile: subtotal row juga jadi block tapi sederhana */
+    @media (max-width: 767.98px) {
+        .table-main tbody tr.shift-subtotal-row {
+            display: block;
+            margin: 0 0.5rem 0.25rem;
+            border-radius: 8px;
+            background: #f0f7f1 !important;
+            border: 1px solid #c3e6cb !important;
+            box-shadow: none;
+            padding: 0.4rem 0.75rem;
+        }
+        .shift-subtotal-row td {
+            display: flex !important;
+            justify-content: space-between;
+            border: none !important;
+            padding: 0.2rem 0 !important;
+            font-size: 0.78rem;
+        }
+    }
+
     .btn-action {
         width: 32px;
         height: 32px;
@@ -1115,5 +1145,32 @@
     @media (max-width: 767.98px) {
         .jam-reject-type   { font-size: 0.7rem !important; }
         .jam-reject-jumlah { width: 46px !important; }
+    }
+
+    /* ── REMOVE NUMBER STEPPER (SPINNER) ────────────────────────
+       Hilangkan up/down arrow buttons di semua input type="number"
+       ────────────────────────────────────────────────────────── */
+
+    /* Chrome, Safari, Edge, Opera */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none !important;
+        margin: 0 !important;
+    }
+
+    /* Firefox */
+    input[type="number"] {
+        -moz-appearance: textfield !important;
+    }
+
+    /* Input number lebih clean tanpa spinner */
+    input[type="number"] {
+        /* pastikan focus border terlihat */
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="number"]:focus {
+        border-color: var(--primary-modern, #4361ee) !important;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1) !important;
     }
 </style>

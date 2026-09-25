@@ -400,6 +400,7 @@ $routes->get('/produksi/restore/(:num)', 'Produksi::restore/$1', ['filter' => 'm
 $routes->get('/produksi/delete_permanent/(:num)', 'Produksi::deletePermanent/$1', ['filter' => 'managerProduksi']);
 $routes->get('/produksi/get_last_data/(:any)', 'Produksi::get_last_data/$1', ['filter' => 'readOnlyProduksi']);
 $routes->get('/produksi/get_ppic_spk/(:any)', 'Produksi::getPpicSpkDetail/$1', ['filter' => 'readOnlyProduksi']);
+$routes->get('/produksi/get_ppic_spk', 'Produksi::getPpicSpkDetail', ['filter' => 'readOnlyProduksi']);
 $routes->get('/api/spk-detail/(:any)', 'Produksi::getPpicSpkDetail/$1', ['filter' => 'readOnlyProduksi']);
 $routes->get('/produksi/get_produksi_spk_list', 'Produksi::getProduksiSpkList', ['filter' => 'readOnlyProduksi']);
 $routes->get('/produksi/detail/(:num)', 'Produksi::detail/$1', ['filter' => 'readOnlyProduksi']);

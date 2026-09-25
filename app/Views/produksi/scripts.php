@@ -242,6 +242,14 @@
         newRow.querySelector('.reject-jumlah').addEventListener('input', function() {
             updateRejectInlineTotals(root);
         });
+
+        // Initialize Select2 on new reject dropdown (Task 3)
+        if (typeof window.initRejectSelect2 === 'function') {
+            setTimeout(() => {
+                window.initRejectSelect2(newRow);
+            }, 100);
+        }
+
         newRow.querySelector('.reject-type').focus();
         updateRejectInlineTotals(root);
     }
@@ -424,6 +432,16 @@
             </tr>
         `;
             tableBody.insertAdjacentHTML('beforeend', html);
+
+            // Initialize Select2 on new jam row's reject dropdowns (Task 4)
+            if (typeof window.initRejectSelect2 === 'function') {
+                setTimeout(() => {
+                    const newRow = tableBody.querySelector(`tr[data-jam="${jam}"]`);
+                    if (newRow) {
+                        window.initRejectSelect2(newRow);
+                    }
+                }, 100);
+            }
         };
 
         window.addDtRow = function(container, data = {}) {
@@ -446,6 +464,7 @@
                 'DT16': 'Kerusakan Tools',
                 'DT17': 'Alarm karena Error',
                 'DT18': 'Alarm karena kesalahan proses',
+                'DT19': 'Setting mesin',
                 'DT20': 'Salah memasukan material',
                 'DT21': 'Material tidak tersedia',
                 'DT22': 'Man power tidak mencukupi',
@@ -461,7 +480,7 @@
                 'DT32': 'Ketiadaan kelengkapan kerja',
             };
 
-            let reasonOptions = '<option value="">-- Pilih Alasan --</option>';
+            let reasonOptions = '<option value="">-- Pilih Jenis --</option>';
             for (const [code, desc] of Object.entries(reasons)) {
                 const val = `${code} - ${desc}`;
                 reasonOptions += `<option value="${val}" ${data.alasan_downtime === val ? 'selected' : ''}>${val}</option>`;
@@ -480,26 +499,6 @@
                     </button>
                 </div>
                 <div class="dt-card-body">
-                    <div class="dt-field">
-                        <label class="dt-label">Alasan</label>
-                        <select name="downtimes[${rowId}][alasan]" class="form-select form-select-sm">
-                            ${reasonOptions}
-                        </select>
-                    </div>
-                    <div class="dt-field">
-                        <label class="dt-label">Problem</label>
-                        <textarea name="downtimes[${rowId}][problem]"
-                            class="form-control form-control-sm"
-                            rows="2"
-                            placeholder="Deskripsi problem...">${data.problem || ''}</textarea>
-                    </div>
-                    <div class="dt-field">
-                        <label class="dt-label">Action Plant</label>
-                        <textarea name="downtimes[${rowId}][action_plant]"
-                            class="form-control form-control-sm"
-                            rows="2"
-                            placeholder="Tindakan perbaikan...">${data.action_plant || ''}</textarea>
-                    </div>
                     <div class="dt-field-row">
                         <div class="dt-field">
                             <label class="dt-label">Mulai</label>
@@ -515,6 +514,26 @@
                                 value="${data.waktu_selesai ? data.waktu_selesai.replace(' ', 'T').substring(0, 16) : ''}"
                                 class="form-control form-control-sm dt-selesai">
                         </div>
+                    </div>
+                    <div class="dt-field">
+                        <label class="dt-label">Problem</label>
+                        <textarea name="downtimes[${rowId}][problem]"
+                            class="form-control form-control-sm"
+                            rows="2"
+                            placeholder="Deskripsi problem...">${data.problem || ''}</textarea>
+                    </div>
+                    <div class="dt-field">
+                        <label class="dt-label">Action Plant</label>
+                        <textarea name="downtimes[${rowId}][action_plant]"
+                            class="form-control form-control-sm"
+                            rows="2"
+                            placeholder="Tindakan perbaikan...">${data.action_plant || ''}</textarea>
+                    </div>
+                    <div class="dt-field">
+                        <label class="dt-label">Jenis Downtime</label>
+                        <select name="downtimes[${rowId}][alasan]" class="form-select form-select-sm">
+                            ${reasonOptions}
+                        </select>
                     </div>
                     <div class="dt-field" style="max-width: 200px;">
                         <label class="dt-label">Durasi (menit)</label>
@@ -537,7 +556,7 @@
         window.addRejectRow = function(tableBody, type = '', qty = '') {
             const rejectTypes = [
                 'start up', 'karantina', 'trial', 'camera', 'bottom putih', 'oval', 'flashing', 'short shoot',
-                'kotor', 'beda warna', 'sampling qc', 'kontaminasi', 'black spot', 'gosong',
+                'kotor', 'beda warna', 'sampling qc', 'kontaminasi', 'gosong',
                 'struktur tidak standard', 'inject poin tidak standard', 'bolong', 'bubble', 'berair', 'neck panjang'
             ];
 
@@ -562,12 +581,12 @@
 
         /**
          * Auto-fill batch_number dari nomor_mesin + tanggal + shift
-         * Format: {shift}{nomor_mesin}/{DD.MM.YYYY}
-         * Contoh: 1B01/08.09.2026
+         * Format: {shift}.{nomor_mesin}.{DDMMYY}
+         * Contoh: 3.B02.180926
          */
         window.autofillBatchNumber = function(container) {
             if (!container) return;
-            const nomorMesin = container.querySelector('.nomor_mesin_hidden')?.value || '';
+            const nomorMesin = (container.querySelector('.nomor_mesin_hidden')?.value || '').replace(/\./g, '');
             const tanggal    = container.querySelector('.tanggal_hidden')?.value || '';   // format YYYY-MM-DD
             if (!nomorMesin || !tanggal) return;
 
@@ -575,13 +594,14 @@
             const shiftRaw = container.querySelector('.shift_hidden')?.value || '';
             const shiftVal = shiftRaw.startsWith('extra_') ? shiftRaw.replace('extra_', '') : shiftRaw;
 
-            // Konversi YYYY-MM-DD → DD.MM.YYYY (pakai titik)
+            // Konversi YYYY-MM-DD → DDMMYY (tanpa titik, 2 digit tahun)
             const parts = tanggal.split('-');
             if (parts.length !== 3) return;
             const [y, m, d] = parts;
-            const formatted  = `${d}.${m}.${y}`;
-            const prefix     = shiftVal ? `${shiftVal}` : '';
-            const batchValue = `${prefix}${nomorMesin}/${formatted}`;
+            const yy        = y.slice(-2);          // 2026 → 26
+            const formatted = `${d}${m}${yy}`;      // 180926
+            const prefix    = shiftVal ? `${shiftVal}.` : '';
+            const batchValue = `${prefix}${nomorMesin}.${formatted}`;
 
             const batchInput = container.querySelector('.batch_number');
             if (batchInput) {
@@ -684,6 +704,11 @@
                     '- Kumulatif DB:', kumulatif,
                     '- Bagus form aktif:', totalBagus, ')');
             }
+
+            // Update Total Bagus + Reject
+            const totalReject = parseInt(container.querySelector('.grand_total_reject')?.value) || 0;
+            const gBrDisplay = container.querySelector('.grand_total_br');
+            if (gBrDisplay) gBrDisplay.value = totalBagus + totalReject;
         };
 
         function normalizeMachineName(machineName) {
@@ -1587,6 +1612,14 @@
                         class="btn btn-sm btn-outline-danger btn-remove-jam-reject"
                         style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">✕</button>`;
                 rejectList.appendChild(newRow);
+
+                // Initialize Select2 on new jam reject dropdown (Task 5)
+                if (typeof window.initRejectSelect2 === 'function') {
+                    setTimeout(() => {
+                        window.initRejectSelect2(newRow);
+                    }, 100);
+                }
+
                 const container = btn.closest('.modal-body') || document;
                 syncJamRejectToRejectSection(container);
             }
@@ -1619,11 +1652,55 @@
                         // Hitung ulang total jam & bagus
                         if (typeof updateTotals === 'function') updateTotals(modalBody);
 
+                        // Init Kode Cap (Powerjet): hitung ulang rata² & akhir
+                        if (typeof window.initKodeCap === 'function') {
+                            setTimeout(() => window.initKodeCap(), 100);
+                            setTimeout(() => window.initKodeCap(), 500);
+                        }
+
+                        // Re-run PE & Box/Karung pemakaian calculations after AJAX edit load
+                        setTimeout(() => {
+                            if (typeof window.initPePemakaian === 'function') {
+                                window.initPePemakaian(container);
+                            }
+                            if (typeof window.initBoxKarungPemakaian === 'function') {
+                                window.initBoxKarungPemakaian(container);
+                            }
+                        }, 300);
+                        setTimeout(() => {
+                            if (typeof window.initPePemakaian === 'function') {
+                                window.initPePemakaian(container);
+                            }
+                            if (typeof window.initBoxKarungPemakaian === 'function') {
+                                window.initBoxKarungPemakaian(container);
+                            }
+                        }, 700);
+
+                        // Re-run calcCounter agar total_counter Powerjet (×12) tampil benar
+                        setTimeout(() => {
+                            const totalEl = container.querySelector('input[name="total_counter"]');
+                            const awalEl  = container.querySelector('input[name="counter_awal"]');
+                            const akhirEl = container.querySelector('input[name="counter_akhir"]');
+                            if (totalEl && awalEl && akhirEl) {
+                                const diff     = Math.abs((parseFloat(akhirEl.value) || 0) - (parseFloat(awalEl.value) || 0));
+                                const multiply = parseFloat(totalEl.dataset.multiply) || 1;
+                                totalEl.value  = diff * multiply;
+                            }
+                        }, 150);
+
                         // Init reject section: pasang event listeners + hitung total reject
                         if (typeof initializeRejectSection === 'function') initializeRejectSection(modalBody);
 
                         // Hitung ulang total reject (memanggil updateBagusTotal juga)
                         if (typeof updateRejectInlineTotals === 'function') updateRejectInlineTotals(modalBody);
+
+                        // Initialize Select2 on reject dropdowns in AJAX-loaded modal (Task 6)
+                        if (typeof window.initRejectSelect2 === 'function') {
+                            setTimeout(() => {
+                                console.log('[EDIT] Initializing Select2 for reject dropdowns');
+                                window.initRejectSelect2(modalBody);
+                            }, 300);
+                        }
 
                         // RESTORE EDIT DATA - SPK, Shift, TTD
                         setTimeout(() => {
@@ -2073,13 +2150,13 @@
                 updateRejectInlineTotals(root);
             }
 
-            // Meter awal/akhir — kalkulasi pemakaian = akhir - awal
+            // Meter awal/akhir — kalkulasi pemakaian = awal - akhir (selalu positif)
             if (e.target.classList.contains('meter_awal') ||
                 e.target.classList.contains('meter_akhir')) {
                 const container = e.target.closest('form') || e.target.closest('.modal-body') || document;
                 const awal    = parseFloat(container.querySelector('.meter_awal')?.value)  || 0;
                 const akhir   = parseFloat(container.querySelector('.meter_akhir')?.value) || 0;
-                const hasil   = akhir - awal;
+                const hasil   = Math.abs(awal - akhir);
                 const pemakaianDisplay = container.querySelector('.meter_pemakaian');
                 const pemakaianHidden  = container.querySelector('.meter_pemakaian_hidden');
                 if (pemakaianDisplay) pemakaianDisplay.value = hasil.toFixed(2);
@@ -2378,6 +2455,8 @@
                 if (IS_JAM_REJECT_MESIN) {
                     // Hapus hidden reject lama agar tidak duplikat
                     e.target.querySelectorAll('input[name^="rejects["]').forEach(el => el.remove());
+                    // Hapus hidden rejects_json lama per jam
+                    e.target.querySelectorAll('input[name*="[rejects_json]"]').forEach(el => el.remove());
 
                     // Baca rejectMap dari dataset form (diisi oleh syncJamRejectToRejectSection)
                     const rejectMap = JSON.parse(e.target.dataset.jamRejectMap || '{}');
@@ -2398,6 +2477,33 @@
                         idx++;
                     }
                     console.log('Jam-reject injected:', rejectMap, 'total entries:', idx);
+
+                    // Inject rejects_json per jam row (untuk restore saat edit)
+                    // Tiap tr[data-jam] dikumpulkan reject per jam-nya sebagai JSON
+                    const jamRows = e.target.querySelectorAll('tr[data-jam]');
+                    jamRows.forEach((row, jamIdx) => {
+                        const rejectsArr = [];
+                        row.querySelectorAll('.jam-reject-row').forEach(rejectRow => {
+                            const jenis  = rejectRow.querySelector('.jam-reject-type')?.value  || '';
+                            const jumlah = parseInt(rejectRow.querySelector('.jam-reject-jumlah')?.value) || 0;
+                            if (jenis) rejectsArr.push({ jenis, jumlah });
+                        });
+                        // Cari hidden input rentang_jam di baris ini untuk mapping index
+                        const rentangInput = row.querySelector('input[name*="[rentang_jam]"]');
+                        if (rentangInput) {
+                            // Ambil index dari name attribute, misal "jam_data[1001][rentang_jam]" → 1001
+                            const match = rentangInput.name.match(/jam_data\[(\d+)\]/);
+                            if (match) {
+                                const jamDataIdx = match[1];
+                                const hiddenJson = document.createElement('input');
+                                hiddenJson.type  = 'hidden';
+                                hiddenJson.name  = `jam_data[${jamDataIdx}][rejects_json]`;
+                                hiddenJson.value = JSON.stringify(rejectsArr);
+                                e.target.appendChild(hiddenJson);
+                            }
+                        }
+                    });
+                    console.log('[jam rejects_json] serialized', jamRows.length, 'jam rows');
                 }
 
                 console.log('All hidden fields synced before submission');
@@ -2686,6 +2792,8 @@
             if (IS_JAM_REJECT_MESIN) {
                 // Hapus hidden reject lama agar tidak duplikat
                 e.target.querySelectorAll('input[name^="rejects["]').forEach(el => el.remove());
+                // Hapus hidden rejects_json lama per jam
+                e.target.querySelectorAll('input[name*="[rejects_json]"]').forEach(el => el.remove());
 
                 // Baca rejectMap dari dataset form (diisi oleh syncJamRejectToRejectSection)
                 const rejectMap = JSON.parse(e.target.dataset.jamRejectMap || '{}');
@@ -2706,6 +2814,30 @@
                     idx++;
                 }
                 console.log('Jam-reject injected:', rejectMap, 'total entries:', idx);
+
+                // Inject rejects_json per jam row (untuk restore saat edit)
+                const jamRows = e.target.querySelectorAll('tr[data-jam]');
+                jamRows.forEach((row) => {
+                    const rejectsArr = [];
+                    row.querySelectorAll('.jam-reject-row').forEach(rejectRow => {
+                        const jenis  = rejectRow.querySelector('.jam-reject-type')?.value  || '';
+                        const jumlah = parseInt(rejectRow.querySelector('.jam-reject-jumlah')?.value) || 0;
+                        if (jenis) rejectsArr.push({ jenis, jumlah });
+                    });
+                    const rentangInput = row.querySelector('input[name*="[rentang_jam]"]');
+                    if (rentangInput) {
+                        const match = rentangInput.name.match(/jam_data\[(\d+)\]/);
+                        if (match) {
+                            const jamDataIdx = match[1];
+                            const hiddenJson = document.createElement('input');
+                            hiddenJson.type  = 'hidden';
+                            hiddenJson.name  = `jam_data[${jamDataIdx}][rejects_json]`;
+                            hiddenJson.value = JSON.stringify(rejectsArr);
+                            e.target.appendChild(hiddenJson);
+                        }
+                    }
+                });
+                console.log('[jam rejects_json] serialized', jamRows.length, 'jam rows');
             }
 
             console.log('All hidden fields synced before submission');
@@ -2736,4 +2868,101 @@
             if (icon) icon.style.transform = 'rotate(0deg)';
         }
     });
+</script>
+
+<script>
+    // ============================================
+    // SELECT2 INITIALIZATION FOR REJECT DROPDOWNS
+    // ============================================
+    /**
+     * Initialize Select2 on all reject type dropdowns for searchable interface
+     * - .reject-type (Detail Jenis Reject table)
+     * - .jam-reject-type (Jam Reject inline for Becum/Powerjet)
+     */
+    window.initRejectSelect2 = function(container = document) {
+        // Check if jQuery and Select2 available
+        if (typeof jQuery === 'undefined') {
+            console.warn('[SELECT2] jQuery not loaded, skipping reject dropdown init');
+            return;
+        }
+        if (typeof jQuery.fn.select2 === 'undefined') {
+            console.warn('[SELECT2] Select2 not loaded, skipping reject dropdown init');
+            return;
+        }
+
+        console.log('[SELECT2] Initializing reject dropdowns in container:', container);
+
+        // Initialize Detail Jenis Reject dropdowns (.reject-type)
+        const rejectTypeSelects = container.querySelectorAll('.reject-type');
+        let initCount = 0;
+
+        // Cari modal parent yang tepat — harus di .modal (bukan .modal-body) agar dropdown tidak terpotong
+        const getDropdownParent = function(select) {
+            const modal = jQuery(select).closest('.modal');
+            return modal.length ? modal : jQuery('body');
+        };
+
+        rejectTypeSelects.forEach(select => {
+            const $select = jQuery(select);
+            if ($select.hasClass('select2-hidden-accessible')) return; // already init
+
+            try {
+                $select.select2({
+                    placeholder: '-- Pilih Jenis Reject --',
+                    allowClear: false,
+                    width: '100%',
+                    dropdownParent: getDropdownParent(select),
+                    language: {
+                        noResults: function() { return 'Reject tidak ditemukan'; },
+                        searching: function() { return 'Mencari...'; }
+                    }
+                });
+                initCount++;
+            } catch (error) {
+                console.error('[SELECT2] Error .reject-type:', error.message);
+            }
+        });
+
+        // Initialize Jam Reject inline dropdowns (.jam-reject-type for Becum/Powerjet)
+        const jamRejectSelects = container.querySelectorAll('.jam-reject-type');
+
+        jamRejectSelects.forEach(select => {
+            const $select = jQuery(select);
+            if ($select.hasClass('select2-hidden-accessible')) return; // already init
+
+            try {
+                $select.select2({
+                    placeholder: '-- Jenis --',
+                    allowClear: false,
+                    width: '100%',
+                    dropdownParent: getDropdownParent(select),
+                    minimumResultsForSearch: 5,
+                    language: {
+                        noResults: function() { return 'Tidak ada'; },
+                        searching: function() { return 'Cari...'; }
+                    }
+                });
+                initCount++;
+            } catch (error) {
+                console.error('[SELECT2] Error .jam-reject-type:', error.message);
+            }
+        });
+
+        if (initCount > 0) {
+            console.log('[SELECT2] ✓ Initialized', initCount, 'reject dropdowns');
+        }
+    };
+
+    // Initialize reject Select2 when Add modal is shown
+    (function() {
+        const addModalEl = document.getElementById('addDataModal');
+        if (addModalEl) {
+            addModalEl.addEventListener('shown.bs.modal', function() {
+                const container = addModalEl.querySelector('.modal-body');
+                if (container && typeof window.initRejectSelect2 === 'function') {
+                    setTimeout(() => window.initRejectSelect2(container), 200);
+                }
+            });
+        }
+    })();
 </script>

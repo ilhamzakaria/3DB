@@ -256,7 +256,26 @@ class Ppic extends BaseController
             }
         }
 
-        return redirect()->to('/ppic')->with('success', 'Data berhasil ditambahkan');
+        // Redirect kembali ke mesin yang sesuai agar flash message bisa tampil
+        $namaMesin = strtolower(trim((string)$this->request->getPost('nama_mesin') ?? ''));
+        $mesinSlug = '';
+        if (strpos($namaMesin, 'becum') !== false) {
+            $mesinSlug = 'mesin_becum';
+        } elseif (strpos($namaMesin, 'powerjet') !== false) {
+            if (strpos($namaMesin, 'powerjet 1') !== false || strpos($namaMesin, 'powerjet1') !== false) {
+                $mesinSlug = 'mesin_powerjet1';
+            } else {
+                $mesinSlug = 'mesin_powerjet2';
+            }
+        } elseif (strpos($namaMesin, 'ccm') !== false) {
+            $mesinSlug = strpos($namaMesin, 'ccm 1') !== false ? 'mesin_ccm1' : 'mesin_ccm2';
+        } elseif (strpos($namaMesin, 'ips') !== false) {
+            preg_match('/ips\s*(\d+)/i', $namaMesin, $m);
+            $mesinSlug = 'mesin_ips' . ($m[1] ?? '1');
+        }
+        
+        $redirectPath = !empty($mesinSlug) ? "/ppic/$mesinSlug" : '/ppic';
+        return redirect()->to($redirectPath)->with('success', 'Data berhasil ditambahkan');
     }
 
     public function delete($id)
@@ -361,7 +380,26 @@ class Ppic extends BaseController
             ]);
         }
 
-        return redirect()->back()->with('success', 'Data berhasil diupdate');
+        // Redirect kembali ke mesin yang sesuai agar flash message bisa tampil
+        $namaMesin = strtolower(trim((string)$data['nama_mesin'] ?? ''));
+        $mesinSlug = '';
+        if (strpos($namaMesin, 'becum') !== false) {
+            $mesinSlug = 'mesin_becum';
+        } elseif (strpos($namaMesin, 'powerjet') !== false) {
+            if (strpos($namaMesin, 'powerjet 1') !== false || strpos($namaMesin, 'powerjet1') !== false) {
+                $mesinSlug = 'mesin_powerjet1';
+            } else {
+                $mesinSlug = 'mesin_powerjet2';
+            }
+        } elseif (strpos($namaMesin, 'ccm') !== false) {
+            $mesinSlug = strpos($namaMesin, 'ccm 1') !== false ? 'mesin_ccm1' : 'mesin_ccm2';
+        } elseif (strpos($namaMesin, 'ips') !== false) {
+            preg_match('/ips\s*(\d+)/i', $namaMesin, $m);
+            $mesinSlug = 'mesin_ips' . ($m[1] ?? '1');
+        }
+        
+        $redirectPath = !empty($mesinSlug) ? "/ppic/$mesinSlug" : '/ppic';
+        return redirect()->to($redirectPath)->with('success', 'Data berhasil diupdate');
     }
 
     private function saveInitialRevisi(int $idPpic, array $revisiInputs): void

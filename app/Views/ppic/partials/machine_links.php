@@ -1,7 +1,7 @@
 <?php
 $currentMachine = $current_machine ?? '';
 $machines = [
-    'mesin_becum'     => ['label' => 'Becum',      'icon' => 'fas fa-industry',       'url' => 'ppic/mesin_becum'],
+    'mesin_becum'     => ['label' => 'Bekum',      'icon' => 'fas fa-industry',       'url' => 'ppic/mesin_becum'],
     'mesin_powerjet1' => ['label' => 'Powerjet 1', 'icon' => 'fas fa-bolt',           'url' => 'ppic/mesin_powerjet1'],
     'mesin_powerjet2' => ['label' => 'Powerjet 2', 'icon' => 'fas fa-bolt',           'url' => 'ppic/mesin_powerjet2'],
     'mesin_ccm1'      => ['label' => 'CCM 1',      'icon' => 'fas fa-cogs',           'url' => 'ppic/mesin_ccm1'],

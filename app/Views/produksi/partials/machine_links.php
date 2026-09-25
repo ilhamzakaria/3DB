@@ -6,7 +6,7 @@
 
 $currentMachine = $filter_mesin ?? '';
 $machines = [
-    'becum'     => ['label' => 'Becum',      'icon' => 'fas fa-industry',       'url' => 'produksi/mesin_becum'],
+    'becum'     => ['label' => 'Bekum',      'icon' => 'fas fa-industry',       'url' => 'produksi/mesin_becum'],
     'powerjet1' => ['label' => 'Powerjet 1', 'icon' => 'fas fa-bolt',           'url' => 'produksi/mesin_powerjet1'],
     'powerjet2' => ['label' => 'Powerjet 2', 'icon' => 'fas fa-bolt',           'url' => 'produksi/mesin_powerjet2'],
     'ccm1'      => ['label' => 'CCM 1',      'icon' => 'fas fa-cogs',           'url' => 'produksi/mesin_ccm1'],

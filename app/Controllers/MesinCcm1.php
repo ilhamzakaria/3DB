@@ -137,13 +137,15 @@ class MesinCcm1 extends BaseController
      * Attach per-shift realisasi totals from produksi_headers to each mesin row.
      *
      * Matching strategy (in order of priority):
-     *  1. PRIMARY:  nomor_spk (varchar, any format) + tanggal + shift
+     *  1. PRIMARY:  nomor_spk (varchar, any format) + shift
      *               — handles "2926", "02926", " 2926 ", etc. via multi-candidate IN list
      *               — plus CAST fallback for purely numeric SPKs stored differently
      *  2. FALLBACK: nomor_mesin (LIKE match, partial) + tanggal + shift when no SPK match is found
+     *  3. EXTRA SHIFTS: collect all extra shift realisasi per SPK+shift
      *
-     * The result key `produksi_realisasi_shift{1|2|3}` is ALWAYS present on every
-     * row (null = no data found) so the view never gets "Undefined array key".
+     * The result keys `produksi_realisasi_shift{1|2|3}` and `extra_realisasi_shifts`
+     * are ALWAYS present on every row (null = no data found) so the view never gets
+     * "Undefined array key".
      */
     private function attachProduksiRealisasi(array $rows): array
     {
@@ -164,7 +166,8 @@ class MesinCcm1 extends BaseController
             $row['produksi_realisasi_shift1'] = null;
             $row['produksi_realisasi_shift2'] = null;
             $row['produksi_realisasi_shift3'] = null;
-            $row['produksi_has_data']         = false;
+            $row['extra_realisasi_shifts']    = null;  // JSON array for extra shifts
+            $row['produksi_has_data']         = false;  // badge flag for view
         }
         unset($row);
 
@@ -210,36 +213,34 @@ class MesinCcm1 extends BaseController
                 fn($s) => $s !== '0' && $s !== ''
             )));
 
-            $bySpk = [];  // ["normSpk|tanggal|shift"] => int total
+            // ["normSpk|shift"] => int total  (no tanggal filter — SPK is unique enough)
+            $bySpk = [];
 
             if (!empty($spkList)) {
-                // Build placeholders manually for raw query to support both
-                // a VARCHAR IN list and a numeric CAST fallback in one shot.
-                $inPlaceholders  = implode(',', array_fill(0, count($spkList), '?'));
+                $inPlaceholders   = implode(',', array_fill(0, count($spkList), '?'));
                 $castPlaceholders = !empty($intSpks)
                     ? implode(',', array_fill(0, count($intSpks), '?'))
                     : null;
-                $tPlaceholders   = implode(',', array_fill(0, count($tanggals), '?'));
 
                 $castClause = $castPlaceholders
                     ? "OR CAST(nomor_spk AS UNSIGNED) IN ($castPlaceholders)"
                     : '';
 
+                // No tanggal filter here: SPK is unique per job, so matching by SPK
+                // alone is correct even when the operator records different dates in
+                // mesin_[MESIN] vs produksi_headers.
                 $sql = "
                     SELECT
                         nomor_spk,
-                        tanggal,
                         shift,
                         SUM(grand_total_bagus) AS total_bagus
                     FROM produksi_headers
                     WHERE deleted_at IS NULL
-                      AND tanggal IN ($tPlaceholders)
                       AND (nomor_spk IN ($inPlaceholders) $castClause)
-                    GROUP BY nomor_spk, tanggal, shift
+                    GROUP BY nomor_spk, shift
                 ";
 
                 $bindings = array_merge(
-                    $tanggals,
                     $spkList,
                     $castPlaceholders ? $intSpks : []
                 );
@@ -247,9 +248,8 @@ class MesinCcm1 extends BaseController
                 $rows1 = $db->query($sql, $bindings)->getResultArray();
 
                 foreach ($rows1 as $r) {
-                    // Normalise the stored nomor_spk to a plain int string for lookup
                     $normKey = (string)(int)trim((string)$r['nomor_spk']);
-                    $key     = "$normKey|{$r['tanggal']}|{$r['shift']}";
+                    $key     = "$normKey|{$r['shift']}";
                     $bySpk[$key] = ($bySpk[$key] ?? 0) + (int)$r['total_bagus'];
                 }
             }
@@ -257,8 +257,8 @@ class MesinCcm1 extends BaseController
             // -----------------------------------------------------------------
             // Query 2 — FALLBACK: aggregate by nomor_mesin+tanggal+shift
             // Used only for rows where the SPK lookup produced no data.
-            // Uses LIKE for flexible matching (nomor_mesin stored as "becum"
-            // matches produksi's "becum 001" via LIKE '%becum%')
+            // Uses LIKE for flexible matching (nomor_mesin stored as "[MESIN]"
+            // matches produksi's "[MESIN] 001" via LIKE '%[MESIN]%')
             // -----------------------------------------------------------------
             $byMesin = [];  // ["nomor_mesin|tanggal|shift"] => int total
 
@@ -296,6 +296,65 @@ class MesinCcm1 extends BaseController
             }
 
             // -----------------------------------------------------------------
+            // Query 3 — EXTRA SHIFTS: collect extra shift realisasi from JSON
+            // stored in produksi_headers.extra_realisasi_shifts column.
+            // -----------------------------------------------------------------
+            // ["normSpk|label"] => int total
+            $byExtraShift = [];
+
+            if (!empty($spkList)) {
+                $inPlaceholders   = implode(',', array_fill(0, count($spkList), '?'));
+                $castPlaceholders = !empty($intSpks)
+                    ? implode(',', array_fill(0, count($intSpks), '?'))
+                    : null;
+
+                $castClause = $castPlaceholders
+                    ? "OR CAST(nomor_spk AS UNSIGNED) IN ($castPlaceholders)"
+                    : '';
+
+                $sql3 = "
+                    SELECT
+                        nomor_spk,
+                        extra_realisasi_shifts
+                    FROM produksi_headers
+                    WHERE deleted_at IS NULL
+                      AND extra_realisasi_shifts IS NOT NULL
+                      AND extra_realisasi_shifts != '[]'
+                      AND (nomor_spk IN ($inPlaceholders) $castClause)
+                ";
+
+                $bindings3 = array_merge(
+                    $spkList,
+                    $castPlaceholders ? $intSpks : []
+                );
+
+                $rows3 = $db->query($sql3, $bindings3)->getResultArray();
+
+                foreach ($rows3 as $r) {
+                    $normKey = (string)(int)trim((string)$r['nomor_spk']);
+                    
+                    // Decode JSON array of extra shifts
+                    try {
+                        $extraShifts = json_decode($r['extra_realisasi_shifts'], true);
+                        if (is_array($extraShifts)) {
+                            foreach ($extraShifts as $extraShift) {
+                                if (isset($extraShift['label']) && isset($extraShift['realisasi'])) {
+                                    $label = trim((string)$extraShift['label']);
+                                    $realisasi = (int)$extraShift['realisasi'];
+                                    if (!empty($label) && $realisasi > 0) {
+                                        $key = "$normKey|$label";
+                                        $byExtraShift[$key] = ($byExtraShift[$key] ?? 0) + $realisasi;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Invalid JSON, skip this row
+                    }
+                }
+            }
+
+            // -----------------------------------------------------------------
             // Attach results to each row
             // -----------------------------------------------------------------
             foreach ($rows as &$row) {
@@ -306,9 +365,9 @@ class MesinCcm1 extends BaseController
 
                 $found = false;
 
-                // Try SPK-based match first
+                // Try SPK-based match first (key is now "normSpk|shift" — no tanggal)
                 for ($shift = 1; $shift <= 3; $shift++) {
-                    $key = "$normSpk|$tanggal|$shift";
+                    $key = "$normSpk|$shift";
                     if (isset($bySpk[$key])) {
                         $row["produksi_realisasi_shift$shift"] = $bySpk[$key];
                         $found = true;
@@ -326,13 +385,36 @@ class MesinCcm1 extends BaseController
                                 && stripos($storedMesin, $mesin) !== false) {
                                 $row["produksi_realisasi_shift$shift"] = $byMesinVal;
                                 $found = true;
-                                break;
+                                break;  // Found match for this shift, stop searching
                             }
                         }
                     }
                 }
 
                 $row['produksi_has_data'] = $found;
+
+                // --------- EXTRA SHIFTS REALISASI --------
+                $extraShiftsData = [];
+                if (!empty($byExtraShift)) {
+                    foreach ($byExtraShift as $key => $val) {
+                        [$keySpk, $keyShift] = explode('|', $key, 2);
+                        if ($keySpk === $normSpk) {
+                            // Format label: "extra_1" → "Extra Shift 1", "extra_Malam" → "Extra Malam"
+                            $suffix = substr($keyShift, strlen('extra_'));
+                            $suffix = str_replace('_', ' ', $suffix);
+                            $displayLabel = is_numeric(trim($suffix))
+                                ? 'Extra Shift ' . trim($suffix)
+                                : 'Extra ' . ucfirst($suffix);
+                            $extraShiftsData[] = [
+                                'label'     => $displayLabel,
+                                'realisasi' => $val,
+                            ];
+                        }
+                    }
+                }
+                if (!empty($extraShiftsData)) {
+                    $row['extra_realisasi_shifts'] = json_encode($extraShiftsData);
+                }
             }
             unset($row);
 

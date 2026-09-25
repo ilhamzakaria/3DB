@@ -180,8 +180,8 @@ class Profile extends BaseController
             $userId = session()->get('id_user');
             $newName = 'ttd_' . $userId . '_' . time() . '.' . $file->getExtension();
             
-            // Buat folder jika belum ada
-            $uploadPath = WRITEPATH . '../public/' . $this->uploadDir . '/ttd/';
+            // Buat folder jika belum ada (gunakan FCPATH untuk path yang reliable di hosting)
+            $uploadPath = FCPATH . $this->uploadDir . '/ttd/';
             if (!is_dir($uploadPath)) {
                 @mkdir($uploadPath, 0755, true);
             }
@@ -190,14 +190,14 @@ class Profile extends BaseController
             if (!$file->move($uploadPath, $newName)) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'error' => 'Gagal memindahkan file ke folder upload',
+                    'error' => 'Gagal memindahkan file ke folder upload. Path: ' . $uploadPath . ' | Writable: ' . (is_writable($uploadPath) ? 'Ya' : 'Tidak'),
                 ]);
             }
 
             // Hapus tanda tangan lama jika ada
             $user = $this->userModel->find($userId);
             if ($user && !empty($user['tanda_tangan'])) {
-                $oldPath = WRITEPATH . '../public/' . $user['tanda_tangan'];
+                $oldPath = FCPATH . $user['tanda_tangan'];
                 if (file_exists($oldPath)) {
                     @unlink($oldPath);
                 }
@@ -239,7 +239,7 @@ class Profile extends BaseController
 
         try {
             $userId = session()->get('id_user');
-            $defaultTtdPath = WRITEPATH . '../public/uploads/ttd1.png';
+            $defaultTtdPath = FCPATH . 'uploads/ttd1.png';
 
             // Cek apakah file default ada
             if (!file_exists($defaultTtdPath)) {
@@ -250,7 +250,7 @@ class Profile extends BaseController
             }
 
             // Copy file ke folder user
-            $uploadPath = WRITEPATH . '../public/' . $this->uploadDir . '/ttd/';
+            $uploadPath = FCPATH . $this->uploadDir . '/ttd/';
             if (!is_dir($uploadPath)) {
                 @mkdir($uploadPath, 0755, true);
             }
@@ -266,7 +266,7 @@ class Profile extends BaseController
             // Hapus tanda tangan lama jika ada
             $user = $this->userModel->find($userId);
             if ($user && !empty($user['tanda_tangan'])) {
-                $oldPath = WRITEPATH . '../public/' . $user['tanda_tangan'];
+                $oldPath = FCPATH . $user['tanda_tangan'];
                 if (file_exists($oldPath)) {
                     @unlink($oldPath);
                 }

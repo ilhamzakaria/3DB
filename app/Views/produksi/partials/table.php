@@ -37,17 +37,27 @@
                     </td>
                 </tr>
             <?php else: 
-                $currentDate = '';
-                $currentShift = '';
+                $currentDate   = '';
+                $currentShift  = '';
+                $shiftTotalBagus  = 0;
+                $shiftTotalReject = 0;
                 // Roles that may edit / delete records
                 $canDelete    = in_array(session('role'), ['manager', 'produksi']);
                 $_tableRole   = session('role');
                 $_plantMesin  = \App\Controllers\Produksi::getPlantMesin($_tableRole);
                 // canEdit dihitung per baris (plant check), pre-set true untuk non-plant roles
                 $canEditBase  = in_array($_tableRole, ['admin', 'manager', 'leader', 'leader_plant1', 'leader_plant2', 'produksi']);
-                foreach ($produksi as $p): 
+                $produksiList = array_values($produksi);
+                $totalRows    = count($produksiList);
+                foreach ($produksiList as $rowIdx => $p):
+                    $isLastRow   = ($rowIdx === $totalRows - 1);
+                    $nextRow     = $produksiList[$rowIdx + 1] ?? null;
+                    $shiftBreaks = $isLastRow
+                        || ($nextRow && $nextRow['shift']   !== $p['shift'])
+                        || ($nextRow && $nextRow['tanggal'] !== $p['tanggal']);
+
                     if ($currentDate != $p['tanggal']): 
-                        $currentDate = $p['tanggal'];
+                        $currentDate  = $p['tanggal'];
                         $currentShift = ''; 
                         $formattedDate = date('d M Y', strtotime($currentDate));
             ?>
@@ -56,7 +66,9 @@
                 </tr>
             <?php endif; ?>
             <?php if ($currentShift != $p['shift']): 
-                $currentShift = $p['shift'];
+                $currentShift     = $p['shift'];
+                $shiftTotalBagus  = 0;
+                $shiftTotalReject = 0;
             ?>
                 <tr class="shift-divider">
                     <td colspan="8" class="ps-4">
@@ -66,6 +78,10 @@
                     </td>
                 </tr>
             <?php endif; ?>
+            <?php
+                $shiftTotalBagus  += (int)($p['grand_total_bagus']  ?? 0);
+                $shiftTotalReject += (int)($p['grand_total_reject'] ?? 0);
+            ?>
 
             <tr<?= (!empty($p['selesai_spk'])) ? ' class="spk-selesai-row"' : '' ?>>
                 <td data-label="No. SPK">
@@ -146,6 +162,22 @@
                     </div>
                 </td>
             </tr>
+            <?php if ($shiftBreaks): ?>
+                <tr class="shift-subtotal-row">
+                    <td colspan="5" class="text-end pe-3" style="font-size:.78rem; color:#6c757d; font-weight:600; padding-top:.5rem; padding-bottom:.5rem;">
+                        <i class="fas fa-sigma me-1"></i> Total Shift <?= esc($p['shift']) ?>
+                    </td>
+                    <td class="text-right font-weight-bold" style="color:#1a7a32; font-size:.88rem; padding-top:.5rem; padding-bottom:.5rem;">
+                        <?= number_format($shiftTotalBagus) ?>
+                        <small class="text-muted fw-normal ms-1" style="font-size:.7rem;">pcs</small>
+                    </td>
+                    <td class="text-right font-weight-bold" style="color:#c0392b; font-size:.88rem; padding-top:.5rem; padding-bottom:.5rem;">
+                        <?= number_format($shiftTotalReject) ?>
+                        <small class="text-muted fw-normal ms-1" style="font-size:.7rem;">pcs</small>
+                    </td>
+                    <td></td>
+                </tr>
+            <?php endif; ?>
             <?php endforeach; ?>
             <?php endif; ?>
         </tbody>

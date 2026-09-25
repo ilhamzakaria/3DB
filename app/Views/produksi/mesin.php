@@ -1,4 +1,41 @@
 <?= $this->extend('layout/main') ?>
+<?= $this->section('vendor_styles') ?>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css">
+<style>
+    /* Custom Select2 styling for reject dropdowns */
+    .select2-container--default .select2-selection--single {
+        height: 36px !important;
+        border-radius: 6px !important;
+        border: 1px solid #dee2e6 !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 34px !important;
+        font-size: 0.875rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 34px !important;
+    }
+    .select2-dropdown {
+        border-radius: 6px !important;
+        border: 1px solid #dee2e6 !important;
+        font-size: 0.875rem;
+        z-index: 9999 !important;
+    }
+    .select2-search--dropdown .select2-search__field {
+        border-radius: 4px !important;
+        font-size: 0.875rem;
+        padding: 0.5rem !important;
+    }
+    /* Dropdown harus overlay modal, bukan terpotong */
+    .modal .select2-dropdown {
+        z-index: 10060 !important;
+    }
+    /* Pastikan .select2-container tidak ter-clip */
+    .select2-container {
+        z-index: 10060 !important;
+    }
+</style>
+<?= $this->endSection() ?>
 <?= $this->section('content') ?>
 
 <?= view('produksi/partials/styles') ?>
@@ -287,5 +324,9 @@ $mesinLabel  = $mesin_label ?? ($mesin_labels[$mesin_slug ?? ''] ?? '');
 </div>
 
 <?= view('produksi/scripts') ?>
+
+<?= $this->section('vendor_scripts') ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+<?= $this->endSection() ?>
 
 <?= $this->endSection() ?>

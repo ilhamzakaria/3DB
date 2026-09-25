@@ -135,7 +135,7 @@ $formatDate = static function ($value): string {
                         <?php if (!($is_ppic_context ?? false)) : ?>
                         <th colspan="2" class="bg-success text-white">Waktu Realisasi Produksi</th>
                         <?php endif; ?>
-                        <th colspan="3" class="bg-success text-white">
+                        <th colspan="<?= ($is_ppic_context ?? false) ? 4 : 3 ?>" class="bg-success text-white">
                             Jumlah Realisasi Produksi (pcs)
                             <?php if ($is_ppic_context ?? false) : ?>
                             <br><small class="font-weight-normal">(dari Produksi)</small>
@@ -164,6 +164,9 @@ $formatDate = static function ($value): string {
                         <th class="bg-success text-white">Shift 1<br><small>06.00–14.00</small></th>
                         <th class="bg-success text-white">Shift 2<br><small>14.00–22.00</small></th>
                         <th class="bg-success text-white">Shift 3<br><small>22.00–06.00</small></th>
+                        <?php if ($is_ppic_context ?? false) : ?>
+                        <th class="bg-success text-white">Shift Lainnya</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                                 <tbody>
@@ -234,6 +237,27 @@ $formatDate = static function ($value): string {
                                 <?= $renderRealisasi($item['produksi_realisasi_shift1'] ?? null) ?>
                                 <?= $renderRealisasi($item['produksi_realisasi_shift2'] ?? null) ?>
                                 <?= $renderRealisasi($item['produksi_realisasi_shift3'] ?? null) ?>
+                                <?php
+                                // Render extra realisasi shifts
+                                $extraRealisasi = [];
+                                if (!empty($item['extra_realisasi_shifts'])) {
+                                    $decoded = json_decode($item['extra_realisasi_shifts'], true);
+                                    if (is_array($decoded)) {
+                                        $extraRealisasi = $decoded;
+                                    }
+                                }
+                                ?>
+                                <td>
+                                    <?php if (!empty($extraRealisasi)) : ?>
+                                        <?php foreach ($extraRealisasi as $er) : ?>
+                                            <span class="badge badge-success d-block mb-1" style="white-space:nowrap;">
+                                                <?= esc($er['label'] ?? '-') ?>: <?= esc($er['realisasi'] ?? '-') ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    <?php else : ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
+                                </td>
                                 <?php else : ?>
                                 <td><?= esc($item['waktu_awal_realisasi'] ?? '-') ?></td>
                                 <td><?= esc($item['waktu_akhir_realisasi'] ?? '-') ?></td>
@@ -301,7 +325,7 @@ $formatDate = static function ($value): string {
 <div class="modal fade" id="addDataModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-xl" role="document"><div class="modal-content">
     <div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="fas fa-plus mr-2"></i>Tambah Data Mesin Powerjet 2</h5><button type="button" class="close text-white" data-dismiss="modal">&times;</button></div>
-    <form action="<?= base_url(($is_ppic_context ?? false) ? 'ppic/' . ($current_machine ?? 'mesin_powerjet2') . '/tambahData' : 'gudang/mesin_powerjet2/tambahData') ?>" method="post"><?= csrf_field() ?>
+    <form id="formTambahMesin" action="<?= base_url(($is_ppic_context ?? false) ? 'ppic/' . ($current_machine ?? 'mesin_powerjet2') . '/tambahData' : 'gudang/mesin_powerjet2/tambahData') ?>" method="post"><?= csrf_field() ?>
       <div class="modal-body">
         <div class="row">
           <div class="col-md-2"><div class="form-group"><label>Tanggal *</label><input type="date" class="form-control" name="tanggal" value="<?= date('Y-m-d') ?>" required></div></div>
@@ -363,7 +387,7 @@ $formatDate = static function ($value): string {
           <div class="col-md-2"><div class="form-group"><label>Keterangan</label><input type="text" class="form-control" name="keterangan"></div></div>
         </div>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i>Simpan</button></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="submit" id="btnTambahMesin" class="btn btn-primary"><i class="fas fa-save mr-1"></i>Simpan</button></div>
     </form>
   </div></div>
 </div>
@@ -371,7 +395,7 @@ $formatDate = static function ($value): string {
 <div class="modal fade" id="editDataModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-xl" role="document"><div class="modal-content">
     <div class="modal-header bg-warning"><h5 class="modal-title"><i class="fas fa-edit mr-2"></i>Edit Data Mesin Powerjet 2</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>
-    <form id="formEdit" method="post"><?= csrf_field() ?><input type="hidden" name="id" id="edit_id">
+    <form id="formEditMesin" method="post"><?= csrf_field() ?><input type="hidden" name="id" id="edit_id">
       <div class="modal-body">
         <div class="row">
           <div class="col-md-2"><div class="form-group"><label>Tanggal *</label><input type="date" class="form-control" name="tanggal" id="edit_tanggal" required></div></div>
@@ -434,7 +458,7 @@ $formatDate = static function ($value): string {
           <div class="col-md-2"><div class="form-group"><label>Keterangan</label><input type="text" class="form-control" name="keterangan" id="edit_keterangan"></div></div>
         </div>
       </div>
-      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="submit" class="btn btn-warning"><i class="fas fa-save mr-1"></i>Update</button></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="submit" id="btnEditMesin" class="btn btn-warning"><i class="fas fa-save mr-1"></i>Update</button></div>
     </form>
   </div></div>
 </div>
@@ -504,7 +528,7 @@ $formatDate = static function ($value): string {
         document.getElementById('edit_keterangan').value = data.getAttribute('data-keterangan') || '';
         
         // Set action URL — data-action already contains the ID
-        document.getElementById('formEdit').action = data.getAttribute('data-action');
+        document.getElementById('formEditMesin').action = data.getAttribute('data-action');
     }
     function setDeleteModal(btn) {
         document.getElementById('delete_id').value = btn.dataset.id;
@@ -892,6 +916,8 @@ $formatDate = static function ($value): string {
     </div>
   </div>
 </div>
+
+<?= view('gudang/partials/mesin_toast') ?>
 
 <?= $this->endSection() ?>
 

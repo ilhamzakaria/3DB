@@ -8,7 +8,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form method="POST" action="<?= base_url('ppic/tambahData') ?>">
+            <form method="POST" action="<?= base_url('ppic/tambahData') ?>" id="formTambahPpic">
                 <?= csrf_field() ?>
 
                 <div class="modal-body p-4">
@@ -157,9 +157,106 @@
 
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button class="btn btn-light px-4" type="button" data-bs-dismiss="modal" style="border-radius: 10px;">Batal</button>
-                    <button class="btn btn-primary px-4 shadow-sm" type="submit" style="border-radius: 10px;">Simpan Data</button>
+                    <button class="btn btn-primary px-4 shadow-sm" type="submit" id="btnSimpanTambah" style="border-radius: 10px;">Simpan Data</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    'use strict';
+
+    function attachTambahListener() {
+        var form = document.getElementById('formTambahPpic');
+        var btn  = document.getElementById('btnSimpanTambah');
+        if (!form || form.__toastBound) return;
+        form.__toastBound = true;
+
+        form.addEventListener('submit', function() {
+            showPpicToast('Menyimpan data...', 'info');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+        });
+    }
+
+    // Jalankan saat modal ditampilkan (Bootstrap 5 event)
+    document.addEventListener('show.bs.modal', function(e) {
+        if (e.target && e.target.id === 'addDataModal') {
+            setTimeout(attachTambahListener, 50);
+        }
+    });
+
+    // Fallback: coba langsung saat script ini dieksekusi
+    attachTambahListener();
+
+    // ─── Toast engine ────────────────────────────────────────────────
+    window.showPpicToast = function(message, type) {
+        type = type || 'info';
+
+        var colors = {
+            success : { bg: '#198754', icon: 'fas fa-check-circle' },
+            error   : { bg: '#dc3545', icon: 'fas fa-exclamation-circle' },
+            info    : { bg: '#0d6efd', icon: 'fas fa-info-circle' },
+            warning : { bg: '#e6a817', icon: 'fas fa-exclamation-triangle' }
+        };
+        var cfg = colors[type] || colors.info;
+
+        var container = document.getElementById('ppicToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'ppicToastContainer';
+            container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;';
+            document.body.appendChild(container);
+        }
+
+        var toast = document.createElement('div');
+        toast.style.cssText = [
+            'background:' + cfg.bg,
+            'color:#fff',
+            'padding:14px 18px',
+            'border-radius:10px',
+            'box-shadow:0 6px 20px rgba(0,0,0,.18)',
+            'display:flex',
+            'align-items:center',
+            'gap:12px',
+            'min-width:300px',
+            'max-width:380px',
+            'transform:translateX(420px)',
+            'transition:transform .35s cubic-bezier(.25,.8,.25,1)',
+            'font-family:inherit'
+        ].join(';');
+
+        toast.innerHTML =
+            '<i class="' + cfg.icon + '" style="font-size:18px;flex-shrink:0;"></i>' +
+            '<div style="flex-grow:1">' +
+                '<div style="font-weight:600;font-size:14px;margin-bottom:5px;">' + message + '</div>' +
+                '<div style="height:3px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden;">' +
+                    '<div id="ppicToastBar_' + Date.now() + '" style="height:100%;background:rgba(255,255,255,.75);width:100%;transition:width 2.8s linear;"></div>' +
+                '</div>' +
+            '</div>';
+
+        container.appendChild(toast);
+
+        // Slide in
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                toast.style.transform = 'translateX(0)';
+                // Start progress bar shrink
+                var bar = toast.querySelector('[id^="ppicToastBar_"]');
+                if (bar) {
+                    requestAnimationFrame(function() { bar.style.width = '0%'; });
+                }
+            });
+        });
+
+        // Slide out & remove
+        setTimeout(function() {
+            toast.style.transform = 'translateX(420px)';
+            toast.style.opacity = '0';
+            setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 400);
+        }, 3200);
+    };
+})();
+</script>

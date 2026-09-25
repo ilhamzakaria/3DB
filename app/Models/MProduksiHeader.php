@@ -17,8 +17,11 @@ class MProduksiHeader extends BaseProduksiModel
         'nomor_mesin', 'packing', 'cycle_time', 'target', 'isi', 'tanggal', 
         'operator', 'catatan', 'brand', 'warna', 'grade', 'total_spk',
         'grand_total_bagus', 'grand_total_reject', 
-        'total_downtime', 'sisa_po', 'hold', 'gumpalan', 'plash_kotor', 'sapuan', 'selesai_spk', 'tercapai',
-        'ttd_shift_1', 'ttd_shift_2', 'ttd_shift_3', 'ttd_spv', 'auto_user_ttd'
+        'total_downtime', 'sisa_po', 'hold', 'gumpalan', 'plash_kotor', 'sapuan',
+        'counter_awal', 'counter_akhir', 'total_counter',
+        'selesai_spk', 'tercapai',
+        'ttd_shift_1', 'ttd_shift_2', 'ttd_shift_3', 'ttd_spv', 'auto_user_ttd',
+        'extra_realisasi_shifts'
     ];
 
     protected $useTimestamps = true;

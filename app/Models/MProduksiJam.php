@@ -13,7 +13,8 @@ class MProduksiJam extends BaseProduksiModel
     protected $useSoftDeletes   = true;
     protected $allowedFields    = [
         'produksi_header_id', 'rentang_jam', 'hasil_produksi', 
-        'total_bagus', 'sisa_po', 'hold', 'gumpalan', 'total_reject'
+        'total_bagus', 'sisa_po', 'hold', 'gumpalan', 'total_reject',
+        'rejects_json',
     ];
 
     protected $useTimestamps = true;

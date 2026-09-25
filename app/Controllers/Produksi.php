@@ -11,6 +11,7 @@ use App\Models\MProduksiColorant;
 use App\Models\MProduksiPackaging;
 use App\Models\MProduksiDowntime;
 use App\Models\MRejectType;
+use App\Models\MProduksiKodeCap;
 
 class Produksi extends BaseController
 {
@@ -23,6 +24,7 @@ class Produksi extends BaseController
     protected $packagingModel;
     protected $downtimeModel;
     protected $rejectTypeModel;
+    protected $kodeCapModel;
 
     public function __construct()
     {
@@ -35,6 +37,7 @@ class Produksi extends BaseController
         $this->packagingModel = new MProduksiPackaging();
         $this->downtimeModel = new MProduksiDowntime();
         $this->rejectTypeModel = new MRejectType();
+        $this->kodeCapModel    = new MProduksiKodeCap();
         helper(['form', 'url']);
     }
 
@@ -267,6 +270,46 @@ class Produksi extends BaseController
         $data['downtimes'] = $this->downtimeModel->where('produksi_header_id', $id)->findAll();
         $data['reject_types'] = $this->rejectTypeModel->getActive();
 
+        // Load penimbangan jam data (oromaster.penimbangan_jam)
+        $dbMaster = \Config\Database::connect('master');
+        $penimbanganRows = $dbMaster->table('penimbangan_jam')
+            ->where('produksi_header_id', $id)
+            ->orderBy('hour', 'ASC')
+            ->get()->getResultArray();
+        // Build flat array keyed by jam_1_galon, jam_1_flash, etc.
+        $penimbanganData = [];
+        $isPowerjetLoad  = stripos($data['header']['nama_mesin'] ?? '', 'powerjet') !== false;
+        $maxHourLoad     = $isPowerjetLoad ? 12 : 8;
+        for ($h = 1; $h <= $maxHourLoad; $h++) {
+            $penimbanganData["jam_{$h}_galon"] = 0;
+            $penimbanganData["jam_{$h}_flash"] = 0;
+        }
+        foreach ($penimbanganRows as $row) {
+            $h = (int)$row['hour'];
+            if ($h >= 1 && $h <= $maxHourLoad) {
+                $penimbanganData["jam_{$h}_galon"] = $row['galon'];
+                $penimbanganData["jam_{$h}_flash"] = $row['flash'];
+            }
+        }
+        $data['penimbanganData'] = $penimbanganData;
+
+        // Load kode cap data (Powerjet only)
+        $kodeCapRowsEdit = $this->kodeCapModel->where('produksi_header_id', $id)->findAll();
+        $kodeCapDataEdit = [];
+        foreach ([2, 4, 6, 8] as $jam) {
+            $kodeCapDataEdit[$jam] = ['jam_ke' => $jam, 'runner' => 0];
+            for ($c = 1; $c <= 12; $c++) {
+                $kodeCapDataEdit[$jam]["kode_cap_{$c}"] = null;
+            }
+        }
+        foreach ($kodeCapRowsEdit as $row) {
+            $jam = (int)$row['jam_ke'];
+            if (isset($kodeCapDataEdit[$jam])) {
+                $kodeCapDataEdit[$jam] = $row;
+            }
+        }
+        $data['kodeCapData'] = $kodeCapDataEdit;
+
         // Filter SPK list to only the mesin matching this record
         $mesinLabel = strtolower(trim((string)($data['header']['nama_mesin'] ?? '')));
         $mesinSlug  = array_search($data['header']['nama_mesin'] ?? '', self::mesinLabels());
@@ -321,6 +364,51 @@ class Produksi extends BaseController
             }
         }
 
+        // Detect mesin type untuk menampilkan field yang sesuai
+        $namaMesin = $data['header']['nama_mesin'] ?? '';
+        $data['isCcmMesin'] = in_array($namaMesin, ['CCM 1', 'CCM 2']);
+        $data['isIpsMesin'] = in_array($namaMesin, ['IPS 1', 'IPS 2', 'IPS 3', 'IPS 4']);
+
+        // Load penimbangan jam data (oromaster.penimbangan_jam)
+        $dbMaster = \Config\Database::connect('master');
+        $penimbanganRows = $dbMaster->table('penimbangan_jam')
+            ->where('produksi_header_id', $id)
+            ->orderBy('hour', 'ASC')
+            ->get()->getResultArray();
+        $isPowerjetEdit = stripos($namaMesin, 'powerjet') !== false;
+        $maxHourEdit    = $isPowerjetEdit ? 12 : 8;
+        $penimbanganData = [];
+        for ($h = 1; $h <= $maxHourEdit; $h++) {
+            $penimbanganData[$h] = ['galon' => 0, 'flash' => 0];
+        }
+        foreach ($penimbanganRows as $row) {
+            $h = (int)$row['hour'];
+            if ($h >= 1 && $h <= $maxHourEdit) {
+                $penimbanganData[$h] = [
+                    'galon' => (float)$row['galon'],
+                    'flash' => (float)$row['flash'],
+                ];
+            }
+        }
+        $data['penimbanganData'] = $penimbanganData;
+
+        // Load kode cap data (Powerjet only)
+        $kodeCapRows  = $this->kodeCapModel->where('produksi_header_id', $id)->findAll();
+        $kodeCapData  = [];
+        foreach ([2, 4, 6, 8] as $jam) {
+            $kodeCapData[$jam] = ['jam_ke' => $jam, 'runner' => 0];
+            for ($c = 1; $c <= 12; $c++) {
+                $kodeCapData[$jam]["kode_cap_{$c}"] = null;
+            }
+        }
+        foreach ($kodeCapRows as $row) {
+            $jam = (int)$row['jam_ke'];
+            if (isset($kodeCapData[$jam])) {
+                $kodeCapData[$jam] = $row;
+            }
+        }
+        $data['kodeCapData'] = $kodeCapData;
+
         return view('produksi/modals/detail', $data);
     }
 
@@ -356,6 +444,9 @@ class Produksi extends BaseController
                 'nama_produk'   => $this->request->getPost('nama_produk'),
                 'batch_number'  => $this->request->getPost('batch_number'),
                 'type_produk'   => $this->request->getPost('type_produk') ?: null,
+                'brand'         => $this->request->getPost('brand'),
+                'warna'         => $this->request->getPost('warna'),
+                'grade'         => $this->request->getPost('grade'),
                 'shift'         => $shiftValue,
                 'grup'          => $this->request->getPost('grup'),
                 'nomor_mesin'   => $this->request->getPost('nomor_mesin'),
@@ -372,9 +463,17 @@ class Produksi extends BaseController
                 'gumpalan'      => $gumpalanValue,
                 'plash_kotor'   => $this->request->getPost('plash_kotor') ?: null,
                 'sapuan'        => $this->request->getPost('sapuan') ?: null,
+                'counter_awal'  => $this->request->getPost('counter_awal') ?: null,
+                'counter_akhir' => $this->request->getPost('counter_akhir') ?: null,
+                'total_counter' => (function() {
+                    $awal  = (int) ($this->request->getPost('counter_awal')  ?: 0);
+                    $akhir = (int) ($this->request->getPost('counter_akhir') ?: 0);
+                    return ($awal > 0 || $akhir > 0) ? abs($akhir - $awal) : null;
+                })(),
                 'tercapai'      => $tercapaiValue,
                 'grand_total_bagus'  => $this->request->getPost('grand_total_bagus') ?: 0,
                 'grand_total_reject' => $this->request->getPost('grand_total_reject') ?: 0,
+                'extra_realisasi_shifts' => $this->request->getPost('extra_realisasi_shifts') ?: '[]',
                 'auto_user_ttd'      => $this->request->getPost('auto_user_ttd') // TTD operator auto-filled berdasarkan shift
             ];
 
@@ -428,6 +527,7 @@ class Produksi extends BaseController
                         'produksi_header_id' => $headerId,
                         'rentang_jam'        => $jam['rentang_jam'],
                         'hasil_produksi'     => $jam['hasil_produksi'] ?? 0,
+                        'rejects_json'       => isset($jam['rejects_json']) ? $jam['rejects_json'] : null,
                     ]);
                 }
             }
@@ -460,30 +560,82 @@ class Produksi extends BaseController
 
             // 3. Save Materials
             $materials = $this->request->getPost('materials');
-            if ($materials) {
+            if ($materials && is_array($materials)) {
                 foreach ($materials as $mat) {
+                    // Ensure $mat is an array and skip empty materials
+                    if (!is_array($mat)) {
+                        continue;
+                    }
+                    
+                    // Safely extract material fields with null defaults
                     $this->materialModel->insert([
                         'produksi_header_id' => $headerId,
-                        'merek_kode'         => $mat['merek_kode'],
-                        'pemakaian'          => $mat['pemakaian'],
-                        'lot_a'              => $mat['lot_a'],
-                        'lot_b'              => $mat['lot_b'],
-                        'lot_c'              => $mat['lot_c'],
-                        'lot_d'              => $mat['lot_d'],
-                        'komposisi_nama_1'   => $mat['komposisi_nama_1'] ?? null,
-                        'komposisi_nama_2'   => $mat['komposisi_nama_2'] ?? null,
-                        'komposisi_nama_3'   => $mat['komposisi_nama_3'] ?? null,
-                        'komposisi_nama_4'   => $mat['komposisi_nama_4'] ?? null,
-                        'komposisi_persen_1' => $mat['komposisi_persen_1'] ?? 0,
-                        'komposisi_persen_2' => $mat['komposisi_persen_2'] ?? 0,
-                        'komposisi_persen_3' => $mat['komposisi_persen_3'] ?? 0,
-                        'komposisi_persen_4' => $mat['komposisi_persen_4'] ?? 0,
-                        'komposisi_kg_1'     => ($mat['komposisi_kg_1'] ?? '') !== '' ? $mat['komposisi_kg_1'] : null,
-                        'komposisi_kg_2'     => ($mat['komposisi_kg_2'] ?? '') !== '' ? $mat['komposisi_kg_2'] : null,
-                        'komposisi_kg_3'     => ($mat['komposisi_kg_3'] ?? '') !== '' ? $mat['komposisi_kg_3'] : null,
-                        'komposisi_kg_4'     => ($mat['komposisi_kg_4'] ?? '') !== '' ? $mat['komposisi_kg_4'] : null,
+                        'merek_kode'         => isset($mat['merek_kode']) ? $mat['merek_kode'] : null,
+                        'pemakaian'          => isset($mat['pemakaian']) ? $mat['pemakaian'] : null,
+                        'lot_a'              => isset($mat['lot_a']) ? $mat['lot_a'] : null,
+                        'lot_b'              => isset($mat['lot_b']) ? $mat['lot_b'] : null,
+                        'lot_c'              => isset($mat['lot_c']) ? $mat['lot_c'] : null,
+                        'lot_d'              => isset($mat['lot_d']) ? $mat['lot_d'] : null,
+                        'komposisi_nama_1'   => isset($mat['komposisi_nama_1']) ? $mat['komposisi_nama_1'] : null,
+                        'komposisi_nama_2'   => isset($mat['komposisi_nama_2']) ? $mat['komposisi_nama_2'] : null,
+                        'komposisi_nama_3'   => isset($mat['komposisi_nama_3']) ? $mat['komposisi_nama_3'] : null,
+                        'komposisi_nama_4'   => isset($mat['komposisi_nama_4']) ? $mat['komposisi_nama_4'] : null,
+                        'komposisi_persen_1' => isset($mat['komposisi_persen_1']) ? $mat['komposisi_persen_1'] : 0,
+                        'komposisi_persen_2' => isset($mat['komposisi_persen_2']) ? $mat['komposisi_persen_2'] : 0,
+                        'komposisi_persen_3' => isset($mat['komposisi_persen_3']) ? $mat['komposisi_persen_3'] : 0,
+                        'komposisi_persen_4' => isset($mat['komposisi_persen_4']) ? $mat['komposisi_persen_4'] : 0,
+                        'komposisi_kg_1'     => (isset($mat['komposisi_kg_1']) && $mat['komposisi_kg_1'] !== '') ? $mat['komposisi_kg_1'] : null,
+                        'komposisi_kg_2'     => (isset($mat['komposisi_kg_2']) && $mat['komposisi_kg_2'] !== '') ? $mat['komposisi_kg_2'] : null,
+                        'komposisi_kg_3'     => (isset($mat['komposisi_kg_3']) && $mat['komposisi_kg_3'] !== '') ? $mat['komposisi_kg_3'] : null,
+                        'komposisi_kg_4'     => (isset($mat['komposisi_kg_4']) && $mat['komposisi_kg_4'] !== '') ? $mat['komposisi_kg_4'] : null,
                     ]);
                 }
+            }
+
+            // 3b. Save Penimbangan Jam (8-hour weighing) - for Becum, Powerjet1, Powerjet2
+            // NOTE: This uses separate database connection (oromaster) outside main transaction
+            $penimbanganJam = $this->request->getPost('penimbangan_jam');
+            if ($penimbanganJam) {
+                // Get oromaster database connection (separate from oroproduksi transaction)
+                $dbMaster = \Config\Database::connect('master');
+
+                // Powerjet = 12 jam, Becum = 8 jam
+                $namaMesinSave = $this->request->getPost('nama_mesin') ?? '';
+                $isPowerjetSave = stripos($namaMesinSave, 'powerjet') !== false;
+                $maxHourSave    = $isPowerjetSave ? 12 : 8;
+
+                // Pre-calculate totals for rata-rata
+                $totalGalon = 0;
+                $totalFlash = 0;
+                for ($hour = 1; $hour <= $maxHourSave; $hour++) {
+                    $totalGalon += isset($penimbanganJam["jam_{$hour}_galon"]) ? (float)$penimbanganJam["jam_{$hour}_galon"] : 0;
+                    $totalFlash += isset($penimbanganJam["jam_{$hour}_flash"]) ? (float)$penimbanganJam["jam_{$hour}_flash"] : 0;
+                }
+                $rataGalon = round($totalGalon / $maxHourSave, 2);
+                $rataFlash = round($totalFlash / $maxHourSave, 2);
+
+                // Loop through all hours
+                for ($hour = 1; $hour <= $maxHourSave; $hour++) {
+                    $galonKey = "jam_{$hour}_galon";
+                    $flashKey = "jam_{$hour}_flash";
+                    
+                    $galon = isset($penimbanganJam[$galonKey]) ? (float)$penimbanganJam[$galonKey] : 0;
+                    $flash = isset($penimbanganJam[$flashKey]) ? (float)$penimbanganJam[$flashKey] : 0;
+                    
+                    // Only save if at least one value is not zero
+                    if ($galon != 0 || $flash != 0) {
+                        $dbMaster->table('penimbangan_jam')->insert([
+                            'produksi_header_id' => $headerId,
+                            'hour'               => $hour,
+                            'galon'              => $galon,
+                            'flash'              => $flash,
+                            'rata_galon'         => $rataGalon,
+                            'rata_flash'         => $rataFlash,
+                        ]);
+                    }
+                }
+                
+                $dbMaster->close();
             }
 
             // 4. Save Colorants
@@ -493,19 +645,34 @@ class Produksi extends BaseController
                     // TB in/out: untuk Becum berupa array, untuk mesin lain berupa string
                     $tbIn  = null;
                     $tbOut = null;
-                    $tbInDetails  = null;
-                    $tbOutDetails = null;
+                    $tbInDetails      = null;
+                    $tbOutDetails     = null;
+                    $tbLainIn         = null;
+                    $tbLainInDetails  = null;
 
                     if (isset($col['tb_in']) && is_array($col['tb_in'])) {
-                        $tbInDetails = json_encode(array_values($col['tb_in']));
+                        // Filter out empty items before encoding
+                        $tbInFiltered = array_values(array_filter($col['tb_in'], fn($item) => !empty($item['nama'])));
+                        $tbInDetails = !empty($tbInFiltered) ? json_encode($tbInFiltered) : null;
+                        $tbIn = $col['tb_in_summary'] ?? null; // summary text field
                     } else {
                         $tbIn = $col['tb_in'] ?? null;
                     }
 
                     if (isset($col['tb_out']) && is_array($col['tb_out'])) {
-                        $tbOutDetails = json_encode(array_values($col['tb_out']));
+                        $tbOutFiltered = array_values(array_filter($col['tb_out'], fn($item) => !empty($item['nama'])));
+                        $tbOutDetails = !empty($tbOutFiltered) ? json_encode($tbOutFiltered) : null;
+                        $tbOut = $col['tb_out_summary'] ?? null;
                     } else {
                         $tbOut = $col['tb_out'] ?? null;
+                    }
+
+                    if (isset($col['tb_lain_in']) && is_array($col['tb_lain_in'])) {
+                        $tbLainInFiltered = array_values(array_filter($col['tb_lain_in'], fn($item) => !empty($item['nama'])));
+                        $tbLainInDetails = !empty($tbLainInFiltered) ? json_encode($tbLainInFiltered) : null;
+                        $tbLainIn = $col['tb_lain_in_summary'] ?? null;
+                    } else {
+                        $tbLainIn = $col['tb_lain_in'] ?? null;
                     }
 
                     $this->colorantModel->insert([
@@ -517,7 +684,33 @@ class Produksi extends BaseController
                         'tb_out'             => $tbOut,
                         'tb_in_details'      => $tbInDetails,
                         'tb_out_details'     => $tbOutDetails,
+                        'tb_lain_in'         => $tbLainIn,
+                        'tb_lain_in_details' => $tbLainInDetails,
+                        'tb_in_runner'       => $col['tb_in_runner'] ?? null,
+                        'tb_out_runner'      => $col['tb_out_runner'] ?? null,
                     ]);
+                }
+            }
+
+            // 4b. Save Kode Cap (Powerjet only)
+            $kodeCapPost = $this->request->getPost('kode_cap');
+            if ($kodeCapPost) {
+                foreach ([2, 4, 6, 8] as $jam) {
+                    $jamData = $kodeCapPost[$jam] ?? [];
+                    $row = ['produksi_header_id' => $headerId, 'jam_ke' => $jam];
+                    // Use posted runner value (manual input, supports decimal)
+                    $runnerRaw = str_replace(',', '.', trim($jamData['runner'] ?? '0'));
+                    $row['runner'] = is_numeric($runnerRaw) ? (float)$runnerRaw : 0;
+                    $hasData = false;
+                    for ($c = 1; $c <= 12; $c++) {
+                        $val = trim($jamData["kode_cap_{$c}"] ?? '');
+                        $row["kode_cap_{$c}"] = $val !== '' ? $val : null;
+                        if ($val !== '') $hasData = true;
+                    }
+                    // Save if any kode cap is filled OR runner has a value
+                    if ($hasData || $row['runner'] > 0) {
+                        $this->kodeCapModel->insert($row);
+                    }
                 }
             }
 
@@ -535,12 +728,30 @@ class Produksi extends BaseController
                 'nicktainer'            => $this->request->getPost('nicktainer'),
                 'nicktainer_ukuran'     => $this->request->getPost('nicktainer_ukuran'),
                 'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
-                'meter_awal'            => $this->request->getPost('meter_awal')      ?: null,
-                'meter_akhir'           => $this->request->getPost('meter_akhir')     ?: null,
-                'meter_pemakaian'       => $this->request->getPost('meter_pemakaian') ?: null,
+                'meter_awal'            => $this->request->getPost('meter_awal')            ?: null,
+                'meter_akhir'           => $this->request->getPost('meter_akhir')           ?: null,
+                'meter_pemakaian'       => $this->request->getPost('meter_pemakaian')       ?: null,
+                'ukuran_plastik_besar'  => $this->request->getPost('ukuran_plastik_besar')  ?: null,
+                'plastik_besar_awal'     => $this->request->getPost('plastik_besar_awal')    ?: null,
+                'plastik_besar_akhir'    => $this->request->getPost('plastik_besar_akhir')   ?: null,
+                'plastik_besar_pemakaian'=> $this->request->getPost('plastik_besar_pemakaian') ?: null,
+                'ukuran_plastik_kecil'   => $this->request->getPost('ukuran_plastik_kecil')  ?: null,
+                'plastik_kecil_awal'     => $this->request->getPost('plastik_kecil_awal')    ?: null,
+                'plastik_kecil_akhir'    => $this->request->getPost('plastik_kecil_akhir')   ?: null,
+                'plastik_kecil_pemakaian'=> $this->request->getPost('plastik_kecil_pemakaian') ?: null,
+                'ukuran_pe'              => $this->request->getPost('ukuran_pe')              ?: null,
+                'pe_awal'                => $this->request->getPost('pe_awal')                ?: null,
+                'pe_akhir'               => $this->request->getPost('pe_akhir')               ?: null,
+                'pe_pemakaian'           => $this->request->getPost('pe_pemakaian')           ?: null,
+                'ukuran_box_karung'      => $this->request->getPost('ukuran_box_karung')      ?: null,
+                'box_karung_awal'        => $this->request->getPost('box_karung_awal')        ?: null,
+                'box_karung_akhir'       => $this->request->getPost('box_karung_akhir')       ?: null,
+                'box_karung_pemakaian'   => $this->request->getPost('box_karung_pemakaian')   ?: null,
+                'plastik_awal'          => $this->request->getPost('plastik_awal')          ?: null,
+                'plastik_akhir'         => $this->request->getPost('plastik_akhir')         ?: null,
+                'material_awal'         => $this->request->getPost('material_awal')         ?: null,
+                'material_akhir'        => $this->request->getPost('material_akhir')        ?: null,
             ]);
-
-            // 6. Save Downtimes
             $totalDowntime = 0;
             $downtimes = $this->request->getPost('downtimes');
             if ($downtimes) {
@@ -619,6 +830,9 @@ class Produksi extends BaseController
             'nama_produk'   => $this->request->getPost('nama_produk'),
             'batch_number'  => $this->request->getPost('batch_number'),
             'type_produk'   => $this->request->getPost('type_produk') ?: null,
+            'brand'         => $this->request->getPost('brand'),
+            'warna'         => $this->request->getPost('warna'),
+            'grade'         => $this->request->getPost('grade'),
             'shift'         => $shiftValue,
             'grup'          => $this->request->getPost('grup'),
             'nomor_mesin'   => $this->request->getPost('nomor_mesin'),
@@ -635,9 +849,17 @@ class Produksi extends BaseController
             'gumpalan'      => $gumpalanValue,
             'plash_kotor'   => $this->request->getPost('plash_kotor') ?: null,
             'sapuan'        => $this->request->getPost('sapuan') ?: null,
+            'counter_awal'  => $this->request->getPost('counter_awal') ?: null,
+            'counter_akhir' => $this->request->getPost('counter_akhir') ?: null,
+            'total_counter' => (function() {
+                $awal  = (int) ($this->request->getPost('counter_awal')  ?: 0);
+                $akhir = (int) ($this->request->getPost('counter_akhir') ?: 0);
+                return ($awal > 0 || $akhir > 0) ? abs($akhir - $awal) : null;
+            })(),
             'tercapai'      => $tercapaiValue,
             'grand_total_bagus'  => $this->request->getPost('grand_total_bagus') ?: 0,
             'grand_total_reject' => $this->request->getPost('grand_total_reject') ?: 0,
+            'extra_realisasi_shifts' => $this->request->getPost('extra_realisasi_shifts') ?: '[]',
             'auto_user_ttd'      => $this->request->getPost('auto_user_ttd') // TTD operator auto-filled berdasarkan shift
         ];
 
@@ -666,6 +888,7 @@ class Produksi extends BaseController
                     'produksi_header_id' => $id,
                     'rentang_jam'        => $jam['rentang_jam'],
                     'hasil_produksi'     => $jam['hasil_produksi'] ?? 0,
+                    'rejects_json'       => isset($jam['rejects_json']) ? $jam['rejects_json'] : null,
                 ]);
             }
         }
@@ -700,31 +923,84 @@ class Produksi extends BaseController
         // 4. Refresh Materials
         $this->materialModel->where('produksi_header_id', $id)->delete();
         $materials = $this->request->getPost('materials');
-        if ($materials) {
+        if ($materials && is_array($materials)) {
             foreach ($materials as $mat) {
+                // Ensure $mat is an array and skip empty materials
+                if (!is_array($mat)) {
+                    continue;
+                }
+                
+                // Safely extract material fields with null defaults
                 $this->materialModel->insert([
                     'produksi_header_id' => $id,
-                    'merek_kode'         => $mat['merek_kode'],
-                    'pemakaian'          => $mat['pemakaian'],
-                    'lot_a'              => $mat['lot_a'],
-                    'lot_b'              => $mat['lot_b'],
-                    'lot_c'              => $mat['lot_c'],
-                    'lot_d'              => $mat['lot_d'],
-                    'komposisi_nama_1'   => $mat['komposisi_nama_1'] ?? null,
-                    'komposisi_nama_2'   => $mat['komposisi_nama_2'] ?? null,
-                    'komposisi_nama_3'   => $mat['komposisi_nama_3'] ?? null,
-                    'komposisi_nama_4'   => $mat['komposisi_nama_4'] ?? null,
-                    'komposisi_persen_1' => $mat['komposisi_persen_1'] ?? 0,
-                    'komposisi_persen_2' => $mat['komposisi_persen_2'] ?? 0,
-                    'komposisi_persen_3' => $mat['komposisi_persen_3'] ?? 0,
-                    'komposisi_persen_4' => $mat['komposisi_persen_4'] ?? 0,
-                    'komposisi_kg_1'     => ($mat['komposisi_kg_1'] ?? '') !== '' ? $mat['komposisi_kg_1'] : null,
-                    'komposisi_kg_2'     => ($mat['komposisi_kg_2'] ?? '') !== '' ? $mat['komposisi_kg_2'] : null,
-                    'komposisi_kg_3'     => ($mat['komposisi_kg_3'] ?? '') !== '' ? $mat['komposisi_kg_3'] : null,
-                    'komposisi_kg_4'     => ($mat['komposisi_kg_4'] ?? '') !== '' ? $mat['komposisi_kg_4'] : null,
+                    'merek_kode'         => isset($mat['merek_kode']) ? $mat['merek_kode'] : null,
+                    'pemakaian'          => isset($mat['pemakaian']) ? $mat['pemakaian'] : null,
+                    'lot_a'              => isset($mat['lot_a']) ? $mat['lot_a'] : null,
+                    'lot_b'              => isset($mat['lot_b']) ? $mat['lot_b'] : null,
+                    'lot_c'              => isset($mat['lot_c']) ? $mat['lot_c'] : null,
+                    'lot_d'              => isset($mat['lot_d']) ? $mat['lot_d'] : null,
+                    'komposisi_nama_1'   => isset($mat['komposisi_nama_1']) ? $mat['komposisi_nama_1'] : null,
+                    'komposisi_nama_2'   => isset($mat['komposisi_nama_2']) ? $mat['komposisi_nama_2'] : null,
+                    'komposisi_nama_3'   => isset($mat['komposisi_nama_3']) ? $mat['komposisi_nama_3'] : null,
+                    'komposisi_nama_4'   => isset($mat['komposisi_nama_4']) ? $mat['komposisi_nama_4'] : null,
+                    'komposisi_persen_1' => isset($mat['komposisi_persen_1']) ? $mat['komposisi_persen_1'] : 0,
+                    'komposisi_persen_2' => isset($mat['komposisi_persen_2']) ? $mat['komposisi_persen_2'] : 0,
+                    'komposisi_persen_3' => isset($mat['komposisi_persen_3']) ? $mat['komposisi_persen_3'] : 0,
+                    'komposisi_persen_4' => isset($mat['komposisi_persen_4']) ? $mat['komposisi_persen_4'] : 0,
+                    'komposisi_kg_1'     => (isset($mat['komposisi_kg_1']) && $mat['komposisi_kg_1'] !== '') ? $mat['komposisi_kg_1'] : null,
+                    'komposisi_kg_2'     => (isset($mat['komposisi_kg_2']) && $mat['komposisi_kg_2'] !== '') ? $mat['komposisi_kg_2'] : null,
+                    'komposisi_kg_3'     => (isset($mat['komposisi_kg_3']) && $mat['komposisi_kg_3'] !== '') ? $mat['komposisi_kg_3'] : null,
+                    'komposisi_kg_4'     => (isset($mat['komposisi_kg_4']) && $mat['komposisi_kg_4'] !== '') ? $mat['komposisi_kg_4'] : null,
                 ]);
             }
         }
+
+        // 4b. Refresh Penimbangan Jam (8-hour weighing) - for Becum, Powerjet1, Powerjet2
+        // NOTE: This uses separate database connection (oromaster) outside main transaction
+        // Get oromaster database connection (separate from oroproduksi transaction)
+        $dbMaster = \Config\Database::connect('master');
+        $dbMaster->table('penimbangan_jam')->where('produksi_header_id', $id)->delete();
+        
+        $penimbanganJam = $this->request->getPost('penimbangan_jam');
+        if ($penimbanganJam) {
+            // Powerjet = 12 jam, Becum = 8 jam
+            $namaMesinUpd   = $this->request->getPost('nama_mesin') ?? '';
+            $isPowerjetUpd  = stripos($namaMesinUpd, 'powerjet') !== false;
+            $maxHourUpd     = $isPowerjetUpd ? 12 : 8;
+
+            // Pre-calculate totals for rata-rata
+            $totalGalon = 0;
+            $totalFlash = 0;
+            for ($hour = 1; $hour <= $maxHourUpd; $hour++) {
+                $totalGalon += isset($penimbanganJam["jam_{$hour}_galon"]) ? (float)$penimbanganJam["jam_{$hour}_galon"] : 0;
+                $totalFlash += isset($penimbanganJam["jam_{$hour}_flash"]) ? (float)$penimbanganJam["jam_{$hour}_flash"] : 0;
+            }
+            $rataGalon = round($totalGalon / $maxHourUpd, 2);
+            $rataFlash = round($totalFlash / $maxHourUpd, 2);
+
+            // Loop through all hours
+            for ($hour = 1; $hour <= $maxHourUpd; $hour++) {
+                $galonKey = "jam_{$hour}_galon";
+                $flashKey = "jam_{$hour}_flash";
+                
+                $galon = isset($penimbanganJam[$galonKey]) ? (float)$penimbanganJam[$galonKey] : 0;
+                $flash = isset($penimbanganJam[$flashKey]) ? (float)$penimbanganJam[$flashKey] : 0;
+                
+                // Only save if at least one value is not zero
+                if ($galon != 0 || $flash != 0) {
+                    $dbMaster->table('penimbangan_jam')->insert([
+                        'produksi_header_id' => $id,
+                        'hour'               => $hour,
+                        'galon'              => $galon,
+                        'flash'              => $flash,
+                        'rata_galon'         => $rataGalon,
+                        'rata_flash'         => $rataFlash,
+                    ]);
+                }
+            }
+        }
+        
+        $dbMaster->close();
 
         // 5. Refresh Colorants
         $this->colorantModel->where('produksi_header_id', $id)->delete();
@@ -734,19 +1010,33 @@ class Produksi extends BaseController
                 // TB in/out: untuk Becum berupa array, untuk mesin lain berupa string
                 $tbIn  = null;
                 $tbOut = null;
-                $tbInDetails  = null;
-                $tbOutDetails = null;
+                $tbInDetails      = null;
+                $tbOutDetails     = null;
+                $tbLainIn         = null;
+                $tbLainInDetails  = null;
 
                 if (isset($col['tb_in']) && is_array($col['tb_in'])) {
-                    $tbInDetails = json_encode(array_values($col['tb_in']));
+                        $tbInFiltered = array_values(array_filter($col['tb_in'], fn($item) => !empty($item['nama'])));
+                        $tbInDetails = !empty($tbInFiltered) ? json_encode($tbInFiltered) : null;
+                        $tbIn = $col['tb_in_summary'] ?? null;
                 } else {
                     $tbIn = $col['tb_in'] ?? null;
                 }
 
                 if (isset($col['tb_out']) && is_array($col['tb_out'])) {
-                    $tbOutDetails = json_encode(array_values($col['tb_out']));
+                        $tbOutFiltered = array_values(array_filter($col['tb_out'], fn($item) => !empty($item['nama'])));
+                        $tbOutDetails = !empty($tbOutFiltered) ? json_encode($tbOutFiltered) : null;
+                        $tbOut = $col['tb_out_summary'] ?? null;
                 } else {
                     $tbOut = $col['tb_out'] ?? null;
+                }
+
+                if (isset($col['tb_lain_in']) && is_array($col['tb_lain_in'])) {
+                        $tbLainInFiltered = array_values(array_filter($col['tb_lain_in'], fn($item) => !empty($item['nama'])));
+                        $tbLainInDetails = !empty($tbLainInFiltered) ? json_encode($tbLainInFiltered) : null;
+                        $tbLainIn = $col['tb_lain_in_summary'] ?? null;
+                } else {
+                    $tbLainIn = $col['tb_lain_in'] ?? null;
                 }
 
                 $this->colorantModel->insert([
@@ -758,7 +1048,34 @@ class Produksi extends BaseController
                     'tb_out'             => $tbOut,
                     'tb_in_details'      => $tbInDetails,
                     'tb_out_details'     => $tbOutDetails,
+                    'tb_lain_in'         => $tbLainIn,
+                    'tb_lain_in_details' => $tbLainInDetails,
+                    'tb_in_runner'       => $col['tb_in_runner'] ?? null,
+                    'tb_out_runner'      => $col['tb_out_runner'] ?? null,
                 ]);
+            }
+        }
+
+        // 5b. Refresh Kode Cap (Powerjet only)
+        $this->kodeCapModel->where('produksi_header_id', $id)->delete();
+        $kodeCapPost = $this->request->getPost('kode_cap');
+        if ($kodeCapPost) {
+            foreach ([2, 4, 6, 8] as $jam) {
+                $jamData = $kodeCapPost[$jam] ?? [];
+                $row = ['produksi_header_id' => $id, 'jam_ke' => $jam];
+                // Use posted runner value (manual input, supports decimal)
+                $runnerRaw = str_replace(',', '.', trim($jamData['runner'] ?? '0'));
+                $row['runner'] = is_numeric($runnerRaw) ? (float)$runnerRaw : 0;
+                $hasData = false;
+                for ($c = 1; $c <= 12; $c++) {
+                    $val = trim($jamData["kode_cap_{$c}"] ?? '');
+                    $row["kode_cap_{$c}"] = $val !== '' ? $val : null;
+                    if ($val !== '') $hasData = true;
+                }
+                // Save if any kode cap is filled OR runner has a value
+                if ($hasData || $row['runner'] > 0) {
+                    $this->kodeCapModel->insert($row);
+                }
             }
         }
 
@@ -777,9 +1094,29 @@ class Produksi extends BaseController
             'nicktainer'            => $this->request->getPost('nicktainer'),
             'nicktainer_ukuran'     => $this->request->getPost('nicktainer_ukuran'),
             'box_karung_nicktainer' => $this->request->getPost('box_karung_nicktainer'),
-            'meter_awal'            => $this->request->getPost('meter_awal')      ?: null,
-            'meter_akhir'           => $this->request->getPost('meter_akhir')     ?: null,
-            'meter_pemakaian'       => $this->request->getPost('meter_pemakaian') ?: null,
+            'meter_awal'            => $this->request->getPost('meter_awal')            ?: null,
+            'meter_akhir'           => $this->request->getPost('meter_akhir')           ?: null,
+            'meter_pemakaian'       => $this->request->getPost('meter_pemakaian')       ?: null,
+            'ukuran_plastik_besar'  => $this->request->getPost('ukuran_plastik_besar')  ?: null,
+            'plastik_besar_awal'     => $this->request->getPost('plastik_besar_awal')    ?: null,
+            'plastik_besar_akhir'    => $this->request->getPost('plastik_besar_akhir')   ?: null,
+            'plastik_besar_pemakaian'=> $this->request->getPost('plastik_besar_pemakaian') ?: null,
+            'ukuran_plastik_kecil'   => $this->request->getPost('ukuran_plastik_kecil')  ?: null,
+            'plastik_kecil_awal'     => $this->request->getPost('plastik_kecil_awal')    ?: null,
+            'plastik_kecil_akhir'    => $this->request->getPost('plastik_kecil_akhir')   ?: null,
+            'plastik_kecil_pemakaian'=> $this->request->getPost('plastik_kecil_pemakaian') ?: null,
+            'ukuran_pe'              => $this->request->getPost('ukuran_pe')              ?: null,
+            'pe_awal'                => $this->request->getPost('pe_awal')                ?: null,
+            'pe_akhir'               => $this->request->getPost('pe_akhir')               ?: null,
+            'pe_pemakaian'           => $this->request->getPost('pe_pemakaian')           ?: null,
+            'ukuran_box_karung'      => $this->request->getPost('ukuran_box_karung')      ?: null,
+            'box_karung_awal'        => $this->request->getPost('box_karung_awal')        ?: null,
+            'box_karung_akhir'       => $this->request->getPost('box_karung_akhir')       ?: null,
+            'box_karung_pemakaian'   => $this->request->getPost('box_karung_pemakaian')   ?: null,
+            'plastik_awal'          => $this->request->getPost('plastik_awal')          ?: null,
+            'plastik_akhir'         => $this->request->getPost('plastik_akhir')         ?: null,
+            'material_awal'         => $this->request->getPost('material_awal')         ?: null,
+            'material_akhir'        => $this->request->getPost('material_akhir')        ?: null,
         ]);
 
         // 7. Refresh Downtimes

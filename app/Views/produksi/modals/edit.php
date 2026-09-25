@@ -39,7 +39,7 @@
     </style>
     <form id="formEditLaporan" action="<?= base_url('produksi/update/' . $header['id']) ?>" method="POST" enctype="multipart/form-data" onkeydown="return event.key !== 'Enter' || event.target.tagName === 'TEXTAREA';">
         <?= csrf_field() ?>
-        <?= view('produksi/partials/form_fields', ['header' => $header, 'jams' => $jams, 'rejects' => $rejects, 'materials' => $materials, 'colorants' => $colorants, 'packaging' => $packaging, 'downtimes' => $downtimes, 'spk_list' => $spk_list, 'reject_types' => $reject_types ?? []]) ?>
+        <?= view('produksi/partials/form_fields', ['header' => $header, 'jams' => $jams, 'rejects' => $rejects, 'materials' => $materials, 'colorants' => $colorants, 'packaging' => $packaging, 'downtimes' => $downtimes, 'spk_list' => $spk_list, 'reject_types' => $reject_types ?? [], 'penimbanganData' => $penimbanganData ?? []]) ?>
     </form>
 
     <script>

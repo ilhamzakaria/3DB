@@ -14,7 +14,7 @@
 
 $currentMachine = $current_machine ?? '';
 $machines = [
-    'mesin_becum'     => ['label' => 'Becum',      'icon' => 'fas fa-industry',       'color' => 'primary'],
+    'mesin_becum'     => ['label' => 'Bekum',      'icon' => 'fas fa-industry',       'color' => 'primary'],
     'mesin_powerjet1' => ['label' => 'Powerjet 1', 'icon' => 'fas fa-bolt',           'color' => 'warning'],
     'mesin_powerjet2' => ['label' => 'Powerjet 2', 'icon' => 'fas fa-bolt',           'color' => 'warning'],
     'mesin_ccm1'      => ['label' => 'CCM 1',      'icon' => 'fas fa-cogs',           'color' => 'info'],

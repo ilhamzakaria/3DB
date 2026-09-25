@@ -90,6 +90,27 @@ trait MesinModuleTrait
     {
         $id = $id ?: $this->request->getPost('id');
 
+        // Before deleting the mesin record, also delete related penimbangan data
+        // (This is redundant with CASCADE DELETE at DB level, but ensures consistency)
+        if (isset($this->MMesin) && method_exists($this->MMesin, 'getTable')) {
+            $table = $this->MMesin->getTable();
+            
+            // If this is a mesin_becum table, delete its penimbangan records
+            if (strpos($table, 'mesin_becum') !== false) {
+                try {
+                    $db = $this->isPpicContext() ? $this->dbPpic() : $this->dbGudang();
+                    $db->table('penimbangan_jam')
+                        ->where('becum_id', (int)$id)
+                        ->delete();
+                    
+                    log_message('info', "Deleted penimbangan_jam records for becum_id={$id}");
+                } catch (\Throwable $e) {
+                    log_message('error', "Failed to delete penimbangan_jam for becum_id={$id}: " . $e->getMessage());
+                    // Continue with mesin delete even if penimbangan delete fails
+                }
+            }
+        }
+
         if ($this->activeMesin()->delete($id)) {
             session()->setFlashdata('success', 'Data dipindahkan ke tempat sampah');
         } else {
@@ -113,6 +134,26 @@ trait MesinModuleTrait
 
     public function deletePermanent($id)
     {
+        // Before permanently deleting the mesin record, also delete related penimbangan data
+        if (isset($this->MMesin) && method_exists($this->MMesin, 'getTable')) {
+            $table = $this->MMesin->getTable();
+            
+            // If this is a mesin_becum table, delete its penimbangan records
+            if (strpos($table, 'mesin_becum') !== false) {
+                try {
+                    $db = $this->isPpicContext() ? $this->dbPpic() : $this->dbGudang();
+                    $db->table('penimbangan_jam')
+                        ->where('becum_id', (int)$id)
+                        ->delete();
+                    
+                    log_message('info', "Permanently deleted penimbangan_jam records for becum_id={$id}");
+                } catch (\Throwable $e) {
+                    log_message('error', "Failed to permanently delete penimbangan_jam for becum_id={$id}: " . $e->getMessage());
+                    // Continue with mesin delete even if penimbangan delete fails
+                }
+            }
+        }
+
         $this->activeMesin()->delete((int) $id, true);
         session()->setFlashdata('success', 'Data berhasil dihapus permanen');
         return redirect()->to($this->indexRoute());
