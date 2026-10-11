@@ -7,7 +7,8 @@
         border: none;
         border-bottom: 3px solid transparent;
         cursor: pointer;
-        padding: 0.75rem 1.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
     }
 
     .nav-tabs .nav-link.active {
@@ -40,17 +41,52 @@
         display: block;
     }
 
+    /* ===== MESIN PILLS STYLING ===== */
+    .mesin-pills-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;
+        margin-top: -0.5rem;
+    }
+
+    .mesin-pill-compact {
+        border: 1px solid #dee2e6;
+        background-color: #ffffff;
+        color: #495057;
+        padding: 0.35rem 0.75rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+        font-weight: 500;
+        display: inline-block;
+        line-height: 1.2;
+    }
+
+    .mesin-pill-compact:hover {
+        background-color: #f8f9fa;
+        border-color: #0d6efd;
+        color: #0d6efd;
+    }
+
+    .mesin-pill-compact.active {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+
     .table-responsive {
         border-radius: 0.5rem;
     }
 
     .btn-group-sm {
-        gap: 0.25rem;
+        gap: 0.15rem;
     }
 
     .badge {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.75rem;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.7rem;
     }
 
     .form-modal .modal-body {
@@ -66,13 +102,14 @@
     }
 
     .data-table {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .data-table th {
         background-color: #f8f9fa;
         font-weight: 600;
         border-top: none;
+        font-size: 0.8rem;
     }
 
     .empty-state {
@@ -243,10 +280,10 @@
 
     /* Styling untuk form label */
     .form-label {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: #495057;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.3rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -255,7 +292,8 @@
     .form-select,
     .form-control {
         border-radius: 0.375rem;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
     }
 
     .form-select:disabled,
@@ -630,20 +668,9 @@
         }
     }
 
-    /* Card Container — Better Spacing */
-    @media (max-width: 768px) {
-        .card {
-            margin-bottom: 0.75rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        }
-
-        .card-body {
-            padding: 0.75rem;
-        }
-
-        .card-header {
-            padding: 0.75rem;
-        }
+    .card {
+        margin-bottom: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     /* Summary Badges — Stack Vertically */
@@ -1021,7 +1048,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-produksi" data-tab="produksi" role="tab">
-                        <i class="fas fa-industry me-2"></i> Barang Masuk ke Produksi
+                        <i class="fas fa-industry me-2"></i> Barang Keluar ke Produksi
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -1031,7 +1058,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-masuk-produksi" data-tab="masuk-produksi" role="tab">
-                        <i class="fas fa-box me-2"></i> Barang Masuk dari Produksi
+                        <i class="fas fa-box me-2"></i> Finish good
                     </button>
                 </li>
             </ul>
@@ -1042,7 +1069,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
     <div class="tab-content active" data-tab="pemasok">
         <div class="card shadow mb-4 border-0">
             <!-- Toolbar Section -->
-            <div class="card-header py-3 bg-white">
+            <div class="card-header py-2 bg-white">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <!-- Left Group: Action Buttons -->
                     <div class="btn-group flex-wrap">
@@ -1073,9 +1100,23 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             </div>
                         </form>
 
+                        <div class="pagination">
+                            <div class="position-relative w-80">
+                                <select class="form-select form-select-sm pagination-per-page pe-5" id="perPageSelectPemasok">
+                                    <option value="10">10/hal</option>
+                                    <option value="25">25/hal</option>
+                                    <option value="50">50/hal</option>
+                                </select>
+                                <!-- Contoh menggunakan ikon panah (misal menggunakan Bootstrap Icons atau panah CSS) -->
+                                <span class="position-absolute top-50 end-0 translate-middle-y pe-2 pointer-events-none">
+                                    
+                                </span>
+                            </div>
+                        </div>
+
                         <!-- Custom Filter Button -->
                         <button class="btn btn-light btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#pemasokCustomFilterDrawer">
-                            <i class="fas fa-sliders-h me-1"></i> Filter
+                            <i class="fas fa-sliders-h me-1"></i> Filter 1
                             <span class="badge bg-primary ms-1" id="pemasokFilterCount" style="display:none;"></span>
                         </button>
                     </div>
@@ -1083,7 +1124,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             </div>
 
             <!-- Data Table -->
-            <div class="card-body">
+            <div class="card-body p-2">
                 <div class="table-responsive">
                     <table class="table table-hover table-sm data-table" id="tablePemasok">
                         <thead>
@@ -1091,7 +1132,6 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                                 <th style="width: 90px;">Tanggal</th>
                                 <th style="width: 90px;">Nomor Lot</th>
                                 <th style="width: 110px;">Pemasok</th>
-                                <th style="width: 80px;">Kode Barang</th>
                                 <th style="width: 110px;">Nama Barang</th>
                                 <th style="width: 70px;">Satuan</th>
                                 <th style="width: 80px;">Jumlah</th>
@@ -1149,9 +1189,25 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
     <!-- TAB 2: Barang Masuk Produksi (Updated with Orowarehouse structure) -->
     <div class="tab-content" data-tab="produksi">
+        <!-- Mesin Selection Pills - Compact inline -->
+        <div class="mesin-pills-wrapper d-flex gap-1 flex-wrap mb-2">
+            <button class="mesin-pill-compact active" data-mesin="" onclick="setProduksiMesin('', this)">
+                <i class="fas fa-th me-1"></i>Semua
+            </button>
+            <button class="mesin-pill-compact" data-mesin="becum" onclick="setProduksiMesin('becum', this)">Becum</button>
+            <button class="mesin-pill-compact" data-mesin="powerjet1" onclick="setProduksiMesin('powerjet1', this)">Powerjet 1</button>
+            <button class="mesin-pill-compact" data-mesin="powerjet2" onclick="setProduksiMesin('powerjet2', this)">Powerjet 2</button>
+            <button class="mesin-pill-compact" data-mesin="ccm1" onclick="setProduksiMesin('ccm1', this)">CCM 1</button>
+            <button class="mesin-pill-compact" data-mesin="ccm2" onclick="setProduksiMesin('ccm2', this)">CCM 2</button>
+            <button class="mesin-pill-compact" data-mesin="ips1" onclick="setProduksiMesin('ips1', this)">IPS 1</button>
+            <button class="mesin-pill-compact" data-mesin="ips2" onclick="setProduksiMesin('ips2', this)">IPS 2</button>
+            <button class="mesin-pill-compact" data-mesin="ips3" onclick="setProduksiMesin('ips3', this)">IPS 3</button>
+            <button class="mesin-pill-compact" data-mesin="ips4" onclick="setProduksiMesin('ips4', this)">IPS 4</button>
+        </div>
+
         <div class="card shadow mb-4 border-0">
             <!-- Toolbar Section -->
-            <div class="card-header py-3 bg-white">
+            <div class="card-header py-2 bg-white">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <!-- Left Group: Action Buttons -->
                     <div class="btn-group flex-wrap">
@@ -1192,28 +1248,22 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             </div>
 
             <!-- Data Table -->
-            <div class="card-body">
+            <div class="card-body p-2">
                 <div class="table-responsive">
                     <table class="table table-hover table-sm data-table" id="tableProduksi">
                         <thead>
                             <tr>
-                                <th style="width: 90px;">Tanggal</th>
-                                <th style="width: 90px;">Nomor SPK</th>
-                                <th style="width: 90px;">Nomor Lot</th>
-                                <th style="width: 80px;">Kode Barang</th>
-                                <th style="width: 110px;">Nama Barang</th>
-                                <th style="width: 70px;">Satuan</th>
-                                <th style="width: 80px;">Keluar</th>
-                                <th style="width: 80px;">Terima</th>
-                                <th style="width: 110px;">Nama Penerima</th>
-                                <th style="width: 150px;">Catatan</th>
+                                <th style="width: 100px;">Tanggal</th>
+                                <th style="width: 100px;">Nomor SPK</th>
+                                <th style="width: 80px;">Mesin</th>
+                                <th style="width: 100px;">Nomor Lot</th>
                                 <th style="width: 80px;">Status</th>
-                                <th style="width: 90px;">Aksi</th>
+                                <th style="width: 110px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyProduksi">
                             <tr>
-                                <td colspan="12" class="empty-state">
+                                <td colspan="6" class="empty-state">
                                     <i class="fas fa-inbox"></i>
                                     <p>Belum ada data</p>
                                 </td>
@@ -1260,7 +1310,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
     <div class="tab-content" data-tab="pembeli">
         <div class="card shadow mb-4 border-0">
             <!-- Toolbar Section -->
-            <div class="card-header py-3 bg-white">
+            <div class="card-header py-2 bg-white">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <!-- Left Group: Action Buttons -->
                     <div class="btn-group flex-wrap">
@@ -1301,7 +1351,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             </div>
 
             <!-- Data Table -->
-            <div class="card-body">
+            <div class="card-body p-2">
                 <div class="table-responsive">
                     <table class="table table-hover table-sm data-table" id="tablePembeli">
                         <thead>
@@ -1860,10 +1910,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <label class="form-label">No PO</label>
                             <input type="text" class="form-control" id="noPoPemasok">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Kode Barang *</label>
-                            <input type="text" class="form-control" id="kodeBarangPemasok" required>
-                        </div>
+                        
                         <div class="col-md-6">
                             <label class="form-label">Nama Barang *</label>
                             <input type="text" class="form-control" id="namaBarangPemasok" required>
@@ -1913,7 +1960,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
     <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalProduksiTitle">Tambah Barang Masuk Produksi</h5>
+                <h5 class="modal-title" id="modalProduksiTitle">Tambah Barang Keluar ke Produksi</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -1921,33 +1968,69 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     <input type="hidden" id="produksiEditId" value="">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Nomor SPK *</label>
-                            <input type="text" class="form-control" id="noDokumenProduksi" required>
+                            <label class="form-label">Nomor SPK</label>
+                            <input type="text" class="form-control" id="noDokumenProduksi">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nomor Lot</label>
                             <input type="text" class="form-control" id="nomorLotProduksi">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Tanggal *</label>
-                            <input type="date" class="form-control" id="tanggalProduksi" required>
+                            <label class="form-label">Mesin</label>
+                            <select class="form-select" id="namaMesinProduksi" onchange="updateNamaBarangDropdowns()">
+                                <option value="">-- Pilih Mesin --</option>
+                                <option value="becum">Becum</option>
+                                <option value="powerjet1">Powerjet 1</option>
+                                <option value="powerjet2">Powerjet 2</option>
+                                <option value="ccm1">CCM 1</option>
+                                <option value="ccm2">CCM 2</option>
+                                <option value="ips1">IPS 1</option>
+                                <option value="ips2">IPS 2</option>
+                                <option value="ips3">IPS 3</option>
+                                <option value="ips4">IPS 4</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tanggal</label>
+                            <input type="date" class="form-control" id="tanggalProduksi">
                         </div>
 
+                        
                         <div class="col-md-6">
-                            <label class="form-label">Kode Barang *</label>
-                            <input type="text" class="form-control" id="kodeBarangProduksi" required>
+                            <label class="form-label">nama barang 1</label>
+                            <select class="form-select nb-select" id="namaBarangProduksi">
+                                <option value="">-- Pilih --</option>
+                            </select>
+                            <input type="text" class="form-control nb-text" id="namaBarangProduksiText" style="display:none">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Nama Barang *</label>
-                            <input type="text" class="form-control" id="namaBarangProduksi" required>
+                            <label class="form-label">nama barang 2</label>
+                            <select class="form-select nb-select" id="namaBarang2Produksi">
+                                <option value="">-- Pilih --</option>
+                            </select>
+                            <input type="text" class="form-control nb-text" id="namaBarang2ProduksiText" style="display:none">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Satuan *</label>
-                            <input type="text" class="form-control" id="satuanProduksi" placeholder="kg, liter, pcs..." required>
+                            <label class="form-label">nama barang 3</label>
+                            <select class="form-select nb-select" id="namaBarang3Produksi">
+                                <option value="">-- Pilih --</option>
+                            </select>
+                            <input type="text" class="form-control nb-text" id="namaBarang3ProduksiText" style="display:none">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Jumlah Keluar *</label>
-                            <input type="number" class="form-control" id="jumlahKeluarProduksi" step="1" required>
+                            <label class="form-label">nama barang 4</label>
+                            <select class="form-select nb-select" id="namaBarang4Produksi">
+                                <option value="">-- Pilih --</option>
+                            </select>
+                            <input type="text" class="form-control nb-text" id="namaBarang4ProduksiText" style="display:none">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Satuan</label>
+                            <input type="text" class="form-control" id="satuanProduksi" placeholder="kg, liter, pcs...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Jumlah Keluar</label>
+                            <input type="number" class="form-control" id="jumlahKeluarProduksi" step="1">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Jumlah Terima</label>
@@ -1962,8 +2045,27 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <textarea class="form-control" id="catatanProduksi" rows="2"></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Status *</label>
-                            <select class="form-select" id="statusProduksi" required>
+                            <label class="form-label">Masterbatch</label>
+                            <input type="text" class="form-control" id="masterbatchProduksi" placeholder="Masterbatch...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Colorant</label>
+                            <input type="text" class="form-control" id="colorantProduksi" placeholder="Colorant...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Packaging</label>
+                            <select class="form-select" id="packagingProduksi">
+                                <option value="">-- Pilih --</option>
+                            </select>
+                            <input type="text" class="form-control" id="packagingProduksiText" style="display:none" placeholder="Ukuran packaging...">
+                        </div>
+                        <div class="col-md-6" id="regrinFieldWrap" style="display:none;">
+                            <label class="form-label">Regrin</label>
+                            <input type="number" class="form-control" id="regrinProduksi" step="1" placeholder="Masukkan jumlah regrin...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="statusProduksi">
                                 <option value="pending">Pending</option>
                                 <option value="terima">Terima</option>
                                 <option value="ditolak">Ditolak</option>
@@ -1975,6 +2077,25 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-primary" onclick="saveProduksi()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detail: Barang Keluar ke Produksi -->
+<div class="modal fade" id="modalProduksiDetail" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-info-circle me-2 text-primary"></i>Detail Barang Keluar ke Produksi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="produksiDetailBody">
+                <!-- filled by JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="produksiDetailEditBtn"><i class="fas fa-edit me-1"></i>Edit</button>
             </div>
         </div>
     </div>
@@ -2075,10 +2196,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <label class="form-label">Nama Produksi *</label>
                             <input type="text" class="form-control" id="namaProduksiMasuk" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Kode Barang *</label>
-                            <input type="text" class="form-control" id="kodeBarangMasukProduksi" required>
-                        </div>
+                        
                         <div class="col-md-6">
                             <label class="form-label">Nama Barang *</label>
                             <input type="text" class="form-control" id="namaBarangMasukProduksi" required>
@@ -2508,7 +2626,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             <td>${formatDate(item.tanggal)}</td>
             <td>${item.nomor_spk}</td>
             <td>${item.no_spk || '-'}</td>
-            <td>${item.nama_barang}</td>
+            <td>${item.nama_barang_1}</td>
             <td>${item.jumlah_keluar} ${item.satuan}</td>
             <td>${item.jumlah_terima || '-'} ${item.satuan}</td>
             <td><span class="badge bg-${badgeColor}">${item.status}</span></td>
@@ -2565,13 +2683,287 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
     // savePemasok: consolidated implementation exists later in the file.
 
+    /**
+     * Product options by machine type for Produksi tab
+     */
+    const produksiProductOptions = {
+        'becum': {
+            'nama_barang_1': [
+                'Novarex M 7027 BF',
+                'Makrolon WB 1239',
+                'WB2032-9109 (Wanhua)',
+                'LEXAN PK2870-21317'
+            ],
+            'nama_barang_2': ['OR', 'OR+', 'OT', 'OT+', 'OTV', 'OU', 'OS', 'OS+', 'OUV', 'RR', 'RS IKRAMA', 'RT', 'RS VICA'],
+            'nama_barang_3': ['OR', 'OR+', 'OT', 'OT+', 'OTV', 'OU', 'OS', 'OS+', 'OUV', 'RR', 'RS IKRAMA', 'RT', 'RS VICA'],
+            'nama_barang_4': [
+                'Plast Trans Blue MFPC 15023',
+                'Plast Trans Violet MFPC 15999 (A)',
+                'Renol Blue PC-C7216R',
+                'Renol Blue PC- D8997',
+                'Renol Violet PC-D87226 MG'
+            ],
+            'packaging': [
+                '-- Ukuran Plastik Besar --',
+                '73.5 x 171 x 0.03',
+                '-- Ukuran Plastik Kecil --',
+                '50 x 75 x 0.03'
+            ]
+        },
+        'powerjet1': {
+            'nama_barang_1': ['LD 2426 K'],
+            'nama_barang_2': ['hd 6070EA', 'INOPLUS hd 2200J'],
+            'nama_barang_3': ['Blue 07', 'White 01', 'Red 01', 'Orange 01', 'Clear', 'Blue 10', 'Blue 10-1', 'Blue 08', 'Blue 04', 'Green 03', 'blue 11', 'Purple 01'],
+            'nama_barang_4': [
+                'Plast Green MPFE 20564-22',
+                'Lucent Blue 0878-BL LM5300729',
+                'Lucent Blue 1761 (A)-BL LM5204194',
+                'Lucent Red 0157-BL LM3300115',
+                'Lucent Green 1749-BL LM6301490',
+                'Lucent Green 5771-BL',
+                'Lucent Green 6019 BL LM5305779',
+                'Lucent Blue 6172 (A) LM510630',
+                'Lucent Blue 6420 (A) SWS',
+                'Lucent Green 2221-BL LM6301973',
+                'Lucent Violet 6407 BL',
+                'Finolene Green GSE-1407'
+            ],
+            'packaging': [
+                '-- Pilih Ukuran PE --',
+                '65x115x0,03 (0,045)',
+                '135x110x0,03 (0,080)',
+                '100x80x0,03',
+                '60x90x0,03 (0,035)',
+                '-- Pilih Ukuran Box / Karung --',
+                '90x130',
+                '600x400x300 (SW)',
+                '578x540x541 (SW)'
+            ]
+        },
+        'powerjet2': {
+            'nama_barang_1': ['LD 2426 K'],
+            'nama_barang_2': ['hd 6070EA', 'INOPLUS hd 2200J'],
+            'nama_barang_3': ['Blue 07', 'White 01', 'Red 01', 'Orange 01', 'Clear', 'Blue 10', 'Blue 10-1', 'Blue 08', 'Blue 04', 'Green 03', 'blue 11', 'Purple 01'],
+            'nama_barang_4': [
+                'Plast Green MPFE 20564-22',
+                'Lucent Blue 0878-BL LM5300729',
+                'Lucent Blue 1761 (A)-BL LM5204194',
+                'Lucent Red 0157-BL LM3300115',
+                'Lucent Green 1749-BL LM6301490',
+                'Lucent Green 5771-BL',
+                'Lucent Green 6019 BL LM5305779',
+                'Lucent Blue 6172 (A) LM510630',
+                'Lucent Blue 6420 (A) SWS',
+                'Lucent Green 2221-BL LM6301973',
+                'Lucent Violet 6407 BL',
+                'Finolene Green GSE-1407'
+            ],
+            'packaging': [
+                '-- Pilih Ukuran PE --',
+                '65x115x0,03 (0,045)',
+                '135x110x0,03 (0,080)',
+                '100x80x0,03',
+                '60x90x0,03 (0,035)',
+                '-- Pilih Ukuran Box / Karung --',
+                '90x130',
+                '600x400x300 (SW)',
+                '578x540x541 (SW)'
+            ]
+        },
+        'ccm1': {
+            'packaging': [
+                '-- Ukuran Plastik --',
+                '60x90x0,03',
+                '50x75x0,03',
+                '-- Ukuran Box --',
+                '500x370x300',
+                '600x370x425'
+            ]
+        },
+        'ccm2': {
+            'packaging': [
+                '-- Ukuran Plastik --',
+                '60x90x0,03',
+                '50x75x0,03',
+                '-- Ukuran Box --',
+                '500x370x300',
+                '600x370x425'
+            ]
+        },
+        'ips1': {
+            'packaging': [
+                '-- Ukuran Plastik --',
+                '65x115x0.03',
+                '200/120x210x0,03',
+                '600x370x425',
+                '-- Box (pcs) --',
+                '600x365x420',
+                '-- Ukuran Karung --',
+                '65 x 105',
+                '90 x 130'
+            ]
+        },
+        'ips2': {
+            'packaging': [
+                '-- Ukuran Plastik --',
+                '65x115x0.03',
+                '200/120x210x0,03',
+                '600x370x425',
+                '-- Box (pcs) --',
+                '600x365x420',
+                '-- Ukuran Karung --',
+                '65 x 105',
+                '90 x 130'
+            ]
+        },
+        'ips3': {
+            'packaging': [
+                '-- Ukuran Plastik --',
+                '65x115x0.03',
+                '200/120x210x0,03',
+                '600x370x425',
+                '-- Box (pcs) --',
+                '600x365x420',
+                '-- Ukuran Karung --',
+                '65 x 105',
+                '90 x 130'
+            ]
+        },
+        'ips4': {
+            'packaging': [
+                '-- Ukuran Plastik --',
+                '65x115x0.03',
+                '200/120x210x0,03',
+                '600x370x425',
+                '-- Box (pcs) --',
+                '600x365x420',
+                '-- Ukuran Karung --',
+                '65 x 105',
+                '90 x 130'
+            ]
+        }
+    };
+
+    /**
+     * Update nama barang fields based on selected mesin.
+     * - becum / powerjet1 / powerjet2 → show dropdown, hide text input
+     * - ccm1 / ccm2 / ips1 / ips2 / ips3 / ips4 → hide dropdown, show text input
+     * Pass savedValues object to pre-fill values (used when editing).
+     */
+    function updateNamaBarangDropdowns(savedValues) {
+        const mesin = document.getElementById('namaMesinProduksi').value;
+        const useText = ['ccm1', 'ccm2', 'ips1', 'ips2', 'ips3', 'ips4'].includes(mesin);
+        const isBecum = mesin === 'becum';
+        const options = produksiProductOptions[mesin] || {};
+
+        // Show/hide Regrin field (only for Becum)
+        const regrinWrap = document.getElementById('regrinFieldWrap');
+        if (isBecum) {
+            regrinWrap.style.display = '';
+        } else {
+            regrinWrap.style.display = 'none';
+        }
+
+        const fields = [
+            { selId: 'namaBarangProduksi',  txtId: 'namaBarangProduksiText',  key: 'nama_barang_1', required: true  },
+            { selId: 'namaBarang2Produksi', txtId: 'namaBarang2ProduksiText', key: 'nama_barang_2', required: false },
+            { selId: 'namaBarang3Produksi', txtId: 'namaBarang3ProduksiText', key: 'nama_barang_3', required: false },
+            { selId: 'namaBarang4Produksi', txtId: 'namaBarang4ProduksiText', key: 'nama_barang_4', required: false },
+        ];
+
+        fields.forEach(({ selId, txtId, key, required }) => {
+            const sel = document.getElementById(selId);
+            const txt = document.getElementById(txtId);
+            const savedVal = (savedValues && savedValues[key] !== undefined) ? savedValues[key] : '';
+
+            if (useText) {
+                // Show text input, hide and disable select so it's excluded from form validation
+                sel.style.display = 'none';
+                sel.disabled = true;
+                sel.required = false;
+                txt.style.display = '';
+                txt.disabled = false;
+                txt.value = savedVal;
+            } else {
+                // Show select, hide and disable text input
+                txt.style.display = 'none';
+                txt.disabled = true;
+                sel.style.display = '';
+                sel.disabled = false;
+                sel.required = required;
+
+                // Rebuild options
+                sel.innerHTML = '<option value="">-- Pilih --</option>';
+                (options[key] || []).forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item;
+                    opt.textContent = item;
+                    sel.appendChild(opt);
+                });
+                if (savedVal) sel.value = savedVal;
+            }
+        });
+
+        // Handle packaging field separately — always a dropdown (or text if no options defined)
+        const pkgSel = document.getElementById('packagingProduksi');
+        const pkgTxt = document.getElementById('packagingProduksiText');
+        const pkgSaved = (savedValues && savedValues['packaging'] !== undefined) ? savedValues['packaging'] : '';
+        const pkgOptions = options['packaging'] || [];
+
+        if (pkgOptions.length === 0) {
+            // No predefined options — show text input
+            pkgSel.style.display = 'none';
+            pkgSel.disabled = true;
+            pkgTxt.style.display = '';
+            pkgTxt.disabled = false;
+            pkgTxt.value = pkgSaved;
+        } else {
+            // Show dropdown with options; items starting with '--' are separators (disabled)
+            pkgTxt.style.display = 'none';
+            pkgTxt.disabled = true;
+            pkgSel.style.display = '';
+            pkgSel.disabled = false;
+
+            pkgSel.innerHTML = '<option value="">-- Pilih --</option>';
+            pkgOptions.forEach(item => {
+                const opt = document.createElement('option');
+                if (item.startsWith('--')) {
+                    opt.value = '';
+                    opt.textContent = item;
+                    opt.disabled = true;
+                    opt.style.fontWeight = 'bold';
+                    opt.style.color = '#6c757d';
+                } else {
+                    opt.value = item;
+                    opt.textContent = item;
+                }
+                pkgSel.appendChild(opt);
+            });
+            if (pkgSaved) pkgSel.value = pkgSaved;
+        }
+
+        // Handle regrin field — populate from saved values
+        if (savedValues && savedValues['regrin'] !== undefined) {
+            document.getElementById('regrinProduksi').value = savedValues['regrin'] || '';
+        }
+    }
+
+    /**
+     * Read active nama barang value (select or text input depending on current mode)
+     */
+    function getNamaBarangValue(selId, txtId) {
+        const sel = document.getElementById(selId);
+        const txt = document.getElementById(txtId);
+        return sel.disabled ? txt.value : sel.value;
+    }
+
     function openProduksiForm() {
         // Reset form
         document.getElementById('formProduksi').reset();
         document.getElementById('produksiEditId').value = '';
 
         // Reset modal title
-        document.getElementById('modalProduksiTitle').textContent = 'Tambah Barang Masuk Produksi';
+        document.getElementById('modalProduksiTitle').textContent = 'Tambah Barang Keluar Ke Produksi';
 
         const modalElement = document.getElementById('modalProduksi');
 
@@ -2592,21 +2984,12 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             keyboard: true
         });
         modal.show();
+
+        // Populate dropdowns after modal is shown
+        updateNamaBarangDropdowns();
     }
 
     function saveProduksi() {
-        const form = document.getElementById('formProduksi');
-        if (!form.checkValidity()) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Form Belum Lengkap',
-                text: 'Mohon lengkapi semua field yang wajib diisi',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
-
         const produksiId = document.getElementById('produksiEditId').value;
         const isEditMode = Boolean(produksiId);
 
@@ -2614,13 +2997,23 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             nomor_spk: document.getElementById('noDokumenProduksi').value,
             nomor_lot: document.getElementById('nomorLotProduksi').value || null,
             tanggal: document.getElementById('tanggalProduksi').value,
-            kode_barang: document.getElementById('kodeBarangProduksi').value,
-            nama_barang: document.getElementById('namaBarangProduksi').value,
+            nama_mesin: document.getElementById('namaMesinProduksi').value,
+            // kode_barang: document.getElementById('kodeBarangProduksi').value,
+            nama_barang_1: getNamaBarangValue('namaBarangProduksi',  'namaBarangProduksiText'),
+            nama_barang_2: getNamaBarangValue('namaBarang2Produksi', 'namaBarang2ProduksiText'),
+            nama_barang_3: getNamaBarangValue('namaBarang3Produksi', 'namaBarang3ProduksiText'),
+            nama_barang_4: getNamaBarangValue('namaBarang4Produksi', 'namaBarang4ProduksiText'),
             satuan: document.getElementById('satuanProduksi').value,
             jumlah_keluar: document.getElementById('jumlahKeluarProduksi').value,
             jumlah_terima: document.getElementById('jumlahTerimaProduksi').value || 0,
             nama_penerima: document.getElementById('namaPenerimaProduksi').value,
             catatan: document.getElementById('catatanProduksi').value,
+            masterbatch: document.getElementById('masterbatchProduksi').value || null,
+            colorant: document.getElementById('colorantProduksi').value || null,
+            packaging: (document.getElementById('packagingProduksi').disabled
+                ? document.getElementById('packagingProduksiText').value
+                : document.getElementById('packagingProduksi').value) || null,
+            regrin: document.getElementById('regrinProduksi').value ? parseInt(document.getElementById('regrinProduksi').value) : null,
             status: document.getElementById('statusProduksi').value
         };
 
@@ -2654,14 +3047,16 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             text: isEditMode ? 'Data barang masuk produksi telah diperbarui' : 'Data barang masuk produksi telah ditambahkan',
                             confirmButtonColor: '#28a745',
                             confirmButtonText: 'OK',
-                            timer: 3000,
+                            timer: 2000,
                             timerProgressBar: true,
                             didOpen: (toast) => {
                                 toast.addEventListener('mouseenter', Swal.stopTimer)
                                 toast.addEventListener('mouseleave', Swal.resumeTimer)
                             }
+                        }).then(() => {
+                            // Reload produksi data with current filter
+                            loadProduksiData(1);
                         });
-                        loadTabData('produksi');
                     }, 300);
                 } else {
                     console.error('Validation errors:', data.errors);
@@ -2710,14 +3105,27 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     document.getElementById('noDokumenProduksi').value = item.nomor_spk || '';
                     document.getElementById('nomorLotProduksi').value = item.nomor_lot || '';
                     document.getElementById('tanggalProduksi').value = item.tanggal ? item.tanggal.split(' ')[0] : '';
-                    document.getElementById('kodeBarangProduksi').value = item.kode_barang || '';
-                    document.getElementById('namaBarangProduksi').value = item.nama_barang || '';
+                    document.getElementById('namaMesinProduksi').value = item.nama_mesin || '';
                     document.getElementById('satuanProduksi').value = item.satuan || '';
                     document.getElementById('jumlahKeluarProduksi').value = parseInt(item.jumlah_keluar) || '';
                     document.getElementById('jumlahTerimaProduksi').value = parseInt(item.jumlah_terima) || '';
                     document.getElementById('namaPenerimaProduksi').value = item.nama_penerima || '';
                     document.getElementById('catatanProduksi').value = item.catatan || '';
+                    document.getElementById('masterbatchProduksi').value = item.masterbatch || '';
+                    document.getElementById('colorantProduksi').value = item.colorant || '';
                     document.getElementById('statusProduksi').value = item.status || 'pending';
+
+                    // Populate nama barang dropdowns with saved values
+                    updateNamaBarangDropdowns({
+                        nama_barang_1: item.nama_barang_1 || '',
+                        nama_barang_2: item.nama_barang_2 || '',
+                        nama_barang_3: item.nama_barang_3 || '',
+                        nama_barang_4: item.nama_barang_4 || '',
+                        packaging:     item.packaging     || '',
+                        masterbatch:   item.masterbatch   || '',
+                        colorant:      item.colorant      || '',
+                        regrin:        item.regrin        || '',
+                    });
 
                     // Update modal title
                     document.getElementById('modalProduksiTitle').textContent = 'Edit Barang Masuk Produksi';
@@ -2762,7 +3170,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         document.getElementById('produksiEditId').value = '';
 
         // Reset modal title
-        document.getElementById('modalProduksiTitle').textContent = 'Tambah Barang Masuk Produksi';
+        document.getElementById('modalProduksiTitle').textContent = 'Tambah Barang Keluar Ke Produksi';
 
         // Show modal
         const modalElement = document.getElementById('modalProduksi');
@@ -2874,7 +3282,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             tanggal: document.getElementById('tanggalMasukProduksi').value,
             no_spk: document.getElementById('noSpkMasukProduksi').value,
             nama_produksi: document.getElementById('namaProduksiMasuk').value,
-            kode_barang: document.getElementById('kodeBarangMasukProduksi').value,
+            // kode_barang: document.getElementById('kodeBarangMasukProduksi').value,
             nama_barang: document.getElementById('namaBarangMasukProduksi').value,
             satuan: document.getElementById('satuanMasukProduksi').value,
             jumlah_produksi: document.getElementById('jumlahProduksiMasuk').value,
@@ -2937,7 +3345,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             document.getElementById('noDokumenPembeli').value = item.nomor_lot || '';
             document.getElementById('tanggalPembeli').value = item.tanggal ? item.tanggal.split(' ')[0] : '';
             document.getElementById('namaPembeli').value = item.nama_pembeli || '';
-            document.getElementById('kodeBarangPembeli').value = item.nomor_po || '';
+            // document.getElementById('kodeBarangPembeli').value = item.nomor_po || '';
             document.getElementById('namaBarangPembeli').value = item.nama_barang || '';
             document.getElementById('satuanPembeli').value = item.satuan || '';
             document.getElementById('jumlahPembeli').value = parseInt(item.jumlah) || '';
@@ -4157,7 +4565,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     modalTitle.textContent = 'Edit Barang Masuk Produksi';
                 } else {
                     // Mode Tambah
-                    modalTitle.textContent = 'Tambah Barang Masuk Produksi';
+                    modalTitle.textContent = 'Tambah Barang Keluar ke Produksi';
                 }
             });
         }
@@ -4229,7 +4637,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             <td data-label="Tanggal">${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
             <td data-label="Nomor Lot"><strong>${item.nomor_lot || '-'}</strong></td>
             <td data-label="Pemasok">${item.nama_pemasok}</td>
-            <td data-label="Kode Barang">${item.kode_barang || '-'}</td>
+            
             <td data-label="Nama Barang">${item.nama_barang}</td>
             <td data-label="Satuan">${item.satuan || '-'}</td>
             <td data-label="Jumlah">${parseInt(item.jumlah || 0).toLocaleString('id-ID')}</td>
@@ -4367,6 +4775,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
     // ============ PRODUKSI TAB FUNCTIONS ============
 
     let currentProduksiPage = 1;
+    let currentProduksiMesin = ''; // Variabel untuk filter mesin
 
     function initProduksiTab() {
         loadProduksiData(1);
@@ -4383,6 +4792,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             tanggal_sampai: document.getElementById('produksiFilterTanggalSampai').value || '',
             status: document.getElementById('produksiFilterStatus').value || '',
             no_spk: document.getElementById('produksiFilterNoSpk').value || '',
+            nama_mesin: currentProduksiMesin,
             search: document.getElementById('produksiSearchQuery').value || ''
         };
 
@@ -4411,7 +4821,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         const tbody = document.getElementById('tbodyProduksi');
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="12" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data</p></td></tr>`;
             return;
         }
 
@@ -4419,25 +4829,19 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         data.forEach(item => {
             const statusColor = item.status === 'terima' ? 'success' : (item.status === 'pending' ? 'warning' : 'danger');
             const statusLabel = item.status === 'terima' ? 'Terima' : (item.status === 'pending' ? 'Pending' : (item.status === 'ditolak' ? 'Ditolak' : item.status));
-            const actionButtons = canEdit ?
-                `<button class="btn btn-outline-primary btn-sm me-1" onclick="editProduksi(${item.id})" title="Edit"><i class="fas fa-edit"></i></button>
-             <button class="btn btn-outline-danger btn-sm" onclick="deleteProduksiRecord(${item.id})" title="Hapus"><i class="fas fa-trash"></i></button>` :
-                '';
+            const editDeleteBtns = canEdit ?
+                `<button class="btn btn-outline-primary btn-sm" onclick="editProduksi(${item.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                 <button class="btn btn-outline-danger btn-sm" onclick="deleteProduksiRecord(${item.id})" title="Hapus"><i class="fas fa-trash"></i></button>` : '';
             html += `<tr>
             <td data-label="Tanggal">${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
             <td data-label="Nomor SPK"><strong>${item.nomor_spk || '-'}</strong></td>
+            <td data-label="Mesin"><span class="badge bg-info text-dark">${item.nama_mesin || '-'}</span></td>
             <td data-label="Nomor Lot">${item.nomor_lot || '-'}</td>
-            <td data-label="Kode Barang">${item.kode_barang || '-'}</td>
-            <td data-label="Nama Barang">${item.nama_barang}</td>
-            <td data-label="Satuan">${item.satuan || '-'}</td>
-            <td data-label="Keluar">${parseInt(item.jumlah_keluar || 0).toLocaleString('id-ID')}</td>
-            <td data-label="Terima">${item.jumlah_terima ? parseInt(item.jumlah_terima).toLocaleString('id-ID') : '-'}</td>
-            <td data-label="Nama Penerima">${item.nama_penerima || '-'}</td>
-            <td data-label="Catatan">${item.catatan || '-'}</td>
             <td data-label="Status"><span class="badge bg-${statusColor}">${statusLabel}</span></td>
             <td data-label="Aksi">
                 <div class="btn-group btn-group-sm">
-                    ${actionButtons}
+                    <button class="btn btn-outline-secondary btn-sm" onclick="showProduksiDetail(${item.id})" title="Detail"><i class="fas fa-eye"></i></button>
+                    ${editDeleteBtns}
                 </div>
             </td>
         </tr>`;
@@ -4473,6 +4877,23 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         }
     }
 
+    /**
+     * Produksi Mesin Filter Handler
+     */
+    function setProduksiMesin(mesin, el) {
+        currentProduksiMesin = mesin;
+        
+        // Update active pill styling
+        document.querySelectorAll('.mesin-pill-compact').forEach(pill => {
+            pill.classList.remove('active');
+        });
+        
+        el.classList.add('active');
+        
+        // Reload data
+        loadProduksiData(1);
+    }
+
     function applyProduksiCustomFilter() {
         loadProduksiData(1);
         updateProduksiFilterCount();
@@ -4505,6 +4926,207 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
         } else {
             badge.style.display = 'none';
         }
+    }
+
+    // Cache for detail view (avoids re-fetching when edit button clicked from detail modal)
+    let produksiDetailCache = {};
+
+    function showProduksiDetail(id) {
+        fetch(`<?= base_url('warehouse2/api/barang-masuk-produksi') ?>?search=${id}`)
+            .then(r => r.json())
+            .then(result => {
+                if (!(result.success || result.status === 'success') || !result.data) return;
+                const item = result.data.find(x => x.id == id);
+                if (!item) return;
+
+                produksiDetailCache[id] = item;
+
+                const statusColor = item.status === 'terima' ? 'success' : (item.status === 'pending' ? 'warning' : 'danger');
+                const statusLabel = item.status === 'terima' ? 'Terima' : (item.status === 'pending' ? 'Pending' : (item.status === 'ditolak' ? 'Ditolak' : item.status));
+                const statusIcon = item.status === 'terima' ? '✓' : (item.status === 'pending' ? '⏳' : '✕');
+
+                document.getElementById('produksiDetailBody').innerHTML = `
+                    <style>
+                        .detail-section { margin-bottom: 2rem; }
+                        .detail-section-title { 
+                            font-size: 0.85rem;
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                            color: #6c757d;
+                            font-weight: 700;
+                            margin-bottom: 1rem;
+                            padding-bottom: 0.5rem;
+                            border-bottom: 2px solid #e9ecef;
+                        }
+                        .detail-table { 
+                            width: 100%;
+                            border-collapse: collapse;
+                            background: #fff;
+                        }
+                        .detail-table tr { border-bottom: 1px solid #e9ecef; }
+                        .detail-table tr:last-child { border-bottom: none; }
+                        .detail-table td { padding: 0.75rem 0.5rem; }
+                        .detail-table td:first-child { 
+                            width: 40%;
+                            color: #6c757d;
+                            font-size: 0.85rem;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.02em;
+                        }
+                        .detail-table td:last-child { 
+                            width: 60%;
+                            color: #212529;
+                            font-weight: 500;
+                        }
+                        .detail-table .value-badge { 
+                            display: inline-block;
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 0.25rem;
+                            font-size: 0.8rem;
+                            font-weight: 600;
+                        }
+                        .value-header { 
+                            font-weight: 700;
+                            font-size: 1.1rem;
+                            color: #0c5ff4;
+                        }
+                        .value-muted { color: #6c757d; }
+                    </style>
+
+                    <!-- Header -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e9ecef;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: #6c757d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Nomor SPK</div>
+                            <div class="value-header">${item.nomor_spk || '-'}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="detail-table value-badge bg-${statusColor}" style="color: white; font-size: 0.9rem;">
+                                ${statusIcon} ${statusLabel}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Informasi Dasar -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">📋 Informasi Dasar</div>
+                        <table class="detail-table">
+                            <tr>
+                                <td>Tanggal</td>
+                                <td>${new Date(item.tanggal).toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'})}</td>
+                            </tr>
+                            <tr>
+                                <td>Mesin</td>
+                                <td><span class="detail-table value-badge" style="background-color: #e7f1ff; color: #0c5ff4;">${item.nama_mesin || '-'}</span></td>
+                            </tr>
+                            <tr>
+                                <td>Nomor Lot</td>
+                                <td>${item.nomor_lot || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Nama Barang -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">📦 Nama Barang</div>
+                        <table class="detail-table">
+                            <tr>
+                                <td>Barang 1</td>
+                                <td>${item.nama_barang_1 || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td>Barang 2</td>
+                                <td>${item.nama_barang_2 || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td>Barang 3</td>
+                                <td>${item.nama_barang_3 || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td>Barang 4</td>
+                                <td>${item.nama_barang_4 || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Kuantitas & Satuan -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">📊 Kuantitas & Satuan</div>
+                        <table class="detail-table">
+                            <tr>
+                                <td>Satuan</td>
+                                <td>${item.satuan || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td>Jumlah Keluar</td>
+                                <td><strong>${parseInt(item.jumlah_keluar || 0).toLocaleString('id-ID')}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Jumlah Terima</td>
+                                <td>${item.jumlah_terima ? '<strong>' + parseInt(item.jumlah_terima).toLocaleString('id-ID') + '</strong>' : '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td>Regrin</td>
+                                <td>${item.regrin ? '<strong>' + parseInt(item.regrin).toLocaleString('id-ID') + '</strong>' : '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Penerima & Packaging -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">👤 Penerima & Packaging</div>
+                        <table class="detail-table">
+                            <tr>
+                                <td>Nama Penerima</td>
+                                <td>${item.nama_penerima || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td>Packaging</td>
+                                <td>${item.packaging || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Materials -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">🧪 Materials</div>
+                        <table class="detail-table">
+                            <tr>
+                                <td>Masterbatch</td>
+                                <td>${item.masterbatch || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td>Colorant</td>
+                                <td>${item.colorant || '<span class="value-muted">-</span>'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Catatan -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">📝 Catatan</div>
+                        <div style="background-color: #f8f9fa; padding: 0.75rem; border-radius: 0.25rem; border-left: 3px solid #0c5ff4; font-size: 0.95rem;">
+                            ${item.catatan || '<span class="value-muted">Tidak ada catatan</span>'}
+                        </div>
+                    </div>
+                `;
+
+                // Wire up Edit button
+                const editBtn = document.getElementById('produksiDetailEditBtn');
+                if (canEdit) {
+                    editBtn.style.display = '';
+                    editBtn.onclick = () => {
+                        bootstrap.Modal.getInstance(document.getElementById('modalProduksiDetail'))?.hide();
+                        setTimeout(() => editProduksi(id), 300);
+                    };
+                } else {
+                    editBtn.style.display = 'none';
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('modalProduksiDetail'));
+                modal.show();
+            })
+            .catch(err => console.error('showProduksiDetail error:', err));
     }
 
     function deleteProduksiRecord(id) {
@@ -4601,7 +5223,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             nomor_spk: document.getElementById('noDokumenPemasok').value,
             tanggal: document.getElementById('tanggalPemasok').value,
             nama_pemasok: document.getElementById('namaPemasok').value,
-            kode_barang: document.getElementById('kodeBarangPemasok').value,
+            
             nama_barang: document.getElementById('namaBarangPemasok').value,
             satuan: document.getElementById('satuanPemasok').value,
             jumlah: document.getElementById('jumlahPemasok').value,
@@ -4775,7 +5397,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     document.getElementById('noDokumenPemasok').value = item.nomor_lot || '';
                     document.getElementById('namaPemasok').value = item.nama_pemasok || '';
                     document.getElementById('noPoPemasok').value = item.no_po || '';
-                    document.getElementById('kodeBarangPemasok').value = item.kode_barang || '';
+                    
                     document.getElementById('namaBarangPemasok').value = item.nama_barang || '';
                     document.getElementById('satuanPemasok').value = item.satuan || '';
                     document.getElementById('jumlahPemasok').value = item.jumlah || '';

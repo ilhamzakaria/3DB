@@ -99,8 +99,8 @@ class Warehouse2 extends BaseController
             if (empty($data['kode_barang'])) {
                 $errors['kode_barang'] = 'Kode barang is required';
             }
-            if (empty($data['nama_barang'])) {
-                $errors['nama_barang'] = 'Nama barang is required';
+            if (empty($data['nama_barang_1'])) {
+                $errors['nama_barang_1'] = 'Nama barang is required';
             }
             if (empty($data['satuan'])) {
                 $errors['satuan'] = 'Satuan is required';
@@ -179,8 +179,8 @@ class Warehouse2 extends BaseController
             if (empty($data['kode_barang'])) {
                 $errors['kode_barang'] = 'Kode barang is required';
             }
-            if (empty($data['nama_barang'])) {
-                $errors['nama_barang'] = 'Nama barang is required';
+            if (empty($data['nama_barang_1'])) {
+                $errors['nama_barang_1'] = 'Nama barang is required';
             }
             if (empty($data['satuan'])) {
                 $errors['satuan'] = 'Satuan is required';
@@ -359,7 +359,7 @@ class Warehouse2 extends BaseController
                 $search = $this->request->getGet('search');
                 $query->groupStart()
                     ->like('no_dokumen', $search)
-                    ->orLike('nama_barang', $search)
+                    ->orLike('nama_barang_1', $search)
                     ->orLike('nama_pemasok', $search)
                     ->groupEnd();
             }
@@ -388,7 +388,7 @@ class Warehouse2 extends BaseController
                         $row['nomor_spk'] ?? '',
                         $row['tanggal'] ?? '',
                         $row['nama_pemasok'] ?? '',
-                        $row['nama_barang'] ?? '',
+                        $row['nama_barang_1'] ?? '',
                         $row['satuan'] ?? '',
                         $row['jumlah'] ?? 0,
                         $row['harga_satuan'] ?? 0,
@@ -432,13 +432,18 @@ class Warehouse2 extends BaseController
                     ->where('DATE(tanggal) <=', $filters['tanggal_sampai']);
             }
 
+            // Mesin filter
+            if (!empty($filters['nama_mesin'])) {
+                $query->where('nama_mesin', $filters['nama_mesin']);
+            }
+
             // Search filter (including by ID for edit)
             if (!empty($filters['search'])) {
                 $search = $filters['search'];
                 $query->groupStart()
                     ->where('id', $search)
                     ->orLike('nomor_spk', $search)
-                    ->orLike('nama_barang', $search)
+                    ->orLike('nama_barang_1', $search)
                     ->groupEnd();
             }
 
@@ -472,44 +477,6 @@ class Warehouse2 extends BaseController
             }
 
             $data = $this->request->getJSON(true);
-
-            // Manual validation
-            $errors = [];
-
-            if (empty($data['nomor_spk'])) {
-                $errors['nomor_spk'] = 'Nomor SPK is required';
-            }
-            if (empty($data['tanggal'])) {
-                $errors['tanggal'] = 'Tanggal is required';
-            }
-            if (empty($data['kode_barang'])) {
-                $errors['kode_barang'] = 'Kode barang is required';
-            }
-            if (empty($data['nama_barang'])) {
-                $errors['nama_barang'] = 'Nama barang is required';
-            }
-            if (empty($data['satuan'])) {
-                $errors['satuan'] = 'Satuan is required';
-            }
-            if (empty($data['jumlah_keluar'])) {
-                $errors['jumlah_keluar'] = 'Jumlah keluar is required';
-            }
-
-            // Check for duplicate nomor_spk
-            if (!empty($data['nomor_spk'])) {
-                $existing = $this->modelProduksi->where('nomor_spk', $data['nomor_spk'])->first();
-                if ($existing) {
-                    $errors['nomor_spk'] = 'Nomor SPK sudah terdaftar';
-                }
-            }
-
-            if (!empty($errors)) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Validation failed',
-                    'errors' => $errors
-                ])->setStatusCode(422);
-            }
 
             $data['status'] = $data['status'] ?? 'diterima';
 
@@ -545,36 +512,6 @@ class Warehouse2 extends BaseController
             }
 
             $data = $this->request->getJSON(true);
-
-            // Manual validation
-            $errors = [];
-
-            if (empty($data['nomor_spk'])) {
-                $errors['nomor_spk'] = 'Nomor SPK is required';
-            }
-            if (empty($data['tanggal'])) {
-                $errors['tanggal'] = 'Tanggal is required';
-            }
-            if (empty($data['kode_barang'])) {
-                $errors['kode_barang'] = 'Kode barang is required';
-            }
-            if (empty($data['nama_barang'])) {
-                $errors['nama_barang'] = 'Nama barang is required';
-            }
-            if (empty($data['satuan'])) {
-                $errors['satuan'] = 'Satuan is required';
-            }
-            if (empty($data['jumlah_keluar'])) {
-                $errors['jumlah_keluar'] = 'Jumlah keluar is required';
-            }
-
-            if (!empty($errors)) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Validation failed',
-                    'errors' => $errors
-                ])->setStatusCode(422);
-            }
 
             // Get existing record
             $existing = $this->modelProduksi->find($id);
@@ -742,7 +679,7 @@ class Warehouse2 extends BaseController
                 $search = $this->request->getGet('search');
                 $query->groupStart()
                     ->like('no_dokumen', $search)
-                    ->orLike('nama_barang', $search)
+                    ->orLike('nama_barang_1', $search)
                     ->orLike('no_spk', $search)
                     ->groupEnd();
             }
@@ -752,9 +689,10 @@ class Warehouse2 extends BaseController
             $headers = [
                 'Nomor SPK',
                 'Tanggal',
+                'Mesin',
                 'No SPK',
                 'Produksi',
-                'Barang',
+                'Barang 1',
                 'Satuan',
                 'Keluar',
                 'Terima',
@@ -768,9 +706,10 @@ class Warehouse2 extends BaseController
                     $exportData[] = [
                         $row['nomor_spk'] ?? '',
                         $row['tanggal'] ?? '',
+                        $row['nama_mesin'] ?? '',
                         $row['no_spk'] ?? '',
                         $row['nama_produksi'] ?? '',
-                        $row['nama_barang'] ?? '',
+                        $row['nama_barang_1'] ?? '',
                         $row['satuan'] ?? '',
                         $row['jumlah_keluar'] ?? 0,
                         $row['jumlah_terima'] ?? 0,
@@ -820,7 +759,7 @@ class Warehouse2 extends BaseController
                 $query->groupStart()
                     ->like('nomor_spk', $search)
                     ->orLike('nama_pembeli', $search)
-                    ->orLike('nama_barang', $search)
+                    ->orLike('nama_barang_1', $search)
                     ->groupEnd();
             }
 
@@ -880,8 +819,8 @@ class Warehouse2 extends BaseController
             if (empty($data['nomor_po'])) {
                 $errors['nomor_po'] = 'Nomor PO is required';
             }
-            if (empty($data['nama_barang'])) {
-                $errors['nama_barang'] = 'Nama barang is required';
+            if (empty($data['nama_barang_1'])) {
+                $errors['nama_barang_1'] = 'Nama barang is required';
             }
             if (empty($data['satuan'])) {
                 $errors['satuan'] = 'Satuan is required';
@@ -1003,8 +942,8 @@ class Warehouse2 extends BaseController
             if (empty($data['nomor_po'])) {
                 $errors['nomor_po'] = 'Nomor PO is required';
             }
-            if (empty($data['nama_barang'])) {
-                $errors['nama_barang'] = 'Nama barang is required';
+            if (empty($data['nama_barang_1'])) {
+                $errors['nama_barang_1'] = 'Nama barang is required';
             }
             if (empty($data['satuan'])) {
                 $errors['satuan'] = 'Satuan is required';
@@ -1166,7 +1105,7 @@ class Warehouse2 extends BaseController
                 $search = $this->request->getGet('search');
                 $query->groupStart()
                     ->like('no_dokumen', $search)
-                    ->orLike('nama_barang', $search)
+                    ->orLike('nama_barang_1', $search)
                     ->orLike('nama_pembeli', $search)
                     ->groupEnd();
             }
@@ -1196,7 +1135,7 @@ class Warehouse2 extends BaseController
                         $row['nomor_lot'] ?? '',
                         $row['tanggal'] ?? '',
                         $row['nama_pembeli'] ?? '',
-                        $row['nama_barang'] ?? '',
+                        $row['nama_barang_1'] ?? '',
                         $row['satuan'] ?? '',
                         $row['jumlah'] ?? 0,
                         $row['harga_satuan'] ?? 0,
@@ -1274,8 +1213,8 @@ class Warehouse2 extends BaseController
             if (empty($data['kode_barang'])) {
                 $errors['kode_barang'] = 'Kode barang is required';
             }
-            if (empty($data['nama_barang'])) {
-                $errors['nama_barang'] = 'Nama barang is required';
+            if (empty($data['nama_barang_1'])) {
+                $errors['nama_barang_1'] = 'Nama barang is required';
             }
             if (empty($data['satuan'])) {
                 $errors['satuan'] = 'Satuan is required';
@@ -1474,7 +1413,7 @@ class Warehouse2 extends BaseController
             $db = \Config\Database::connect('produksi');
 
             $spks = $db->table('produksi_headers')
-                ->select('nomor_spk as spk, nama_produk as produk, tanggal')
+                ->select('no_spk as spk, nama_produk as produk, tanggal')
                 ->where('deleted_at', null)
                 ->orderBy('tanggal', 'DESC')
                 ->orderBy('id', 'DESC')
@@ -1522,8 +1461,8 @@ class Warehouse2 extends BaseController
 
             // Get header data
             $header = $db->table('produksi_headers')
-                ->select('id, nomor_spk, nama_produk, shift, grup, operator, packing, tanggal, grand_total_bagus, grand_total_reject')
-                ->where('nomor_spk', $spk)
+                ->select('id, no_spk, nama_produk, shift, grup, operator, packing, tanggal, grand_total_bagus, grand_total_reject')
+                ->where('no_spk', $spk)
                 ->where('deleted_at', null)
                 ->orderBy('tanggal', 'DESC')
                 ->orderBy('id', 'DESC')
@@ -1588,7 +1527,7 @@ class Warehouse2 extends BaseController
             }
 
             $data = [
-                'spk'           => $header['nomor_spk'],
+                'spk'           => $header['no_spk'],
                 'produk'        => $header['nama_produk'],
                 'shift'         => (string) $header['shift'],
                 'grup'          => $header['grup'],
@@ -1709,7 +1648,6 @@ class Warehouse2 extends BaseController
                 'model_errors' => $errors,
                 'test_data' => $testData
             ])->setStatusCode(500);
-
         } catch (\CodeIgniter\Database\Exceptions\DatabaseException $dbEx) {
             return $this->response->setJSON([
                 'success' => false,
@@ -1779,10 +1717,10 @@ class Warehouse2 extends BaseController
 
             // Enhanced error logging untuk debug hosting
             log_message('debug', '[storeOrowarehouse] Attempting insert with data: ' . json_encode($data));
-            
+
             try {
                 $insertResult = $this->modelOrowarehouse->insert($data);
-                
+
                 if ($insertResult) {
                     log_message('info', '[storeOrowarehouse] Insert successful, ID: ' . $this->modelOrowarehouse->insertID());
                     return $this->response->setJSON([
@@ -1791,23 +1729,22 @@ class Warehouse2 extends BaseController
                         'id' => $this->modelOrowarehouse->insertID()
                     ])->setStatusCode(201);
                 }
-                
+
                 // If insert returned false, get validation errors from model
                 $modelErrors = $this->modelOrowarehouse->errors();
                 log_message('error', '[storeOrowarehouse] Model validation errors: ' . json_encode($modelErrors));
-                
+
                 throw new \Exception('Insert failed. Model errors: ' . json_encode($modelErrors));
-                
             } catch (\CodeIgniter\Database\Exceptions\DatabaseException $dbEx) {
                 // Database specific exception
                 log_message('error', '[storeOrowarehouse] Database Exception: ' . $dbEx->getMessage());
                 log_message('error', '[storeOrowarehouse] Database Error Code: ' . $dbEx->getCode());
-                
+
                 // Return detailed error in development, generic in production
-                $errorMsg = (ENVIRONMENT === 'development') 
-                    ? 'Database Error: ' . $dbEx->getMessage() 
+                $errorMsg = (ENVIRONMENT === 'development')
+                    ? 'Database Error: ' . $dbEx->getMessage()
                     : 'Terjadi kesalahan database. Silakan hubungi administrator.';
-                
+
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => $errorMsg,
@@ -1818,16 +1755,15 @@ class Warehouse2 extends BaseController
                     ] : null
                 ])->setStatusCode(500);
             }
-            
         } catch (\Exception $e) {
             log_message('error', '[storeOrowarehouse] Exception: ' . $e->getMessage());
             log_message('error', '[storeOrowarehouse] Stack trace: ' . $e->getTraceAsString());
-            
+
             // Return detailed error in development, generic in production
-            $errorMsg = (ENVIRONMENT === 'development') 
-                ? $e->getMessage() 
+            $errorMsg = (ENVIRONMENT === 'development')
+                ? $e->getMessage()
                 : 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.';
-            
+
             return $this->response->setJSON([
                 'success' => false,
                 'message' => $errorMsg,
@@ -2137,7 +2073,7 @@ class Warehouse2 extends BaseController
             // Find the produksi_headers record
             $header = $db->table('produksi_headers')
                 ->select('id, grand_total_bagus')
-                ->where('nomor_spk', $noSpk)
+                ->where('no_spk', $noSpk)
                 ->where('deleted_at', null)
                 ->orderBy('tanggal', 'DESC')
                 ->orderBy('id', 'DESC')
@@ -2200,8 +2136,8 @@ class Warehouse2 extends BaseController
 
             // Try exact match first, then with TRIM
             $header = $db->table('produksi_headers')
-                ->select('id, nomor_spk, grand_total_bagus')
-                ->where('TRIM(nomor_spk)', $noSpk)
+                ->select('id, no_spk, grand_total_bagus')
+                ->where('TRIM(no_spk)', $noSpk)
                 ->where('deleted_at', null)
                 ->orderBy('tanggal', 'DESC')
                 ->orderBy('id', 'DESC')
@@ -2211,14 +2147,14 @@ class Warehouse2 extends BaseController
 
             error_log("DEBUG: Query result - " . ($header ? "FOUND" : "NOT FOUND"));
             if ($header) {
-                error_log("DEBUG: Found record with nomor_spk='" . $header['nomor_spk'] . "', id=" . $header['id']);
+                error_log("DEBUG: Found record with no_spk='" . $header['no_spk'] . "', id=" . $header['id']);
             }
 
             if (!$header) {
                 // Try without TRIM for debugging
                 $allRecords = $db->table('produksi_headers')
-                    ->select('id, nomor_spk, grand_total_bagus')
-                    ->like('nomor_spk', $noSpk)
+                    ->select('id, no_spk, grand_total_bagus')
+                    ->like('no_spk', $noSpk)
                     ->where('deleted_at', null)
                     ->limit(5)
                     ->get()
@@ -2226,7 +2162,7 @@ class Warehouse2 extends BaseController
 
                 error_log("DEBUG: Similar records found: " . count($allRecords));
                 foreach ($allRecords as $rec) {
-                    error_log("DEBUG: Record: nomor_spk='" . $rec['nomor_spk'] . "'");
+                    error_log("DEBUG: Record: no_spk='" . $rec['no_spk'] . "'");
                 }
 
                 error_log("WARNING: SPK '{$noSpk}' not found in produksi database");

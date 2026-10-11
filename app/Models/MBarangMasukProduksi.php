@@ -18,10 +18,14 @@ class MBarangMasukProduksi extends Model
         'nomor_spk',
         'nomor_lot',
         'tanggal',
+        'nama_mesin',
         'no_spk',
         'nama_produksi',
-        'kode_barang',
-        'nama_barang',
+        // 'kode_barang',
+        'nama_barang_1',
+        'nama_barang_2',
+        'nama_barang_3',
+        'nama_barang_4',
         'satuan',
         'jumlah_keluar',
         'jumlah_terima',
@@ -38,6 +42,8 @@ class MBarangMasukProduksi extends Model
         'material',
         'colorant',
         'packaging',
+        'masterbatch',
+        'regrin',
         'operator',
     ];
 
@@ -190,10 +196,14 @@ class MBarangMasukProduksi extends Model
             $query = $query->where('no_spk', $filters['no_spk']);
         }
 
+        if (!empty($filters['nama_mesin'])) {
+            $query = $query->where('nama_mesin', $filters['nama_mesin']);
+        }
+
         if (!empty($filters['search'])) {
             $query = $query->groupStart()
                 ->like('nomor_spk', $filters['search'])
-                ->orLike('nama_barang', $filters['search'])
+                ->orLike('nama_barang_1', $filters['search'])
                 ->orLike('no_spk', $filters['search'])
                 ->groupEnd();
         }
