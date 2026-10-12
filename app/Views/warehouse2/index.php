@@ -2033,8 +2033,8 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <input type="number" class="form-control" id="jumlahKeluarProduksi" step="1">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Jumlah Terima</label>
-                            <input type="number" class="form-control" id="jumlahTerimaProduksi" step="1">
+                            <label class="form-label">Retur</label>
+                            <input type="text" class="form-control" id="returProduksi" placeholder="Retur...">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nama Penerima</label>
@@ -3005,7 +3005,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             nama_barang_4: getNamaBarangValue('namaBarang4Produksi', 'namaBarang4ProduksiText'),
             satuan: document.getElementById('satuanProduksi').value,
             jumlah_keluar: document.getElementById('jumlahKeluarProduksi').value,
-            jumlah_terima: document.getElementById('jumlahTerimaProduksi').value || 0,
+            retur: document.getElementById('returProduksi').value || null,
             nama_penerima: document.getElementById('namaPenerimaProduksi').value,
             catatan: document.getElementById('catatanProduksi').value,
             masterbatch: document.getElementById('masterbatchProduksi').value || null,
@@ -3108,7 +3108,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     document.getElementById('namaMesinProduksi').value = item.nama_mesin || '';
                     document.getElementById('satuanProduksi').value = item.satuan || '';
                     document.getElementById('jumlahKeluarProduksi').value = parseInt(item.jumlah_keluar) || '';
-                    document.getElementById('jumlahTerimaProduksi').value = parseInt(item.jumlah_terima) || '';
+                    document.getElementById('returProduksi').value = item.retur || '';
                     document.getElementById('namaPenerimaProduksi').value = item.nama_penerima || '';
                     document.getElementById('catatanProduksi').value = item.catatan || '';
                     document.getElementById('masterbatchProduksi').value = item.masterbatch || '';
@@ -3125,6 +3125,7 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                         masterbatch:   item.masterbatch   || '',
                         colorant:      item.colorant      || '',
                         regrin:        item.regrin        || '',
+                        retur:         item.retur         || '',
                     });
 
                     // Update modal title
@@ -5062,8 +5063,8 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                                 <td><strong>${parseInt(item.jumlah_keluar || 0).toLocaleString('id-ID')}</strong></td>
                             </tr>
                             <tr>
-                                <td>Jumlah Terima</td>
-                                <td>${item.jumlah_terima ? '<strong>' + parseInt(item.jumlah_terima).toLocaleString('id-ID') + '</strong>' : '<span class="value-muted">-</span>'}</td>
+                                <td>Retur</td>
+                                <td>${item.retur || '<span class="value-muted">-</span>'}</td>
                             </tr>
                             <tr>
                                 <td>Regrin</td>

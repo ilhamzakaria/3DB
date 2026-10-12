@@ -28,7 +28,7 @@ class MBarangMasukProduksi extends Model
         'nama_barang_4',
         'satuan',
         'jumlah_keluar',
-        'jumlah_terima',
+        'retur',
         'nama_penerima',
         'catatan',
         'status',
