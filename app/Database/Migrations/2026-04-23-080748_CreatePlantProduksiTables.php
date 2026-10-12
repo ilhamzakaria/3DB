@@ -13,7 +13,7 @@ class CreatePlantProduksiTables extends Migration
         // 1. produksi_headers
         $this->forge->addField([
             'id' => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true],
-            'nomor_spk' => ['type' => 'VARCHAR', 'constraint' => 50],
+            'no_spk' => ['type' => 'VARCHAR', 'constraint' => 50],
             'nama_mesin' => ['type' => 'VARCHAR', 'constraint' => 100, 'null' => true],
             'nama_produksi' => ['type' => 'VARCHAR', 'constraint' => 100, 'null' => true],
             'batch_number' => ['type' => 'VARCHAR', 'constraint' => 50, 'null' => true],
@@ -39,7 +39,7 @@ class CreatePlantProduksiTables extends Migration
             'deleted_at' => ['type' => 'DATETIME', 'null' => true],
         ]);
         $this->forge->addKey('id', true);
-        $this->forge->addKey('nomor_spk');
+        $this->forge->addKey('no_spk');
         $this->forge->createTable('produksi_headers');
 
         // 2. produksi_jam

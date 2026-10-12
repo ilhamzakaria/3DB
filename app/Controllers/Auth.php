@@ -77,6 +77,8 @@ class Auth extends BaseController
                     return redirect()->to('/warehouse2');
                 case 'manager_warehouse2':
                     return redirect()->to('/warehouse2');
+                case 'realtime':
+                    return redirect()->to('/realtime');
             }
 
             return redirect()->back()->with('error', 'Login gagal');

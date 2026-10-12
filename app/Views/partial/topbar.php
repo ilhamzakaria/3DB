@@ -226,6 +226,7 @@
 
                 <!-- LEFT SIDE: menu horizontal (hidden di mobile via CSS) -->
                 <ul class="navbar-nav">
+                    <?php if (session('role') !== 'realtime'): ?>
                     <li class="nav-item">
                         <a class="nav-link topbar-menu-link <?= uri_string() == 'home' ? 'active' : '' ?>" href="<?= base_url('home') ?>">
                             Home
@@ -252,6 +253,7 @@
                             <span id="chatBadge" class="badge badge-danger badge-pill position-absolute" style="display:none; font-size:10px; top: 0; right: 0;">0</span>
                         </a>
                     </li>
+                    <?php endif; ?>
                     <?php if (session('role') == 'produksi' || session('role') == 'gudang'): ?>
                         <li class="nav-item">
                             <a class="nav-link topbar-menu-link position-relative <?= uri_string() == 'notifikasi' ? 'active' : '' ?>" href="<?= base_url('notifikasi') ?>">
@@ -259,6 +261,20 @@
                                 <span id="notifBadge" class="badge badge-danger badge-pill position-absolute" style="display:none; font-size:10px; top: 0; right: 0;">0</span>
                             </a>
                         </li>
+                    <?php endif; ?>
+                    <?php if (in_array(session('role'), ['produksi', 'realtime'])): ?>
+                        <li class="nav-item">
+                            <a class="nav-link topbar-menu-link <?= (uri_string() == 'realtime' || str_starts_with(uri_string(), 'realtime/')) ? 'active' : '' ?>" href="<?= base_url('realtime') ?>">
+                                <i class="fas fa-bolt me-1 text-warning"></i> Realtime
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                    <?php if (session('role') !== 'realtime'): ?>
+                    <li class="nav-item">
+                        <a class="nav-link topbar-menu-link <?= (uri_string() == 'settings-mesin' || str_starts_with(uri_string(), 'settings-mesin/')) ? 'active' : '' ?>" href="<?= base_url('settings-mesin') ?>">
+                            <i class="fas fa-cogs me-1"></i> Setting Mesin
+                        </a>
+                    </li>
                     <?php endif; ?>
                 </ul>
 
@@ -305,6 +321,7 @@
             </div>
 
             <nav class="mobile-sidebar-nav">
+                <?php if (session('role') !== 'realtime'): ?>
                 <a href="<?= base_url('home') ?>"
                    class="mobile-nav-link <?= uri_string() == 'home' ? 'active' : '' ?>">
                     <i class="fas fa-home"></i> Home
@@ -336,6 +353,22 @@
                    class="mobile-nav-link <?= uri_string() == 'notifikasi' ? 'active' : '' ?>">
                     <i class="fas fa-bell"></i> Notifikasi
                     <span id="mobileNotifBadge" class="mobile-badge" style="display:none;"></span>
+                </a>
+                <?php endif; ?>
+
+                <?php endif; // end role !== realtime ?>
+
+                <?php if (in_array(session('role'), ['produksi', 'realtime'])): ?>
+                <a href="<?= base_url('realtime') ?>"
+                   class="mobile-nav-link <?= (uri_string() == 'realtime' || str_starts_with(uri_string(), 'realtime/')) ? 'active' : '' ?>">
+                    <i class="fas fa-bolt"></i> Realtime
+                </a>
+                <?php endif; ?>
+
+                <?php if (session('role') !== 'realtime'): ?>
+                <a href="<?= base_url('settings-mesin') ?>"
+                   class="mobile-nav-link <?= (uri_string() == 'settings-mesin' || str_starts_with(uri_string(), 'settings-mesin/')) ? 'active' : '' ?>">
+                    <i class="fas fa-cogs"></i> Setting Mesin
                 </a>
                 <?php endif; ?>
 

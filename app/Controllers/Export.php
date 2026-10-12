@@ -118,11 +118,11 @@ class Export extends BaseController
 
         if ($q) {
             $query = $query->groupStart()
-                           ->like('nomor_spk', $q)
-                           ->orLike('nama_mesin', $q)
-                           ->orLike('nama_produk', $q)
-                           ->orLike('operator', $q)
-                           ->groupEnd();
+                ->like('no_spk', $q)
+                ->orLike('nama_mesin', $q)
+                ->orLike('nama_produk', $q)
+                ->orLike('operator', $q)
+                ->groupEnd();
         }
 
         if ($shift) {
@@ -134,22 +134,53 @@ class Export extends BaseController
         }
 
         $headersData = $query->orderBy('tanggal', 'DESC')
-                             ->orderBy('id', 'DESC')
-                             ->findAll();
+            ->orderBy('id', 'DESC')
+            ->findAll();
 
         $headers = [
-            'Tanggal', 'Shift', 'Grup', 'No. SPK', 'Nama Mesin', 'No Mesin', 'Nama Produk', 
-            'Batch Number', 'Packing', 'Cycle Time', 'Target/shift', 'isi', 'Operator', 
+            'Tanggal',
+            'Shift',
+            'Grup',
+            'No. SPK',
+            'Nama Mesin',
+            'No Mesin',
+            'Nama Produk',
+            'Batch Number',
+            'Packing',
+            'Cycle Time',
+            'Target/shift',
+            'isi',
+            'Operator',
             // tabel jam produksi
-            'Rentang Jam', 'Hasil Produksi', 'Total Bagus', 'Sisa PO', 'Hold', 'Gumpalan', 'Total Reject',
+            'Rentang Jam',
+            'Hasil Produksi',
+            'Total Bagus',
+            'Sisa PO',
+            'Hold',
+            'Gumpalan',
+            'Total Reject',
             // produksi downtime
-            'Alasan Downtime', 'Durasi (Menit)', 'Total Downtime',
+            'Alasan Downtime',
+            'Durasi (Menit)',
+            'Total Downtime',
             // produksi material
-            'Merek/Kode Material', 'Pemakaian Material', 'Lot A', 'Lot B', 'Lot C', 'Lot D',
+            'Merek/Kode Material',
+            'Pemakaian Material',
+            'Lot A',
+            'Lot B',
+            'Lot C',
+            'Lot D',
             // produksi colorant
-            'Kode Colorant', 'Nomor Lot Colorant', 'Pemakaian Colorant',
+            'Kode Colorant',
+            'Nomor Lot Colorant',
+            'Pemakaian Colorant',
             // produksi packaging
-            'Box', 'Ukuran Box', 'Plastik', 'Ukuran Plastik', 'Karung', 'Ukuran Karung',
+            'Box',
+            'Ukuran Box',
+            'Plastik',
+            'Ukuran Plastik',
+            'Karung',
+            'Ukuran Karung',
             'Catatan'
         ];
 
@@ -222,7 +253,7 @@ class Export extends BaseController
                     $h['tanggal'] ?? '',
                     $h['shift'] ?? '',
                     $h['grup'] ?? '',
-                    $h['nomor_spk'] ?? '',
+                    $h['no_spk'] ?? '',
                     $h['nama_mesin'] ?? '',
                     $h['nomor_mesin'] ?? '',
                     $h['nama_produk'] ?? '',
@@ -280,7 +311,7 @@ class Export extends BaseController
         header('Content-Type: application/vnd.ms-excel');
         header('Content-Disposition: attachment; filename="' . $filename . '.xls"');
         header('Cache-Control: max-age=0');
-        
+
         // Start HTML table
         echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
         echo '<head>';
@@ -292,14 +323,14 @@ class Export extends BaseController
         echo '</head>';
         echo '<body>';
         echo '<table border="1">';
-        
+
         // Header row
         echo '<thead><tr style="background-color: #4361EE; color: #FFFFFF; font-weight: bold;">';
         foreach ($headers as $header) {
             echo '<th>' . htmlspecialchars($header, ENT_QUOTES, 'UTF-8') . '</th>';
         }
         echo '</tr></thead>';
-        
+
         // Data rows
         echo '<tbody>';
         foreach ($data as $row) {
@@ -310,7 +341,7 @@ class Export extends BaseController
             echo '</tr>';
         }
         echo '</tbody>';
-        
+
         echo '</table>';
         echo '</body>';
         echo '</html>';

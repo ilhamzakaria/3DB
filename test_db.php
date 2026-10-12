@@ -1,61 +1,42 @@
 <?php
-require 'vendor/autoload.php';
+// Database connection test
+$db = new mysqli('localhost', 'root', 'root', 'oromaster');
 
-// Load CodeIgniter environment
-$_ENV['CI_ENVIRONMENT'] = 'development';
-
-\Config\Services::autoloader()->addNamespace('Config', APPPATH . 'Config');
-\Config\Services::autoloader()->addNamespace('App', APPPATH);
-
-// Get the database instance
-$db = \Config\Database::connect('warehouse');
-echo 'Connected to: ' . $db->getDatabase() . PHP_EOL;
-
-// Show table columns
-echo "Checking if table exists..." . PHP_EOL;
-$result = $db->query('SHOW TABLES LIKE "barang_masuk_dari_produksi"')->getResultArray();
-if (count($result) == 0) {
-    echo "ERROR: Table barang_masuk_dari_produksi does not exist!" . PHP_EOL;
-    echo "Available tables:" . PHP_EOL;
-    $tables = $db->query('SHOW TABLES')->getResultArray();
-    foreach ($tables as $t) {
-        echo '  - ' . array_values($t)[0] . PHP_EOL;
-    }
-    exit(1);
+if ($db->connect_error) {
+    echo 'Database Error: ' . $db->connect_error;
+    die();
 }
 
-echo "Table exists! Columns:" . PHP_EOL;
-$result = $db->query('DESCRIBE barang_masuk_dari_produksi')->getResultArray();
-foreach ($result as $col) {
-    echo '  - ' . $col['Field'] . ' (' . $col['Type'] . ')' . PHP_EOL;
+echo "Database connected successfully.\n\n";
+
+// Check table exists
+$result = $db->query('SHOW TABLES LIKE "setting_mesin"');
+if ($result->num_rows == 0) {
+    echo "Table 'setting_mesin' does not exist!\n";
+} else {
+    echo "Table 'setting_mesin' exists.\n\n";
 }
 
-// Test insert
-echo "\nTesting insert..." . PHP_EOL;
-$testData = [
-    'no_dokumen' => 'TEST-' . date('YmdHis'),
-    'tanggal' => date('Y-m-d'),
-    'no_spk' => 'SPK-001',
-    'nama_produksi' => 'Test Produksi',
-    'kode_barang' => 'KB-001',
-    'nama_barang' => 'Test Barang',
-    'satuan' => 'pcs',
-    'jumlah_produksi' => 100,
-    'jumlah_reject' => 0,
-    'jumlah_diterima' => 100,
-    'nama_penerima' => 'Admin',
-    'catatan' => 'Test',
-    'status' => 'diterima'
-];
-
-try {
-    $model = new \App\Models\MBarangMasukDariProduksi();
-    $id = $model->insert($testData);
-    echo "SUCCESS! Inserted ID: " . $id . PHP_EOL;
-
-    // Cleanup
-    $model->delete($id);
-    echo "Test data cleaned up." . PHP_EOL;
-} catch (Exception $e) {
-    echo "ERROR: " . $e->getMessage() . PHP_EOL;
+// Check table structure
+echo "Table structure:\n";
+$result = $db->query('DESCRIBE setting_mesin');
+while ($field = $result->fetch_assoc()) {
+    echo $field['Field'] . ' (' . $field['Type'] . ')' . "\n";
 }
+
+echo "\n";
+
+// Count records
+$result = $db->query('SELECT COUNT(*) as count FROM setting_mesin');
+$row = $result->fetch_assoc();
+echo "Total records: " . $row['count'] . "\n";
+
+// Show last 5 records
+echo "\nLast 5 records:\n";
+$result = $db->query('SELECT * FROM setting_mesin ORDER BY id DESC LIMIT 5');
+while ($record = $result->fetch_assoc()) {
+    echo "ID: " . $record['id'] . " | User: " . $record['id_user'] . " | Product: " . $record['product'] . "\n";
+}
+
+$db->close();
+?>

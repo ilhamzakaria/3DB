@@ -35,7 +35,7 @@ trait Warehouse2SyncTrait
             // Find matching produksi_headers rows by nomor_spk
             // and update them with warehouse2 data if needed
             $headers = $produksiDb->table('produksi_headers')
-                ->where('TRIM(nomor_spk)', $nomor_spk_trimmed)
+                ->where('TRIM(no_spk)', $nomor_spk_trimmed)
                 ->where('deleted_at', null)
                 ->get()
                 ->getResultArray();
@@ -99,7 +99,7 @@ trait Warehouse2SyncTrait
 
             $produksiDb = \Config\Database::connect('produksi');
             $header = $produksiDb->table('produksi_headers')
-                ->where('TRIM(nomor_spk)', trim($nomor_spk))
+                ->where('TRIM(no_spk)', trim($nomor_spk))
                 ->where('deleted_at', null)
                 ->orderBy('tanggal', 'DESC')
                 ->orderBy('id', 'DESC')
@@ -114,4 +114,3 @@ trait Warehouse2SyncTrait
         }
     }
 }
-

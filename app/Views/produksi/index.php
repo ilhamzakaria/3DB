@@ -166,7 +166,7 @@
 
 <!-- Trash Modal -->
 <div class="modal fade" id="trashModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header">
                 <h5 class="modal-title font-weight-bold text-muted">
@@ -175,10 +175,26 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0">
+                <!-- Bulk action bar — muncul saat ada yang dicentang -->
+                <div id="trash_bulk_bar" class="d-none px-3 py-2 border-bottom d-flex align-items-center gap-2"
+                     style="background:#fff8f0;">
+                    <span class="text-muted small fw-bold">
+                        <span id="trash_checked_count">0</span> dipilih
+                    </span>
+                    <button type="button" id="btn_bulk_delete_permanent"
+                            class="btn btn-danger btn-sm ms-auto"
+                            style="font-size:.8rem;">
+                        <i class="fas fa-trash me-1"></i> Hapus Permanen yang Dipilih
+                    </button>
+                </div>
                 <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-hover mb-0" id="table_trash">
                         <thead class="bg-light sticky-top">
                             <tr>
+                                <th class="px-3 py-2" style="width:36px;">
+                                    <input type="checkbox" id="trash_check_all" title="Pilih semua"
+                                           style="cursor:pointer; width:16px; height:16px;">
+                                </th>
                                 <th class="px-3 py-2">Laporan</th>
                                 <th class="py-2">Dihapus</th>
                                 <th class="text-center py-2">Aksi</th>
@@ -187,6 +203,9 @@
                         <tbody><!-- Loaded via JS --></tbody>
                     </table>
                 </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>

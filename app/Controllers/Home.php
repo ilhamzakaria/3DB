@@ -44,7 +44,7 @@ class Home extends BaseController
 
         // ── LOG MESIN (dari oroppic) ──────────────────────────────────
         $mesinRows = $this->fetchLogMesin($q, $startDate, $endDate);
-        
+
         // ── ATTACH PRODUKSI REALISASI to mesin rows ──────────────────
         $mesinRows = $this->attachProduksiRealisasiToMesin($mesinRows);
 
@@ -53,7 +53,7 @@ class Home extends BaseController
         $prodQ = $prodModel;
         if ($q !== '') {
             $prodQ = $prodQ->groupStart()
-                ->like('nomor_spk', $q)
+                ->like('no_spk', $q)
                 ->orLike('nama_mesin', $q)
                 ->orLike('nama_produk', $q)
                 ->orLike('operator', $q)
@@ -91,7 +91,7 @@ class Home extends BaseController
             'total_rows'   => $total,
             'current_page' => $page,
             'per_page'     => $perPage,
-            'modern_layout'=> true,
+            'modern_layout' => true,
         ]);
     }
 
@@ -182,7 +182,7 @@ class Home extends BaseController
 
         // Produksi — cari match berdasarkan SPK + tanggal + shift
         foreach ($prod as $pr) {
-            $spk  = trim((string) ($pr['nomor_spk'] ?? ''));
+            $spk  = trim((string) ($pr['no_spk'] ?? ''));
             $tgl  = trim((string) ($pr['tanggal']   ?? ''));
             $shif = trim((string) ($pr['shift']     ?? ''));
 
@@ -217,7 +217,7 @@ class Home extends BaseController
 
             $matched = false;
             foreach ($map as $k => &$row) {
-                $mSpk = $row['mesin']['no_spk']      ?? $row['produksi']['nomor_spk'] ?? '';
+                $mSpk = $row['mesin']['no_spk']      ?? $row['produksi']['no_spk'] ?? '';
                 $mTgl = $row['mesin']['tanggal']      ?? $row['produksi']['tanggal']   ?? '';
                 if ($mSpk === $spk && $mTgl === $tgl && $row['warehouse2'] === null) {
                     $row['warehouse2'] = $w;
@@ -334,7 +334,7 @@ class Home extends BaseController
             $tPH = implode(',', array_fill(0, count($tanggals), '?'));
             $sql = "
                 SELECT
-                    nomor_spk,
+                    no_spk,
                     tanggal,
                     shift,
                     SUM(grand_total_bagus)  AS total_bagus,
@@ -342,7 +342,7 @@ class Home extends BaseController
                 FROM produksi_headers
                 WHERE deleted_at IS NULL
                   AND tanggal IN ($tPH)
-                GROUP BY nomor_spk, tanggal, shift
+                GROUP BY no_spk, tanggal, shift
             ";
 
             $prodRows = $db->query($sql, $tanggals)->getResultArray();
@@ -350,7 +350,7 @@ class Home extends BaseController
             // Build lookup: normSpk|tanggal|shift => [bagus, reject]
             $bySpk = [];
             foreach ($prodRows as $r) {
-                $normSpk = (string)(int)trim((string) $r['nomor_spk']);
+                $normSpk = (string)(int)trim((string) $r['no_spk']);
                 $key     = $normSpk . '|' . $r['tanggal'] . '|' . $r['shift'];
                 if (!isset($bySpk[$key])) {
                     $bySpk[$key] = ['bagus' => 0, 'reject' => 0];
@@ -374,7 +374,6 @@ class Home extends BaseController
                 }
             }
             unset($row);
-
         } catch (\Throwable $e) {
             log_message('error', 'attachProduksiRealisasiToMesin failed: ' . $e->getMessage());
         }
@@ -382,4 +381,3 @@ class Home extends BaseController
         return $rows;
     }
 }
-

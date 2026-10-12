@@ -18,7 +18,7 @@ class TestDb extends BaseController
         }
 
         $results = [];
-        
+
         // Test Produksi DB
         try {
             $db = \Config\Database::connect('produksi');
@@ -32,7 +32,7 @@ class TestDb extends BaseController
 
             // Test insert ke produksi_headers
             $testData = [
-                'nomor_spk'  => 'TEST-' . time(),
+                'no_spk'     => 'TEST-' . time(),
                 'nama_mesin' => 'TEST',
                 'tanggal'    => date('Y-m-d'),
                 'created_at' => date('Y-m-d H:i:s'),

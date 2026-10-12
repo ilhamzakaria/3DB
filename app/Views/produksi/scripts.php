@@ -146,7 +146,7 @@
         const rejectMap = {}; // { 'START UP': 10, 'CAMERA': 8 }
         container.querySelectorAll('.jam-reject-cell').forEach(cell => {
             cell.querySelectorAll('.jam-reject-row').forEach(row => {
-                const jenis  = row.querySelector('.jam-reject-type')?.value  || '';
+                const jenis = row.querySelector('.jam-reject-type')?.value || '';
                 const jumlah = parseInt(row.querySelector('.jam-reject-jumlah')?.value) || 0;
                 if (jenis && jumlah > 0) {
                     rejectMap[jenis] = (rejectMap[jenis] || 0) + jumlah;
@@ -159,9 +159,9 @@
 
         // Update display Total Reject
         const rejectDisplay = container.querySelector('.grand_total_reject');
-        const rejectHidden  = container.querySelector('.grand_total_reject_hidden');
+        const rejectHidden = container.querySelector('.grand_total_reject_hidden');
         if (rejectDisplay) rejectDisplay.value = totalReject;
-        if (rejectHidden)  rejectHidden.value  = totalReject;
+        if (rejectHidden) rejectHidden.value = totalReject;
 
         // Update badge di card Detail Jenis Reject
         const rejectTotalBadge = container.querySelector('#reject_total');
@@ -306,26 +306,26 @@
             const totalDisplay = container.querySelector('.komposisi-total-persen');
             const warningContainer = container.querySelector('.komposisi-warning');
             const warningText = container.querySelector('.komposisi-warning-text');
-            
+
             console.log('[updateKomposisiTotal] Persen inputs found:', persenInputs.length, 'Total display:', totalDisplay);
-            
+
             if (!totalDisplay) {
                 console.warn('[updateKomposisiTotal] No totalDisplay element found!');
                 return;
             }
-            
+
             let total = 0;
             persenInputs.forEach((input, idx) => {
                 const value = parseFloat(input.value) || 0;
                 console.log(`[updateKomposisiTotal] Input ${idx}:`, value);
                 total += value;
             });
-            
+
             console.log('[updateKomposisiTotal] Total calculated:', total.toFixed(2));
-            
+
             // Update display
             totalDisplay.textContent = total.toFixed(2) + ' %';
-            
+
             // Change color berdasarkan total
             if (total === 100) {
                 totalDisplay.className = 'komposisi-total-persen badge bg-success';
@@ -353,7 +353,7 @@
             console.log('[initKomposisiListeners] Starting with container:', container);
             const persenInputs = container.querySelectorAll('.komposisi-persen-input');
             console.log('[initKomposisiListeners] Found persen inputs:', persenInputs.length);
-            
+
             persenInputs.forEach(input => {
                 if (!input.dataset.komposisiBound) {
                     input.dataset.komposisiBound = '1';
@@ -367,6 +367,112 @@
             // Initial calculation
             console.log('[initKomposisiListeners] Calling updateKomposisiTotal');
             window.updateKomposisiTotal(container);
+        }
+
+        /**
+         * Hitung Total Material untuk CCM & IPS
+         * Rumus: (Bagus + Reject + Hold) × Berat ÷ 1000 + Gumpalan
+         * 
+         * hold dan gumpalan adalah sum dari semua jam
+         */
+        window.updateTotalMaterial = function(container = document) {
+            const isCcmIps = container.querySelector('.isCcmIps');
+            if (!isCcmIps) return;
+
+            const display = container.querySelector('.total-material-display');
+            const hidden = container.querySelector('.total_material_hidden');
+            if (!display || !hidden) return;
+
+            // Berat fixed per mesin (gram)
+            const beratPerMesin = {
+                'ccm 1': 1.29,
+                'ccm 2': 1.29,
+                'ips 1': 12.5,
+                'ips 2': 12.5,
+                'ips 3': 11.05,
+                'ips 4': 11.05,
+            };
+
+            // Ambil nama mesin dari hidden input
+            const namaMesin = (container.querySelector('input[name="nama_mesin"]')?.value || '').toLowerCase().trim();
+            const berat = beratPerMesin[namaMesin] || 0;
+
+            // Ambil nilai bagus dan reject — pakai hidden input karena displayed input is disabled
+            const bagus  = parseFloat(container.querySelector('.grand_total_bagus_hidden')?.value
+                        ?? container.querySelector('.grand_total_bagus')?.value  ?? '0') || 0;
+            const reject = parseFloat(container.querySelector('.grand_total_reject_hidden')?.value
+                        ?? container.querySelector('.grand_total_reject')?.value ?? '0') || 0;
+
+            // Hitung sum hold dari tabel jam
+            let totalHold = 0;
+            const jamRows = container.querySelectorAll('tr[data-jam]');
+            jamRows.forEach(row => {
+                const holdInput = row.querySelector('input[name*="[hold]"]');
+                if (holdInput) totalHold += parseFloat(holdInput.value) || 0;
+            });
+
+            // Gumpalan dari header (satuan kg, bukan dari jam rows)
+            const gumpalan = parseFloat(container.querySelector('input[name="gumpalan"]')?.value || '0') || 0;
+
+            // Rumus: (Bagus + Reject + Hold) × Berat ÷ 1000 + Gumpalan(kg)
+            const totalMaterial = ((bagus + reject + totalHold) * berat / 1000) + gumpalan;
+
+            // Update display
+            display.textContent = totalMaterial.toFixed(3) + ' kg';
+            hidden.value = totalMaterial.toFixed(3);
+
+            // Update hint berat di subtitle rumus (hanya angka, "gr" sudah ada di template)
+            const beratHint = container.querySelector('.total-material-berat-hint');
+            if (beratHint) {
+                beratHint.textContent = berat > 0 ? berat : '?';
+                beratHint.style.fontWeight = '700';
+                beratHint.style.color = berat > 0 ? '#198754' : '#dc3545';
+            }
+
+            console.log(`[updateTotalMaterial] Mesin=${namaMesin}, Bagus=${bagus}, Reject=${reject}, Hold=${totalHold}, Berat=${berat}gr, Gumpalan=${gumpalan}kg → Total=${totalMaterial.toFixed(3)}kg`);
+        };
+
+        /**
+         * Init total material listeners
+         */
+        function initTotalMaterialListeners(container = document) {
+            const isCcmIps = container.querySelector('.isCcmIps');
+            if (!isCcmIps) return;
+
+            // Listen to perubahan di field yang mempengaruhi perhitungan
+            // Pakai hidden inputs untuk bagus/reject karena displayed inputs adalah disabled
+            const fields = [
+                '.grand_total_bagus_hidden',
+                '.grand_total_reject_hidden',
+                '.grand_total_bagus',
+                '.grand_total_reject',
+                '.gumpalan',
+            ];
+
+            fields.forEach(selector => {
+                const el = container.querySelector(selector);
+                if (el && !el.dataset.totalMaterialBound) {
+                    el.dataset.totalMaterialBound = '1';
+                    el.addEventListener('input', function() {
+                        window.updateTotalMaterial(container);
+                    });
+                }
+            });
+
+            // Listen ke jam rows untuk hold saja
+            const jamRows = container.querySelectorAll('tr[data-jam]');
+            jamRows.forEach(row => {
+                const holdInput = row.querySelector('input[name*="[hold]"]');
+                if (holdInput && !holdInput.dataset.totalMaterialBound) {
+                    holdInput.dataset.totalMaterialBound = '1';
+                    holdInput.addEventListener('input', function() {
+                        window.updateTotalMaterial(container);
+                    });
+                }
+            });
+
+            // Initial calculation
+            window.updateTotalMaterial(container);
         }
 
         // Expose for modal initialization
@@ -447,14 +553,14 @@
         window.addDtRow = function(container, data = {}) {
             const rowId = dtRowCount++;
             const reasons = {
-                'DT1':  'Improvement',
-                'DT2':  'PLN Off',
-                'DT3':  'Change Product',
-                'DT4':  'Planned Maintenance',
-                'DT5':  'Trial Produk',
-                'DT6':  'Trial mould dan emboss',
-                'DT7':  'Bencana Alam',
-                'DT8':  'Hari libur dan istirahat',
+                'DT1': 'Improvement',
+                'DT2': 'PLN Off',
+                'DT3': 'Change Product',
+                'DT4': 'Planned Maintenance',
+                'DT5': 'Trial Produk',
+                'DT6': 'Trial mould dan emboss',
+                'DT7': 'Bencana Alam',
+                'DT8': 'Hari libur dan istirahat',
                 'DT10': 'Sanitasi',
                 'DT11': 'Warm up',
                 'DT12': 'Stop msn atas permint khusus',
@@ -499,6 +605,7 @@
                     </button>
                 </div>
                 <div class="dt-card-body">
+                    <input type="hidden" name="downtimes[${rowId}][id]" value="${data.id || ''}">
                     <div class="dt-field-row">
                         <div class="dt-field">
                             <label class="dt-label">Mulai</label>
@@ -587,7 +694,7 @@
         window.autofillBatchNumber = function(container) {
             if (!container) return;
             const nomorMesin = (container.querySelector('.nomor_mesin_hidden')?.value || '').replace(/\./g, '');
-            const tanggal    = container.querySelector('.tanggal_hidden')?.value || '';   // format YYYY-MM-DD
+            const tanggal = container.querySelector('.tanggal_hidden')?.value || ''; // format YYYY-MM-DD
             if (!nomorMesin || !tanggal) return;
 
             // Baca shift (prefix) — strip "extra_" jika ada, ambil nomor belakangnya saja
@@ -598,9 +705,9 @@
             const parts = tanggal.split('-');
             if (parts.length !== 3) return;
             const [y, m, d] = parts;
-            const yy        = y.slice(-2);          // 2026 → 26
-            const formatted = `${d}${m}${yy}`;      // 180926
-            const prefix    = shiftVal ? `${shiftVal}.` : '';
+            const yy = y.slice(-2); // 2026 → 26
+            const formatted = `${d}${m}${yy}`; // 180926
+            const prefix = shiftVal ? `${shiftVal}.` : '';
             const batchValue = `${prefix}${nomorMesin}.${formatted}`;
 
             const batchInput = container.querySelector('.batch_number');
@@ -623,7 +730,9 @@
 
             // 1. Hitung total kg
             let totalKg = 0;
-            kgInputs.forEach(inp => { totalKg += parseFloat(inp.value) || 0; });
+            kgInputs.forEach(inp => {
+                totalKg += parseFloat(inp.value) || 0;
+            });
 
             // 2. Update display total kg
             const totalKgDisplay = container.querySelector('.komposisi-total-kg');
@@ -659,7 +768,7 @@
             if (!container) return;
             for (let i = 1; i <= 4; i++) {
                 const namaInput = container.querySelector(`.komposisi_nama_${i}`);
-                const kgLabel   = container.querySelector(`.komposisi-kg-label-${i}`);
+                const kgLabel = container.querySelector(`.komposisi-kg-label-${i}`);
                 if (namaInput && kgLabel) {
                     const val = namaInput.value.trim();
                     kgLabel.textContent = val || `Nama ${i}`;
@@ -688,7 +797,8 @@
             const gBagusHidden = container.querySelector('.grand_total_bagus_hidden');
             if (gBagusHidden) gBagusHidden.value = totalBagus;
 
-            // Calculate Sisa PO: total_spk - (kumulatif DB + total bagus form aktif ini) = sisa_po
+            // Calculate Sisa PO: total_spk - kumulatif DB - total bagus form aktif ini
+            // Jika belum ada jam diisi (totalBagus = 0), sisa_po = total_spk - kumulatif
             const totalSpkInput = container.querySelector('.total_spk');
             const sisaPoInput = container.querySelector('.sisa_po');
             const sisaPoHidden = container.querySelector('.sisa_po_hidden');
@@ -696,19 +806,27 @@
                 const totalSpk = parseInt(totalSpkInput.value) || 0;
                 const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
                 const kumulatif = parseInt(kumulatifEl?.value) || 0;
-                const sisaPo = Math.max(0, totalSpk - kumulatif - totalBagus);
+                // Hanya kurangi totalBagus jika isi sudah diisi (isi > 0)
+                // Kalau isi belum diisi, anggap sisa_po = total_spk - kumulatif
+                const bagusUntukHitung = (isi > 0) ? totalBagus : 0;
+                const sisaPo = Math.max(0, totalSpk - kumulatif - bagusUntukHitung);
                 sisaPoInput.value = sisaPo;
                 if (sisaPoHidden) sisaPoHidden.value = sisaPo;
                 console.log('Auto-calculated Sisa PO:', sisaPo,
                     '(Total SPK:', totalSpk,
                     '- Kumulatif DB:', kumulatif,
-                    '- Bagus form aktif:', totalBagus, ')');
+                    '- Bagus form aktif:', bagusUntukHitung, ')');
             }
 
             // Update Total Bagus + Reject
             const totalReject = parseInt(container.querySelector('.grand_total_reject')?.value) || 0;
             const gBrDisplay = container.querySelector('.grand_total_br');
             if (gBrDisplay) gBrDisplay.value = totalBagus + totalReject;
+
+            // Re-hitung total material setelah bagus/reject diupdate (CCM/IPS)
+            if (typeof window.updateTotalMaterial === 'function') {
+                window.updateTotalMaterial(container);
+            }
         };
 
         function normalizeMachineName(machineName) {
@@ -906,13 +1024,22 @@
             const totalSpkEl = container.querySelector('.total_spk');
             const totalSpkHidden = container.querySelector('.total_spk_hidden');
             if (totalSpkEl && totalSpkHidden) {
+                // Di edit mode, jangan override total_spk jika sudah ada nilai dari DB
+                // kecuali jika source memberikan nilai yang valid
+                const isEditMode2 = container.querySelector('.shift-selector')?.dataset?.isEdit === '1';
+                const sourceHasTotalSpk = source.total_spk && String(source.total_spk).replace(/[^0-9]/g, '') !== '' && String(source.total_spk).replace(/[^0-9]/g, '') !== '0';
+                const currentHasValue = totalSpkEl.value && totalSpkEl.value !== '0';
+
+                if (isEditMode2 && currentHasValue && !sourceHasTotalSpk) {
+                    // Edit mode + sudah ada nilai + source tidak punya nilai valid → skip
+                    console.log('[EDIT] Skipping total_spk override, keeping DB value:', totalSpkEl.value);
+                } else {
                 console.log('Setting total_spk to:', source.total_spk);
                 const rawTotalSpk = String(source.total_spk || '');
-                // Strip non-numeric characters: hapus titik ribuan, koma, spasi, huruf (mis: "5.000 pcs" → "5000")
                 const cleanTotalSpk = rawTotalSpk
-                    .replace(/\./g, '') // hapus titik ribuan
-                    .replace(/,/g, '') // hapus koma
-                    .replace(/[^0-9]/g, ''); // hapus semua non-angka (termasuk "pcs", spasi, dll)
+                    .replace(/\./g, '')
+                    .replace(/,/g, '')
+                    .replace(/[^0-9]/g, '');
                 const totalSpkValue = cleanTotalSpk !== '' ? cleanTotalSpk : '';
                 totalSpkEl.value = totalSpkValue;
                 totalSpkHidden.value = totalSpkValue;
@@ -922,6 +1049,20 @@
                     visible: totalSpkEl.value,
                     hidden: totalSpkHidden.value
                 });
+
+                // Set sisa_po = total_spk - kumulatif langsung
+                const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                if (kumulatifEl && (kumulatifEl.value === '' || kumulatifEl.value === '0')) {
+                    kumulatifEl.value = '0';
+                }
+                const sisaPoEl2 = container.querySelector('.sisa_po');
+                const sisaPoHidden2 = container.querySelector('.sisa_po_hidden');
+                const kumulatif2 = parseInt(kumulatifEl?.value) || 0;
+                const sisaPoVal = Math.max(0, parseInt(totalSpkValue || '0') - kumulatif2);
+                if (sisaPoEl2) sisaPoEl2.value = sisaPoVal;
+                if (sisaPoHidden2) sisaPoHidden2.value = sisaPoVal;
+                console.log('✓ sisa_po pre-set to:', sisaPoVal, '(total_spk:', totalSpkValue, '- kumulatif:', kumulatif2, ')');
+                } // end guard
             } else {
                 console.warn('⚠ total_spk elements not found - visible:', !!totalSpkEl, 'hidden:', !!totalSpkHidden);
             }
@@ -1040,33 +1181,31 @@
                 totalSpk
             });
 
-            // FALLBACK: If total_spk is empty from dropdown, fetch from PPIC via AJAX
-            if (!totalSpk || totalSpk === '') {
-                console.log('total_spk empty from dropdown, fetching from PPIC...');
-                showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
+            // ALWAYS fetch from PPIC API to get latest total_spk (never use stale dropdown value)
+            showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
 
-                fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(opt.value))
-                    .then(r => r.json())
-                    .then(data => {
-                        console.log('PPIC SPK Detail response:', data);
-                        hideProduksiLoading(container);
+            fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(opt.value))
+                .then(r => r.json())
+                .then(data => {
+                    console.log('PPIC SPK Detail response:', data);
+                    hideProduksiLoading(container);
 
-                        if (data.ppic && data.ppic.total_spk) {
-                            totalSpk = data.ppic.total_spk;
-                            console.log('Got total_spk from PPIC API:', totalSpk);
-                        }
+                    if (data.ppic && data.ppic.total_spk) {
+                        totalSpk = data.ppic.total_spk;
+                        console.log('Got total_spk from PPIC API:', totalSpk);
+                    }
 
-                        // Set total_bagus_kumulatif_hidden SEBELUM fillProduksiFromPpic
-                        // agar updateTotals() langsung bisa hitung sisa_po dengan benar
-                        const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
-                        if (kumulatifEl) {
-                            kumulatifEl.value = data.total_bagus_kumulatif ?? 0;
-                            console.log('Set total_bagus_kumulatif_hidden:', kumulatifEl.value);
-                        }
+                    // Set total_bagus_kumulatif_hidden SEBELUM fillProduksiFromPpic
+                    // agar updateTotals() langsung bisa hitung sisa_po dengan benar
+                    const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                    if (kumulatifEl) {
+                        kumulatifEl.value = data.total_bagus_kumulatif ?? 0;
+                        console.log('Set total_bagus_kumulatif_hidden:', kumulatifEl.value);
+                    }
 
-                        // Display komposisi dari PPIC
-                        console.log('Komposisi data received:', data.komposisi);
-                        displayKomposisi(container, data.komposisi || []);
+                    // Display komposisi dari PPIC
+                    console.log('Komposisi data received:', data.komposisi);
+                    displayKomposisi(container, data.komposisi || []);
 
                         // Now fill the form with all data including total_spk from API
                         fillProduksiFromPpic(container, {
@@ -1105,24 +1244,6 @@
                         }, opt.value);
                     });
 
-                return; // Exit early, will continue in async callback
-            }
-
-            // If total_spk is available from dropdown, fill immediately
-            fillProduksiFromPpic(container, {
-                nama_mesin: mesin,
-                nama_produk: produk,
-                brand: brand,
-                grade: grade,
-                warna: warna,
-                nomor_mesin: nomorMesin,
-                operator: operator,
-                targett: targett,
-                shif: shif,
-                packing: packing,
-                total_spk: totalSpk,
-                revisi: revisi
-            }, opt.value);
         }
 
         /**
@@ -1163,89 +1284,68 @@
                         totalSpk
                     });
 
-                    // FALLBACK: If total_spk is empty from dropdown, fetch from PPIC via AJAX
-                    if (!totalSpk || totalSpk === '') {
-                        console.log('Alt method: total_spk empty, fetching from PPIC...');
-                        showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
+                    // ALWAYS fetch from PPIC API to get latest total_spk (never use stale dropdown value)
+                    showProduksiLoading(container, 'Memuat Total SPK dari PPIC...');
 
-                        fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(value))
-                            .then(r => r.json())
-                            .then(data => {
-                                console.log('PPIC SPK Detail response (alt):', data);
-                                hideProduksiLoading(container);
+                    fetch('<?= base_url('produksi/getPpicSpkDetail') ?>?spk=' + encodeURIComponent(value))
+                        .then(r => r.json())
+                        .then(data => {
+                            console.log('PPIC SPK Detail response (alt):', data);
+                            hideProduksiLoading(container);
 
-                                if (data.ppic && data.ppic.total_spk) {
-                                    totalSpk = data.ppic.total_spk;
-                                    console.log('Got total_spk from PPIC API (alt):', totalSpk);
-                                }
+                            if (data.ppic && data.ppic.total_spk) {
+                                totalSpk = data.ppic.total_spk;
+                                console.log('Got total_spk from PPIC API (alt):', totalSpk);
+                            }
 
-                                // Set total_bagus_kumulatif_hidden SEBELUM fillProduksiFromPpic
-                                // agar updateTotals() langsung bisa hitung sisa_po dengan benar
-                                const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
-                                if (kumulatifEl) {
-                                    kumulatifEl.value = data.total_bagus_kumulatif ?? 0;
-                                    console.log('Set total_bagus_kumulatif_hidden (alt):', kumulatifEl.value);
-                                }
+                            // Set total_bagus_kumulatif_hidden SEBELUM fillProduksiFromPpic
+                            // agar updateTotals() langsung bisa hitung sisa_po dengan benar
+                            const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                            if (kumulatifEl) {
+                                kumulatifEl.value = data.total_bagus_kumulatif ?? 0;
+                                console.log('Set total_bagus_kumulatif_hidden (alt):', kumulatifEl.value);
+                            }
 
-                                // Display komposisi dari PPIC (alt method)
-                                console.log('Komposisi data received (alt):', data.komposisi);
-                                displayKomposisi(container, data.komposisi || []);
+                            // Display komposisi dari PPIC (alt method)
+                            console.log('Komposisi data received (alt):', data.komposisi);
+                            displayKomposisi(container, data.komposisi || []);
 
-                                // Now fill the form with all data including total_spk from API
-                                fillProduksiFromPpic(container, {
-                                    nama_mesin: mesin || data.ppic?.nama_mesin,
-                                    nama_produk: produk || data.ppic?.nama_produk,
-                                    brand: brand || data.ppic?.brand,
-                                    grade: grade || data.ppic?.grade,
-                                    warna: warna || data.ppic?.warna,
-                                    nomor_mesin: nomorMesin || data.ppic?.nomor_mesin,
-                                    operator: operator || data.ppic?.operator,
-                                    targett: targett || data.ppic?.targett,
-                                    shif: shif || data.ppic?.shif,
-                                    packing: packing || data.ppic?.packing,
-                                    total_spk: totalSpk,
-                                    revisi: data.ppic?.revisi || data.revisi || revisi
-                                }, value);
-                            })
-                            .catch(err => {
-                                console.error('Error fetching PPIC SPK detail (alt):', err);
-                                hideProduksiLoading(container);
+                            // Now fill the form with all data including total_spk from API
+                            fillProduksiFromPpic(container, {
+                                nama_mesin: mesin || data.ppic?.nama_mesin,
+                                nama_produk: produk || data.ppic?.nama_produk,
+                                brand: brand || data.ppic?.brand,
+                                grade: grade || data.ppic?.grade,
+                                warna: warna || data.ppic?.warna,
+                                nomor_mesin: nomorMesin || data.ppic?.nomor_mesin,
+                                operator: operator || data.ppic?.operator,
+                                targett: targett || data.ppic?.targett,
+                                shif: shif || data.ppic?.shif,
+                                packing: packing || data.ppic?.packing,
+                                total_spk: totalSpk,
+                                revisi: data.ppic?.revisi || data.revisi || revisi
+                            }, value);
+                        })
+                        .catch(err => {
+                            console.error('Error fetching PPIC SPK detail (alt):', err);
+                            hideProduksiLoading(container);
 
-                                // Still fill with available data even if API fails
-                                fillProduksiFromPpic(container, {
-                                    nama_mesin: mesin,
-                                    nama_produk: produk,
-                                    brand: brand,
-                                    grade: grade,
-                                    warna: warna,
-                                    nomor_mesin: nomorMesin,
-                                    operator: operator,
-                                    targett: targett,
-                                    shif: shif,
-                                    packing: packing,
-                                    total_spk: totalSpk,
-                                    revisi: revisi
-                                }, value);
-                            });
-
-                        return; // Exit early, will continue in async callback
-                    }
-
-                    // If total_spk is available from dropdown, fill immediately
-                    fillProduksiFromPpic(container, {
-                        nama_mesin: mesin,
-                        nama_produk: produk,
-                        brand: brand,
-                        grade: grade,
-                        warna: warna,
-                        nomor_mesin: nomorMesin,
-                        operator: operator,
-                        targett: targett,
-                        shif: shif,
-                        packing: packing,
-                        total_spk: totalSpk,
-                        revisi: revisi
-                    }, value);
+                            // Still fill with available data even if API fails
+                            fillProduksiFromPpic(container, {
+                                nama_mesin: mesin,
+                                nama_produk: produk,
+                                brand: brand,
+                                grade: grade,
+                                warna: warna,
+                                nomor_mesin: nomorMesin,
+                                operator: operator,
+                                targett: targett,
+                                shif: shif,
+                                packing: packing,
+                                total_spk: totalSpk,
+                                revisi: revisi
+                            }, value);
+                        });
                     break;
                 }
             }
@@ -1679,12 +1779,12 @@
                         // Re-run calcCounter agar total_counter Powerjet (×12) tampil benar
                         setTimeout(() => {
                             const totalEl = container.querySelector('input[name="total_counter"]');
-                            const awalEl  = container.querySelector('input[name="counter_awal"]');
+                            const awalEl = container.querySelector('input[name="counter_awal"]');
                             const akhirEl = container.querySelector('input[name="counter_akhir"]');
                             if (totalEl && awalEl && akhirEl) {
-                                const diff     = Math.abs((parseFloat(akhirEl.value) || 0) - (parseFloat(awalEl.value) || 0));
+                                const diff = Math.abs((parseFloat(akhirEl.value) || 0) - (parseFloat(awalEl.value) || 0));
                                 const multiply = parseFloat(totalEl.dataset.multiply) || 1;
-                                totalEl.value  = diff * multiply;
+                                totalEl.value = diff * multiply;
                             }
                         }, 150);
 
@@ -1712,6 +1812,12 @@
                                 initKomposisiListeners(container);
                             }
 
+                            // Initialize total material listeners for CCM/IPS
+                            if (typeof initTotalMaterialListeners === 'function') {
+                                console.log('[EDIT] Initializing total material listeners');
+                                initTotalMaterialListeners(container);
+                            }
+
                             // Restore SPK selection and populate related fields
                             const spkSelect = container.querySelector('.nomor_spk');
                             if (spkSelect && spkSelect.value) {
@@ -1722,6 +1828,14 @@
                                 spkSelect.dispatchEvent(changeEvent);
                             }
 
+                            // Re-run updateTotalMaterial setelah nama_mesin sudah terisi
+                            // (nama_mesin diisi oleh SPK change event di atas, perlu delay)
+                            setTimeout(() => {
+                                if (typeof window.updateTotalMaterial === 'function') {
+                                    window.updateTotalMaterial(container);
+                                }
+                            }, 800);
+
                             // Fetch total_bagus_kumulatif untuk mode edit (exclude row ini sendiri)
                             // agar sisa_po tidak double-count produksi shift yang sedang diedit
                             if (spkSelect && spkSelect.value) {
@@ -1731,14 +1845,27 @@
                                         '&exclude_id=' + encodeURIComponent(editId))
                                     .then(r => r.json())
                                     .then(data => {
-                                        const kumulatifEl = container.querySelector('.total_bagus_kumulatif_hidden');
+                                        const modalBody = container.querySelector('.modal-body') || container;
+                                        const kumulatifEl = modalBody.querySelector('.total_bagus_kumulatif_hidden');
                                         if (kumulatifEl && data.total_bagus_kumulatif !== undefined) {
                                             kumulatifEl.value = data.total_bagus_kumulatif;
                                             console.log('[EDIT] total_bagus_kumulatif set:', data.total_bagus_kumulatif);
-                                            // Recalculate sisa_po setelah kumulatif terisi
-                                            const modalBody = container.querySelector('.modal-body') || container;
-                                            updateTotals(modalBody);
                                         }
+                                        // Selalu recalculate sisa_po dari total_spk DB - kumulatif
+                                        const totalSpkInp = modalBody.querySelector('.total_spk');
+                                        const sisaPoInp = modalBody.querySelector('.sisa_po');
+                                        const sisaPoHidInp = modalBody.querySelector('.sisa_po_hidden');
+                                        if (totalSpkInp && sisaPoInp) {
+                                            const kum = parseInt(kumulatifEl?.value) || 0;
+                                            const tspk = parseInt(totalSpkInp.value) || 0;
+                                            // sisa_po = total_spk - kumulatif (jangan kurangi jam form aktif di edit)
+                                            // karena jam yang sedang diedit sudah di-exclude dari kumulatif
+                                            const newSisaPo = Math.max(0, tspk - kum);
+                                            sisaPoInp.value = newSisaPo;
+                                            if (sisaPoHidInp) sisaPoHidInp.value = newSisaPo;
+                                            console.log('[EDIT] sisa_po recalculated:', newSisaPo, '(total_spk:', tspk, '- kumulatif:', kum, ')');
+                                        }
+                                        updateTotals(modalBody);
                                     })
                                     .catch(err => console.warn('[EDIT] Gagal fetch kumulatif:', err));
                             }
@@ -1830,7 +1957,7 @@
                     .then(r => r.text())
                     .then(html => {
                         container.innerHTML = html;
-                        
+
                         // Initialize komposisi listeners AFTER form loaded via AJAX
                         if (typeof initKomposisiListeners === 'function') {
                             setTimeout(() => {
@@ -2128,6 +2255,11 @@
         document.addEventListener('input', function(e) {
             if (e.target.classList.contains('jam-hasil') || e.target.classList.contains('isi')) {
                 updateTotals(e.target.closest('.modal-body'));
+                // Trigger total material calculation if CCM/IPS
+                const container = e.target.closest('.modal-body') || document;
+                if (typeof window.updateTotalMaterial === 'function') {
+                    window.updateTotalMaterial(container);
+                }
             }
 
             // Reject inline per jam — update total reject real-time (Becum/Powerjet)
@@ -2136,6 +2268,10 @@
                 const container = e.target.closest('.modal-body') || document;
                 syncJamRejectToRejectSection(container);
                 updateTotals(container);
+                // Trigger total material calculation
+                if (typeof window.updateTotalMaterial === 'function') {
+                    window.updateTotalMaterial(container);
+                }
             }
 
             // Total SPK input - trigger sisa_po calculation via updateTotals
@@ -2154,13 +2290,13 @@
             if (e.target.classList.contains('meter_awal') ||
                 e.target.classList.contains('meter_akhir')) {
                 const container = e.target.closest('form') || e.target.closest('.modal-body') || document;
-                const awal    = parseFloat(container.querySelector('.meter_awal')?.value)  || 0;
-                const akhir   = parseFloat(container.querySelector('.meter_akhir')?.value) || 0;
-                const hasil   = Math.abs(awal - akhir);
+                const awal = parseFloat(container.querySelector('.meter_awal')?.value) || 0;
+                const akhir = parseFloat(container.querySelector('.meter_akhir')?.value) || 0;
+                const hasil = Math.abs(awal - akhir);
                 const pemakaianDisplay = container.querySelector('.meter_pemakaian');
-                const pemakaianHidden  = container.querySelector('.meter_pemakaian_hidden');
+                const pemakaianHidden = container.querySelector('.meter_pemakaian_hidden');
                 if (pemakaianDisplay) pemakaianDisplay.value = hasil.toFixed(2);
-                if (pemakaianHidden)  pemakaianHidden.value  = hasil.toFixed(2);
+                if (pemakaianHidden) pemakaianHidden.value = hasil.toFixed(2);
             }
 
             // KG komposisi input — kalkulasi otomatis (hanya Becum)
@@ -2256,21 +2392,140 @@
             btnTrash.addEventListener('click', function() {
                 const tbody = document.querySelector('#table_trash tbody');
                 if (!tbody) return;
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat...</div></td>';
+
+                // Reset checkbox state setiap kali modal dibuka
+                const checkAll = document.getElementById('trash_check_all');
+                const bulkBar = document.getElementById('trash_bulk_bar');
+                if (checkAll) checkAll.checked = false;
+                if (bulkBar) bulkBar.classList.add('d-none');
+
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat...</td></tr>';
                 fetch('<?= base_url('produksi/get_trash') ?>')
                     .then(r => r.json())
                     .then(data => {
                         tbody.innerHTML = '';
                         if (data.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Tempat sampah kosong.</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Tempat sampah kosong.</td></tr>';
                             return;
                         }
                         data.forEach(p => {
-                            const html = `<tr><td class="px-3 py-3"><div class="font-weight-bold">${p.nomor_spk}</div><div class="text-xs text-muted">${p.nama_mesin} - ${p.nama_produk}</div></td><td class="py-3 small">${p.deleted_at}</td><td class="text-center py-3"><div class="d-flex justify-content-center gap-1"><a href="<?= base_url('produksi/restore') ?>/${p.id}" class="btn btn-xs btn-success px-2 py-1" style="font-size: 10px;"><i class="fas fa-undo mr-1"></i> Pulihkan</a><a href="<?= base_url('produksi/delete_permanent') ?>/${p.id}" class="btn btn-xs btn-outline-danger px-2 py-1" style="font-size: 10px;" onclick="return confirm('Hapus permanen?')"><i class="fas fa-times"></i></a></div></td></tr>`;
-                            tbody.insertAdjacentHTML('beforeend', html);
+                            const tr = document.createElement('tr');
+                            tr.dataset.id = p.id;
+                            tr.innerHTML = `
+                                <td class="px-3 py-2 text-center">
+                                    <input type="checkbox" class="trash-row-check" value="${p.id}"
+                                           style="cursor:pointer; width:16px; height:16px;">
+                                </td>
+                                <td class="px-3 py-3">
+                                    <div class="fw-bold">${p.no_spk ?? '-'}</div>
+                                    <div class="text-muted" style="font-size:.78rem;">${p.nama_mesin ?? ''} — ${p.nama_produk ?? ''}</div>
+                                </td>
+                                <td class="py-3 small">${p.deleted_at}</td>
+                                <td class="text-center py-3">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <a href="<?= base_url('produksi/restore') ?>/${p.id}"
+                                           class="btn btn-xs btn-success px-2 py-1" style="font-size:10px;"
+                                           title="Pulihkan">
+                                            <i class="fas fa-undo me-1"></i>Pulihkan
+                                        </a>
+                                        <a href="<?= base_url('produksi/delete_permanent') ?>/${p.id}"
+                                           class="btn btn-xs btn-outline-danger px-2 py-1" style="font-size:10px;"
+                                           title="Hapus permanen"
+                                           onclick="return confirm('Hapus permanen data ini?')">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    </div>
+                                </td>`;
+                            tbody.appendChild(tr);
                         });
+                        bindTrashCheckboxes();
                     });
             });
+        }
+
+        function bindTrashCheckboxes() {
+            const checkAll = document.getElementById('trash_check_all');
+            const bulkBar = document.getElementById('trash_bulk_bar');
+            const countEl = document.getElementById('trash_checked_count');
+            const btnBulk = document.getElementById('btn_bulk_delete_permanent');
+
+            function updateBulkBar() {
+                const checked = document.querySelectorAll('.trash-row-check:checked');
+                const n = checked.length;
+                if (countEl) countEl.textContent = n;
+                if (bulkBar) bulkBar.classList.toggle('d-none', n === 0);
+                if (checkAll) checkAll.indeterminate = n > 0 && n < document.querySelectorAll('.trash-row-check').length;
+                if (checkAll && n > 0) checkAll.checked = n === document.querySelectorAll('.trash-row-check').length;
+            }
+
+            // Select-all handler
+            if (checkAll) {
+                checkAll.replaceWith(checkAll.cloneNode(true)); // hapus event lama
+                const newCheckAll = document.getElementById('trash_check_all');
+                newCheckAll.addEventListener('change', function() {
+                    document.querySelectorAll('.trash-row-check').forEach(cb => cb.checked = this.checked);
+                    updateBulkBar();
+                });
+            }
+
+            // Per-row checkbox handler
+            document.querySelectorAll('.trash-row-check').forEach(cb => {
+                cb.addEventListener('change', updateBulkBar);
+            });
+
+            // Bulk delete permanent handler
+            if (btnBulk) {
+                btnBulk.replaceWith(btnBulk.cloneNode(true)); // hapus event lama
+                document.getElementById('btn_bulk_delete_permanent').addEventListener('click', function() {
+                    const ids = Array.from(document.querySelectorAll('.trash-row-check:checked')).map(cb => cb.value);
+                    if (ids.length === 0) return;
+                    if (!confirm(`Hapus permanen ${ids.length} data yang dipilih? Tindakan ini tidak bisa dibatalkan.`)) return;
+
+                    const btn = this;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menghapus...';
+
+                    const formData = new FormData();
+                    ids.forEach(id => formData.append('ids[]', id));
+                    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+                    fetch('<?= base_url('produksi/bulk_delete_permanent') ?>', {
+                            method: 'POST',
+                            body: formData,
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.success) {
+                                // Hapus baris yang sudah didelete dari tabel
+                                ids.forEach(id => {
+                                    const row = document.querySelector(`#table_trash tbody tr[data-id="${id}"]`);
+                                    if (row) row.remove();
+                                });
+                                // Cek apakah tabel kosong
+                                const remaining = document.querySelectorAll('#table_trash tbody tr');
+                                if (remaining.length === 0) {
+                                    document.querySelector('#table_trash tbody').innerHTML =
+                                        '<tr><td colspan="4" class="text-center py-4 text-muted">Tempat sampah kosong.</td></tr>';
+                                }
+                                // Reset state
+                                const checkAllEl = document.getElementById('trash_check_all');
+                                if (checkAllEl) {
+                                    checkAllEl.checked = false;
+                                    checkAllEl.indeterminate = false;
+                                }
+                                const bulkBarEl = document.getElementById('trash_bulk_bar');
+                                if (bulkBarEl) bulkBarEl.classList.add('d-none');
+                            } else {
+                                alert(res.message || 'Gagal menghapus data.');
+                            }
+                        })
+                        .catch(() => alert('Terjadi kesalahan. Coba lagi.'))
+                        .finally(() => {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-trash me-1"></i> Hapus Permanen yang Dipilih';
+                        });
+                });
+            }
         }
 
         // Before form submission, sync grand_total_bagus hidden field
@@ -2463,14 +2718,14 @@
                     let idx = 0;
                     for (const [jenis, jumlah] of Object.entries(rejectMap)) {
                         const inputJenis = document.createElement('input');
-                        inputJenis.type  = 'hidden';
-                        inputJenis.name  = `rejects[${idx}][jenis_reject]`;
+                        inputJenis.type = 'hidden';
+                        inputJenis.name = `rejects[${idx}][jenis_reject]`;
                         inputJenis.value = jenis;
                         e.target.appendChild(inputJenis);
 
                         const inputJumlah = document.createElement('input');
-                        inputJumlah.type  = 'hidden';
-                        inputJumlah.name  = `rejects[${idx}][jumlah]`;
+                        inputJumlah.type = 'hidden';
+                        inputJumlah.name = `rejects[${idx}][jumlah]`;
                         inputJumlah.value = jumlah;
                         e.target.appendChild(inputJumlah);
 
@@ -2484,9 +2739,12 @@
                     jamRows.forEach((row, jamIdx) => {
                         const rejectsArr = [];
                         row.querySelectorAll('.jam-reject-row').forEach(rejectRow => {
-                            const jenis  = rejectRow.querySelector('.jam-reject-type')?.value  || '';
+                            const jenis = rejectRow.querySelector('.jam-reject-type')?.value || '';
                             const jumlah = parseInt(rejectRow.querySelector('.jam-reject-jumlah')?.value) || 0;
-                            if (jenis) rejectsArr.push({ jenis, jumlah });
+                            if (jenis) rejectsArr.push({
+                                jenis,
+                                jumlah
+                            });
                         });
                         // Cari hidden input rentang_jam di baris ini untuk mapping index
                         const rentangInput = row.querySelector('input[name*="[rentang_jam]"]');
@@ -2496,8 +2754,8 @@
                             if (match) {
                                 const jamDataIdx = match[1];
                                 const hiddenJson = document.createElement('input');
-                                hiddenJson.type  = 'hidden';
-                                hiddenJson.name  = `jam_data[${jamDataIdx}][rejects_json]`;
+                                hiddenJson.type = 'hidden';
+                                hiddenJson.name = `jam_data[${jamDataIdx}][rejects_json]`;
                                 hiddenJson.value = JSON.stringify(rejectsArr);
                                 e.target.appendChild(hiddenJson);
                             }
@@ -2800,14 +3058,14 @@
                 let idx = 0;
                 for (const [jenis, jumlah] of Object.entries(rejectMap)) {
                     const inputJenis = document.createElement('input');
-                    inputJenis.type  = 'hidden';
-                    inputJenis.name  = `rejects[${idx}][jenis_reject]`;
+                    inputJenis.type = 'hidden';
+                    inputJenis.name = `rejects[${idx}][jenis_reject]`;
                     inputJenis.value = jenis;
                     e.target.appendChild(inputJenis);
 
                     const inputJumlah = document.createElement('input');
-                    inputJumlah.type  = 'hidden';
-                    inputJumlah.name  = `rejects[${idx}][jumlah]`;
+                    inputJumlah.type = 'hidden';
+                    inputJumlah.name = `rejects[${idx}][jumlah]`;
                     inputJumlah.value = jumlah;
                     e.target.appendChild(inputJumlah);
 
@@ -2820,9 +3078,12 @@
                 jamRows.forEach((row) => {
                     const rejectsArr = [];
                     row.querySelectorAll('.jam-reject-row').forEach(rejectRow => {
-                        const jenis  = rejectRow.querySelector('.jam-reject-type')?.value  || '';
+                        const jenis = rejectRow.querySelector('.jam-reject-type')?.value || '';
                         const jumlah = parseInt(rejectRow.querySelector('.jam-reject-jumlah')?.value) || 0;
-                        if (jenis) rejectsArr.push({ jenis, jumlah });
+                        if (jenis) rejectsArr.push({
+                            jenis,
+                            jumlah
+                        });
                     });
                     const rentangInput = row.querySelector('input[name*="[rentang_jam]"]');
                     if (rentangInput) {
@@ -2830,8 +3091,8 @@
                         if (match) {
                             const jamDataIdx = match[1];
                             const hiddenJson = document.createElement('input');
-                            hiddenJson.type  = 'hidden';
-                            hiddenJson.name  = `jam_data[${jamDataIdx}][rejects_json]`;
+                            hiddenJson.type = 'hidden';
+                            hiddenJson.name = `jam_data[${jamDataIdx}][rejects_json]`;
                             hiddenJson.value = JSON.stringify(rejectsArr);
                             e.target.appendChild(hiddenJson);
                         }
@@ -2913,8 +3174,12 @@
                     width: '100%',
                     dropdownParent: getDropdownParent(select),
                     language: {
-                        noResults: function() { return 'Reject tidak ditemukan'; },
-                        searching: function() { return 'Mencari...'; }
+                        noResults: function() {
+                            return 'Reject tidak ditemukan';
+                        },
+                        searching: function() {
+                            return 'Mencari...';
+                        }
                     }
                 });
                 initCount++;
@@ -2938,8 +3203,12 @@
                     dropdownParent: getDropdownParent(select),
                     minimumResultsForSearch: 5,
                     language: {
-                        noResults: function() { return 'Tidak ada'; },
-                        searching: function() { return 'Cari...'; }
+                        noResults: function() {
+                            return 'Tidak ada';
+                        },
+                        searching: function() {
+                            return 'Cari...';
+                        }
                     }
                 });
                 initCount++;
@@ -2965,4 +3234,77 @@
             });
         }
     })();
+</script>
+
+
+
+
+<script>
+// ===== DOWNTIME TOGGLE HANDLER =====
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-toggle-downtime').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const headerId  = this.dataset.id;
+            const btnEl     = this;
+            const iconEl    = this.querySelector('i');
+            const origClass = iconEl.className;
+            const toggleUrl = '<?= base_url('produksi/downtime/toggle') ?>/' + headerId;
+
+            // Loading state
+            iconEl.className = 'fas fa-spinner fa-spin';
+            btnEl.disabled   = true;
+
+            fetch(toggleUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type':     'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN':     '<?= csrf_hash() ?>'
+                },
+                body: JSON.stringify({})
+            })
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function(json) {
+                if (!json.success) throw new Error(json.message || 'Gagal toggle downtime');
+
+                // Update button
+                btnEl.dataset.active = json.active ? '1' : '0';
+                if (json.active) {
+                    iconEl.className = 'fas fa-pause-circle';
+                    btnEl.title      = 'Downtime sedang berjalan — klik untuk akhiri';
+                } else {
+                    iconEl.className = 'fas fa-play-circle';
+                    btnEl.title      = 'Klik untuk mulai downtime';
+                }
+
+                // Toast
+                const toastEl = document.createElement('div');
+                toastEl.className   = 'alert alert-' + (json.active ? 'warning' : 'success') + ' alert-dismissible fade show';
+                toastEl.role        = 'alert';
+                toastEl.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;min-width:220px;';
+                toastEl.innerHTML   = json.message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                document.body.appendChild(toastEl);
+                setTimeout(function() { toastEl.remove(); }, 4000);
+            })
+            .catch(function(err) {
+                iconEl.className = origClass; // restore
+                const toastEl = document.createElement('div');
+                toastEl.className   = 'alert alert-danger alert-dismissible fade show';
+                toastEl.role        = 'alert';
+                toastEl.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;min-width:220px;';
+                toastEl.innerHTML   = 'Gagal: ' + err.message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                document.body.appendChild(toastEl);
+                setTimeout(function() { toastEl.remove(); }, 5000);
+            })
+            .finally(function() {
+                btnEl.disabled = false;
+            });
+        });
+    });
+});
 </script>

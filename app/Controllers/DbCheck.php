@@ -41,7 +41,7 @@ class DbCheck extends BaseController
             $db = \Config\Database::connect('produksi');
             $db->transStart();
             $ok = $db->table('produksi_headers')->insert([
-                'nomor_spk'           => 'TEST-DEBUG',
+                'no_spk'              => 'TEST-DEBUG',
                 'nama_mesin'          => 'Test',
                 'tanggal'             => date('Y-m-d'),
                 'grand_total_bagus'   => 0,
@@ -116,7 +116,7 @@ class DbCheck extends BaseController
                 ->get()->getResultArray();
             echo "<pre>";
             foreach ($prodData as $row) {
-                echo "SPK: {$row['nomor_spk']}, Mesin: {$row['nomor_mesin']}, Shift: {$row['shift']}, Bagus: {$row['grand_total_bagus']}\n";
+                echo "SPK: {$row['no_spk']}, Mesin: {$row['nomor_mesin']}, Shift: {$row['shift']}, Bagus: {$row['grand_total_bagus']}\n";
             }
             echo "</pre>";
         }

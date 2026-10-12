@@ -1,10 +1,47 @@
 <?php
 /**
  * Kode Cap Section — Powerjet 1 & 2 only
- * Variables: $kodeCapData (array keyed by jam_ke: 2,4,6,8), $isEdit (bool)
+ * Variables: $kodeCapData (array keyed by jam_ke from DB), $isEdit (bool)
+ *
+ * Form structure: 4 fixed rows, each row has a <select> for jam_ke (1–12).
+ * Defaults: row 0=2, row 1=4, row 2=6, row 3=8.
+ * POST name: kode_cap_rows[{rowIndex}][jam_ke|kode_cap_1..12|runner]
  */
-$kodeCapData = $kodeCapData ?? [];
-$jamRows     = [2, 4, 6, 8];
+$kodeCapData    = $kodeCapData ?? [];
+$defaultJamRows = [2, 4, 6, 8];
+
+// Ambil hanya baris yang punya data nyata dari DB (kode_cap atau runner terisi).
+// Seed default dari controller selalu ada, tapi semua kode_cap-nya null dan runner=0 —
+// kita filter itu agar hanya baris DB asli yang masuk.
+$dbRows = [];
+foreach ($kodeCapData as $jam => $row) {
+    $hasData = false;
+    for ($c = 1; $c <= 12; $c++) {
+        if (!empty($row["kode_cap_{$c}"])) { $hasData = true; break; }
+    }
+    if (!$hasData && (float)($row['runner'] ?? 0) > 0) $hasData = true;
+    if ($hasData) {
+        $dbRows[(int)$jam] = $row;
+    }
+}
+ksort($dbRows);
+$dbJams = array_keys($dbRows);
+
+// Build tepat 4 baris untuk form.
+// Prioritas: pakai data DB (urut ascending), sisa baris pakai default.
+$formRows = [];
+for ($i = 0; $i < 4; $i++) {
+    if (isset($dbJams[$i])) {
+        // Baris dari DB — jam dan kode_cap sudah terisi
+        $formRows[] = $dbRows[$dbJams[$i]];
+    } else {
+        // Baris kosong — pakai default jam
+        $jam = $defaultJamRows[$i];
+        $emptyRow = ['jam_ke' => $jam, 'runner' => 0];
+        for ($c = 1; $c <= 12; $c++) $emptyRow["kode_cap_{$c}"] = '';
+        $formRows[] = $emptyRow;
+    }
+}
 ?>
 <div class="card border-0 shadow-sm mb-4" style="border-radius:12px; overflow:hidden;">
     <div class="card-header bg-white border-bottom px-4 py-3">
@@ -18,7 +55,7 @@ $jamRows     = [2, 4, 6, 8];
                    style="min-width:900px; font-size:.78rem;">
                 <thead>
                     <tr class="text-center">
-                        <th class="bg-secondary text-white" style="width:60px;">Jam ke-</th>
+                        <th class="bg-secondary text-white" style="width:75px;">Jam ke-</th>
                         <?php for ($c = 1; $c <= 12; $c++): ?>
                         <th class="bg-primary text-white" style="min-width:60px;"><?= $c ?></th>
                         <?php endfor; ?>
@@ -26,12 +63,23 @@ $jamRows     = [2, 4, 6, 8];
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($jamRows as $jam):
-                        $row = $kodeCapData[$jam] ?? [];
+                    <?php foreach ($formRows as $rowIdx => $row):
+                        $currentJam = (int)($row['jam_ke'] ?? $defaultJamRows[$rowIdx]);
                     ?>
-                    <tr>
-                        <!-- Jam ke- -->
-                        <td class="text-center fw-bold bg-light" style="color:#374151;"><?= $jam ?></td>
+                    <tr class="kode-cap-row" data-row="<?= $rowIdx ?>">
+                        <!-- Jam ke- (dropdown, pilih 1–12) -->
+                        <td class="p-1 text-center">
+                            <select name="kode_cap_rows[<?= $rowIdx ?>][jam_ke]"
+                                    class="form-select form-select-sm jam-ke-select fw-bold text-center"
+                                    data-row="<?= $rowIdx ?>"
+                                    style="font-size:.8rem; padding:.2rem .3rem; border-radius:4px;
+                                           color:#374151; border:1.5px solid #cbd5e1; background:#f8fafc;
+                                           text-align-last:center;">
+                                <?php for ($j = 1; $j <= 12; $j++): ?>
+                                <option value="<?= $j ?>" <?= $currentJam === $j ? 'selected' : '' ?>><?= $j ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </td>
 
                         <!-- Kode Cap 1–12 -->
                         <?php for ($c = 1; $c <= 12; $c++):
@@ -39,9 +87,9 @@ $jamRows     = [2, 4, 6, 8];
                         ?>
                         <td class="p-1">
                             <input type="text"
-                                   name="kode_cap[<?= $jam ?>][kode_cap_<?= $c ?>]"
+                                   name="kode_cap_rows[<?= $rowIdx ?>][kode_cap_<?= $c ?>]"
                                    class="form-control form-control-sm kode-cap-input text-center"
-                                   data-jam="<?= $jam ?>"
+                                   data-row="<?= $rowIdx ?>"
                                    data-col="<?= $c ?>"
                                    value="<?= esc($val) ?>"
                                    placeholder="-"
@@ -52,9 +100,9 @@ $jamRows     = [2, 4, 6, 8];
                         <!-- Runner (manual input - decimal) -->
                         <td class="p-1 text-center">
                             <input type="text"
-                                   name="kode_cap[<?= $jam ?>][runner]"
+                                   name="kode_cap_rows[<?= $rowIdx ?>][runner]"
                                    class="form-control form-control-sm runner-input text-center fw-bold"
-                                   data-jam="<?= $jam ?>"
+                                   data-row="<?= $rowIdx ?>"
                                    value="<?= esc($row['runner'] ?? 0) ?>"
                                    placeholder="0.00"
                                    style="font-size:.8rem; padding:.2rem .3rem; border-radius:4px;
@@ -74,7 +122,6 @@ $jamRows     = [2, 4, 6, 8];
                             0.00
                         </td>
                         <?php endfor; ?>
-                        <!-- rata-rata runner (rata2 dari 4 runner) -->
                         <td class="rata-runner fw-bold text-center"
                             style="font-size:.78rem; color:#15803d; background:#f0fdf4;">
                             0.00
@@ -92,7 +139,6 @@ $jamRows     = [2, 4, 6, 8];
                                 0.00
                             </span>
                         </td>
-                        <!-- sel Runner kosong agar kolom tetap aligned -->
                         <td style="background:#fff7ed;"></td>
                     </tr>
                 </tfoot>
@@ -106,7 +152,6 @@ $jamRows     = [2, 4, 6, 8];
     'use strict';
 
     function getTable(el) {
-        // Scope ke tabel kode-cap terdekat dari elemen, atau seluruh document
         return el ? el.closest('.kode-cap-table') : null;
     }
 
@@ -119,28 +164,21 @@ $jamRows     = [2, 4, 6, 8];
     }
 
     function parseDecimal(str) {
-        // Handle both comma (,) and period (.) as decimal separator
         if (typeof str !== 'string') str = String(str);
-        str = str.trim();
-        // Replace comma with period for parsing
-        var normalized = str.replace(',', '.');
-        return parseFloat(normalized) || 0;
-    }
-
-    function countRunner(jam, table) {
-        // Runner is now manually input - removed auto-count
+        return parseFloat(str.trim().replace(',', '.')) || 0;
     }
 
     function updateRata(table) {
-        var jams = [2, 4, 6, 8];
-        var totalRows = jams.length;
+        // Scan actual rows in the table — no hardcoded jam numbers needed.
+        var rows = (table || document).querySelectorAll('.kode-cap-row');
+        var totalRows = rows.length;
 
-        // Rata-rata per kolom: rata-rata nilai angka dari sel yang terisi
+        // Rata-rata per kolom
         for (var c = 1; c <= 12; c++) {
             var sum    = 0;
             var filled = 0;
-            jams.forEach(function (jam) {
-                var inp = q(table, '.kode-cap-input[data-jam="' + jam + '"][data-col="' + c + '"]');
+            rows.forEach(function (row) {
+                var inp = row.querySelector('.kode-cap-input[data-col="' + c + '"]');
                 if (inp && inp.value.trim() !== '') {
                     var num = parseDecimal(inp.value);
                     if (!isNaN(num)) { sum += num; filled++; }
@@ -150,11 +188,11 @@ $jamRows     = [2, 4, 6, 8];
             if (rataEl) rataEl.textContent = filled > 0 ? (sum / filled).toFixed(2) : '0.00';
         }
 
-        // Rata-rata runner: rata-rata dari 4 nilai runner (manual inputs)
-        var totalRunner = 0;
+        // Rata-rata runner
+        var totalRunner  = 0;
         var filledRunner = 0;
-        jams.forEach(function (jam) {
-            var runnerEl = q(table, '.runner-input[data-jam="' + jam + '"]');
+        rows.forEach(function (row) {
+            var runnerEl = row.querySelector('.runner-input');
             if (runnerEl) {
                 var val = parseDecimal(runnerEl.value);
                 totalRunner += val;
@@ -162,44 +200,40 @@ $jamRows     = [2, 4, 6, 8];
             }
         });
         var rataRunnerEl = q(table, '.rata-runner');
-        if (rataRunnerEl) rataRunnerEl.textContent = filledRunner > 0 ? (totalRunner / totalRows).toFixed(2) : '0.00';
+        if (rataRunnerEl) {
+            rataRunnerEl.textContent = (totalRows > 0 && filledRunner > 0)
+                ? (totalRunner / totalRows).toFixed(2)
+                : '0.00';
+        }
 
-        // Akhir: rata-rata dari kolom yang punya nilai (rata-rata dari rata-rata)
-        var sumRataKol  = 0;
-        var filledKol   = 0;
+        // Akhir: rata-rata dari kolom yang punya nilai
+        var sumRataKol = 0;
+        var filledKol  = 0;
         for (var cc = 1; cc <= 12; cc++) {
             var rataEl2 = q(table, '.rata-col[data-col="' + cc + '"]');
             var val = rataEl2 ? parseFloat(rataEl2.textContent) : 0;
             if (val > 0) { sumRataKol += val; filledKol++; }
         }
         var rataAkhirEl = q(table, '.rata-akhir');
-        if (rataAkhirEl) rataAkhirEl.textContent = filledKol > 0 ? (sumRataKol / filledKol).toFixed(2) : '0.00';
+        if (rataAkhirEl) {
+            rataAkhirEl.textContent = filledKol > 0 ? (sumRataKol / filledKol).toFixed(2) : '0.00';
+        }
     }
 
     function initOneTable(table) {
         qAll(table, '.kode-cap-input').forEach(function (inp) {
             if (inp.dataset.kodeCapBound) return;
             inp.dataset.kodeCapBound = '1';
-            inp.addEventListener('input', function () {
-                var tbl = getTable(this);
-                updateRata(tbl);
-            });
+            inp.addEventListener('input', function () { updateRata(getTable(this)); });
         });
-        
-        // Add event listener to runner inputs for manual entry
+
         qAll(table, '.runner-input').forEach(function (inp) {
             if (inp.dataset.runnerBound) return;
             inp.dataset.runnerBound = '1';
-            inp.addEventListener('input', function () {
-                var tbl = getTable(this);
-                updateRata(tbl);
-            });
-            inp.addEventListener('change', function () {
-                var tbl = getTable(this);
-                updateRata(tbl);
-            });
+            inp.addEventListener('input',  function () { updateRata(getTable(this)); });
+            inp.addEventListener('change', function () { updateRata(getTable(this)); });
         });
-        
+
         updateRata(table);
     }
 
@@ -209,10 +243,8 @@ $jamRows     = [2, 4, 6, 8];
         });
     }
 
-    // Expose globally so scripts.php can call after AJAX edit load
     window.initKodeCap = initKodeCap;
 
-    // Run on DOMContentLoaded and after short delay for AJAX-loaded modals
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initKodeCap);
     } else {

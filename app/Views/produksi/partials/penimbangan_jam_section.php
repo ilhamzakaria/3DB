@@ -95,17 +95,23 @@ $errors          = $errors          ?? [];
 
 // Powerjet = 12 jam, Becum = 8 jam
 $maxHour  = ($isPowerjetMesin ?? false) ? 12 : 8;
-$rataDivisor = $maxHour; // rata-rata dibagi sesuai jumlah jam
 
-$totalGalon = 0;
-$totalFlash = 0;
+$totalGalon  = 0;
+$totalFlash  = 0;
+$filledGalon = 0;
+$filledFlash = 0;
 for ($h = 1; $h <= $maxHour; $h++) {
-    $totalGalon += (float)($penimbanganData["jam_{$h}_galon"] ?? 0);
-    $totalFlash += (float)($penimbanganData["jam_{$h}_flash"] ?? 0);
+    $g = (float)($penimbanganData["jam_{$h}_galon"] ?? 0);
+    $f = (float)($penimbanganData["jam_{$h}_flash"] ?? 0);
+    $totalGalon += $g;
+    $totalFlash += $f;
+    if ($g > 0) $filledGalon++;
+    if ($f > 0) $filledFlash++;
 }
-$grandTotal  = $totalGalon + $totalFlash;
-$rataGalon   = $totalGalon / $rataDivisor;
-$rataFlash   = $totalFlash / $rataDivisor;
+$grandTotal = $totalGalon + $totalFlash;
+// Rata-rata dibagi jumlah kolom yang terisi (bukan total jam)
+$rataGalon  = $filledGalon > 0 ? $totalGalon / $filledGalon : 0;
+$rataFlash  = $filledFlash > 0 ? $totalFlash / $filledFlash : 0;
 
 // Auto-expand jika ada data tersimpan (mode edit dengan data) atau ada error
 $hasExistingData = $grandTotal > 0;
@@ -276,6 +282,24 @@ $rangeLabel      = ($isPowerjetMesin ?? false) ? '1–12' : '1–8';
                         </span>
                     </div>
                 </div>
+                <?php if (!($isPowerjetMesin ?? false)): ?>
+                <div class="col-4">
+                    <div class="d-flex align-items-center justify-content-between rounded px-3 py-2"
+                         style="background:#fefce8;border:1px solid #fde047;">
+                        <span class="small fw-bold" style="color:#854d0e;">
+                            <i class="fas fa-weight-hanging me-1"></i>Total Tonase
+                        </span>
+                        <?php
+                        // Rumus: rata² flash × (total bagus + total reject) / 1000
+                        $totalBagusReject = (int)($header['grand_total_bagus'] ?? 0) + (int)($header['grand_total_reject'] ?? 0);
+                        $tonasePhp = ($rataFlash * $totalBagusReject) / 1000;
+                        ?>
+                        <span class="penimbangan-total-tonase fw-bold" style="color:#854d0e;font-size:.88rem;">
+                            <?= number_format($tonasePhp, 2) ?> kg
+                        </span>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
 
         </div>
@@ -309,6 +333,7 @@ $rangeLabel      = ($isPowerjetMesin ?? false) ? '1–12' : '1–8';
     // ── Real-time calculation ──────────────────────────────────────
     function updateCalc() {
         let totalGalon = 0, totalFlash = 0;
+        let filledGalon = 0, filledFlash = 0;
 
         for (let h = 1; h <= MAX_HOUR; h++) {
             const gEl = document.querySelector(`.penimbangan-galon-input[data-hour="${h}"]`);
@@ -320,17 +345,27 @@ $rangeLabel      = ($isPowerjetMesin ?? false) ? '1–12' : '1–8';
             if (sub) sub.textContent = (g + f).toFixed(2) + ' kg';
             totalGalon += g;
             totalFlash += f;
+            if (g > 0) filledGalon++;
+            if (f > 0) filledFlash++;
         }
 
         const grand     = totalGalon + totalFlash;
-        const rataGalon = totalGalon / MAX_HOUR;
-        const rataFlash = totalFlash / MAX_HOUR;
+        // Rata-rata dibagi jumlah kolom yang terisi, bukan MAX_HOUR
+        const rataGalon = filledGalon > 0 ? totalGalon / filledGalon : 0;
+        const rataFlash = filledFlash > 0 ? totalFlash / filledFlash : 0;
         const q = (sel) => document.querySelector(sel);
         if (q('.penimbangan-total-galon')) q('.penimbangan-total-galon').textContent = totalGalon.toFixed(2) + ' kg';
         if (q('.penimbangan-rata-galon'))  q('.penimbangan-rata-galon').textContent  = rataGalon.toFixed(2)  + ' kg';
         if (q('.penimbangan-total-flash')) q('.penimbangan-total-flash').textContent = totalFlash.toFixed(2) + ' kg';
         if (q('.penimbangan-rata-flash'))  q('.penimbangan-rata-flash').textContent  = rataFlash.toFixed(2)  + ' kg';
         if (q('.penimbangan-grand-total')) q('.penimbangan-grand-total').textContent = grand.toFixed(2) + ' kg';
+        if (q('.penimbangan-total-tonase')) {
+            // Rumus: rata² flash × (total bagus + total reject) / 1000
+            const totalBagus  = parseFloat(q('.grand_total_bagus_hidden')?.value)  || 0;
+            const totalReject = parseFloat(q('.grand_total_reject_hidden')?.value) || 0;
+            const totalProd   = totalBagus + totalReject;
+            q('.penimbangan-total-tonase').textContent = ((rataFlash * totalProd) / 1000).toFixed(2) + ' kg';
+        }
 
         updateCollapsedSummary(totalGalon, totalFlash, grand);
     }

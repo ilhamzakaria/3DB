@@ -63,7 +63,7 @@ class Produksi extends BaseController
      */
     public static function getPlantMesin(string $role): ?array
     {
-        return match($role) {
+        return match ($role) {
             'leader_plant1'        => ['becum', 'powerjet1', 'powerjet2'],
             'leader_plant2'        => ['ccm1', 'ccm2', 'ips1', 'ips2', 'ips3', 'ips4'],
             'operator_produksi1'   => ['becum', 'powerjet1', 'powerjet2'],
@@ -99,12 +99,26 @@ class Produksi extends BaseController
             return $spkList; // unknown slug → return all (safe fallback)
         }
 
-        $label = strtolower(trim($labels[$mesinSlug])); // e.g. "becum", "ccm 2"
+        $normalize = static function (?string $value): string {
+            $clean = strtolower(trim((string) ($value ?? '')));
+            $clean = preg_replace('/[^a-z0-9]+/i', ' ', $clean);
+            $clean = preg_replace('/\s+/', ' ', $clean);
+            return trim($clean);
+        };
 
-        return array_values(array_filter($spkList, static function (array $spk) use ($label): bool {
-            $mesinInSpk = strtolower(trim((string) ($spk['nama_mesin'] ?? '')));
-            // Exact match or case-insensitive match
-            return $mesinInSpk === $label || strtolower($mesinInSpk) === strtolower($label);
+        $label = $normalize($labels[$mesinSlug]);
+        $labelCompact = str_replace(' ', '', $label);
+
+        return array_values(array_filter($spkList, static function (array $spk) use ($label, $labelCompact, $normalize): bool {
+            $mesinInSpk = $normalize($spk['nama_mesin'] ?? '');
+            $mesinCompact = str_replace(' ', '', $mesinInSpk);
+
+            return $mesinInSpk === $label
+                || $mesinCompact === $labelCompact
+                || $mesinInSpk === str_replace(' ', '', $label)
+                || $mesinCompact === $label
+                || strtolower(trim((string) ($spk['nama_mesin'] ?? ''))) === strtolower(trim((string) ($label)))
+                || strtolower(trim((string) ($spk['nama_mesin'] ?? ''))) === strtolower(trim((string) ($labelCompact)));
         }));
     }
 
@@ -149,7 +163,7 @@ class Produksi extends BaseController
 
         if ($q) {
             $query->groupStart()
-                ->like('nomor_spk', $q)
+                ->like('no_spk', $q)
                 ->orLike('nama_produk', $q)
                 ->orLike('operator', $q)
                 ->groupEnd();
@@ -182,6 +196,30 @@ class Produksi extends BaseController
             'modern_layout'      => true,
         ];
 
+        // Build active downtime lookup for all displayed headers
+        $db = $this->dbProduksi();
+        $headerIds = array_column($data['produksi'], 'id');
+        $activeDowntimes = [];
+        
+        if (!empty($headerIds)) {
+            $downtimeRows = $db->table('produksi_downtimes')
+                ->whereIn('produksi_header_id', $headerIds)
+                ->where('waktu_selesai', null)
+                ->where('deleted_at', null)
+                ->get()
+                ->getResultArray();
+            
+            foreach ($downtimeRows as $dt) {
+                $activeDowntimes[$dt['produksi_header_id']] = true;
+            }
+        }
+        
+        // Add has_active_downtime to each produksi row
+        $data['produksi'] = array_map(function($p) use ($activeDowntimes) {
+            $p['has_active_downtime'] = !empty($activeDowntimes[$p['id']]);
+            return $p;
+        }, $data['produksi']);
+        
         return view('produksi/mesin', $data);
     }
 
@@ -225,7 +263,7 @@ class Produksi extends BaseController
 
         if ($q) {
             $query = $query->groupStart()
-                ->like('nomor_spk', $q)
+                ->like('no_spk', $q)
                 ->orLike('nama_mesin', $q)
                 ->orLike('nama_produk', $q)
                 ->orLike('operator', $q)
@@ -254,6 +292,31 @@ class Produksi extends BaseController
             'mesin_labels'   => self::mesinLabels(),
             'modern_layout'  => true,
         ];
+
+        // Build active downtime lookup for all displayed headers
+        $db = $this->dbProduksi();
+        $headerIds = array_column($data['produksi'], 'id');
+        $activeDowntimes = [];
+        
+        if (!empty($headerIds)) {
+            $downtimeRows = $db->table('produksi_downtimes')
+                ->whereIn('produksi_header_id', $headerIds)
+                ->where('waktu_selesai', null)
+                ->where('deleted_at', null)
+                ->get()
+                ->getResultArray();
+            
+            foreach ($downtimeRows as $dt) {
+                $activeDowntimes[$dt['produksi_header_id']] = true;
+            }
+        }
+        
+        // Add has_active_downtime to each produksi row
+        $data['produksi'] = array_map(function($p) use ($activeDowntimes) {
+            $p['has_active_downtime'] = !empty($activeDowntimes[$p['id']]);
+            return $p;
+        }, $data['produksi']);
+        
         return view('produksi/index', $data);
     }
 
@@ -293,20 +356,11 @@ class Produksi extends BaseController
         }
         $data['penimbanganData'] = $penimbanganData;
 
-        // Load kode cap data (Powerjet only)
+        // Load kode cap data (Powerjet only) — keyed by jam_ke, all rows from DB
         $kodeCapRowsEdit = $this->kodeCapModel->where('produksi_header_id', $id)->findAll();
         $kodeCapDataEdit = [];
-        foreach ([2, 4, 6, 8] as $jam) {
-            $kodeCapDataEdit[$jam] = ['jam_ke' => $jam, 'runner' => 0];
-            for ($c = 1; $c <= 12; $c++) {
-                $kodeCapDataEdit[$jam]["kode_cap_{$c}"] = null;
-            }
-        }
         foreach ($kodeCapRowsEdit as $row) {
-            $jam = (int)$row['jam_ke'];
-            if (isset($kodeCapDataEdit[$jam])) {
-                $kodeCapDataEdit[$jam] = $row;
-            }
+            $kodeCapDataEdit[(int)$row['jam_ke']] = $row;
         }
         $data['kodeCapData'] = $kodeCapDataEdit;
 
@@ -335,7 +389,7 @@ class Produksi extends BaseController
 
         // Ambil nomor_mesin dari PPIC berdasarkan nomor_spk
         $data['ppic_nomor_mesin'] = '';
-        $noSpk = trim((string)($data['header']['nomor_spk'] ?? ''));
+        $noSpk = trim((string)($data['header']['no_spk'] ?? ''));
         if ($noSpk !== '') {
             $mesinModels = [
                 'App\\Models\\MPpicMesinBecum',
@@ -360,7 +414,8 @@ class Produksi extends BaseController
                         $data['ppic_nomor_mesin'] = $row['nomor_mesin'];
                         break;
                     }
-                } catch (\Throwable $e) { /* skip */ }
+                } catch (\Throwable $e) { /* skip */
+                }
             }
         }
 
@@ -392,20 +447,11 @@ class Produksi extends BaseController
         }
         $data['penimbanganData'] = $penimbanganData;
 
-        // Load kode cap data (Powerjet only)
-        $kodeCapRows  = $this->kodeCapModel->where('produksi_header_id', $id)->findAll();
-        $kodeCapData  = [];
-        foreach ([2, 4, 6, 8] as $jam) {
-            $kodeCapData[$jam] = ['jam_ke' => $jam, 'runner' => 0];
-            for ($c = 1; $c <= 12; $c++) {
-                $kodeCapData[$jam]["kode_cap_{$c}"] = null;
-            }
-        }
+        // Load kode cap data (Powerjet only) — keyed by jam_ke, all rows from DB
+        $kodeCapRows = $this->kodeCapModel->where('produksi_header_id', $id)->findAll();
+        $kodeCapData = [];
         foreach ($kodeCapRows as $row) {
-            $jam = (int)$row['jam_ke'];
-            if (isset($kodeCapData[$jam])) {
-                $kodeCapData[$jam] = $row;
-            }
+            $kodeCapData[(int)$row['jam_ke']] = $row;
         }
         $data['kodeCapData'] = $kodeCapData;
 
@@ -433,13 +479,68 @@ class Produksi extends BaseController
             $db = $this->dbProduksi();
             $db->transStart();
 
+            // Auto-fetch SPK data from PPIC if nomor_spk is provided
+            $noSpk = $this->request->getPost('nomor_spk');
+            $ppicData = null;
+            if ($noSpk) {
+                try {
+                    $candidates = array_values(array_unique(array_filter(
+                        [$noSpk, (string) (int) $noSpk],
+                        static fn($s) => $s !== '' && $s !== '0'
+                    )));
+
+                    $mesinModels = [
+                        'App\\Models\\MPpicMesinBecum'       => 'becum',
+                        'App\\Models\\MPpicMesinPowerjet1'   => 'powerjet1',
+                        'App\\Models\\MPpicMesinPowerjet2'   => 'powerjet2',
+                        'App\\Models\\MPpicMesinCcm1'        => 'ccm1',
+                        'App\\Models\\MPpicMesinCcm2'        => 'ccm2',
+                        'App\\Models\\MPpicMesinIps1'        => 'ips1',
+                        'App\\Models\\MPpicMesinIps2'        => 'ips2',
+                        'App\\Models\\MPpicMesinIps3'        => 'ips3',
+                        'App\\Models\\MPpicMesinIps4'        => 'ips4',
+                    ];
+
+                    foreach ($mesinModels as $modelClass => $moduleKey) {
+                        if (!class_exists($modelClass)) continue;
+                        try {
+                            $model = new $modelClass();
+                            $row = $model->whereIn('no_spk', $candidates)
+                                ->orderBy('tanggal', 'DESC')
+                                ->orderBy('id', 'DESC')
+                                ->first();
+
+                            if ($row) {
+                                $ppicData = [
+                                    'target'    => $row['target'] ?? $row['target_shift1'] ?? 0,
+                                    'total_spk' => $this->cleanNumericValue($row['total_spk'] ?? '0'),
+                                ];
+                                break;
+                            }
+                        } catch (\Throwable $e) {
+                            log_message('warning', "simpan: error querying {$modelClass}: " . $e->getMessage());
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    log_message('warning', "simpan: error fetching PPIC data for {$noSpk}: " . $e->getMessage());
+                }
+            }
+
             // 1. Save Header
             $shiftValue = trim($this->request->getPost('shift') ?: $this->request->getPost('shift_hidden'));
             $tercapaiValue = (int)($this->request->getPost('tercapai') ?: '0');
             $gumpalanValue = $this->request->getPost('gumpalan') ?: '0';
 
+            // Use PPIC data if available, otherwise fall back to form values
+            $targetValue = $this->request->getPost('target') ?: ($ppicData['target'] ?? 0);
+            $totalSpkValue = $this->request->getPost('total_spk') ?: ($ppicData['total_spk'] ?? 0);
+
+            // Calculate sisa_po: total_spk from PPIC - grand_total_bagus from form
+            $grandTotalBagus = (int)($this->request->getPost('grand_total_bagus') ?: 0);
+            $sisaPoValue = max(0, (int)$totalSpkValue - $grandTotalBagus);
+
             $headerData = [
-                'nomor_spk'     => $this->request->getPost('nomor_spk'),
+                'no_spk'        => $this->request->getPost('nomor_spk'),
                 'nama_mesin'    => $this->request->getPost('nama_mesin'),
                 'nama_produk'   => $this->request->getPost('nama_produk'),
                 'batch_number'  => $this->request->getPost('batch_number'),
@@ -452,20 +553,20 @@ class Produksi extends BaseController
                 'nomor_mesin'   => $this->request->getPost('nomor_mesin'),
                 'packing'       => $this->request->getPost('packing'),
                 'cycle_time'    => $this->request->getPost('cycle_time'),
-                'target'        => $this->request->getPost('target'),
-                'total_spk'     => $this->request->getPost('total_spk') ?: 0,
+                'target'        => $targetValue,
+                'total_spk'     => $totalSpkValue,
                 'isi'           => $this->request->getPost('isi'),
                 'tanggal'       => $this->request->getPost('tanggal'),
                 'operator'      => $this->request->getPost('operator'),
                 'catatan'       => $this->request->getPost('catatan'),
-                'sisa_po'       => $this->request->getPost('sisa_po') ?: 0,
+                'sisa_po'       => $sisaPoValue,
                 'hold'          => $this->request->getPost('hold') ?: 0,
                 'gumpalan'      => $gumpalanValue,
                 'plash_kotor'   => $this->request->getPost('plash_kotor') ?: null,
                 'sapuan'        => $this->request->getPost('sapuan') ?: null,
                 'counter_awal'  => $this->request->getPost('counter_awal') ?: null,
                 'counter_akhir' => $this->request->getPost('counter_akhir') ?: null,
-                'total_counter' => (function() {
+                'total_counter' => (function () {
                     $awal  = (int) ($this->request->getPost('counter_awal')  ?: 0);
                     $akhir = (int) ($this->request->getPost('counter_akhir') ?: 0);
                     return ($awal > 0 || $akhir > 0) ? abs($akhir - $awal) : null;
@@ -566,7 +667,7 @@ class Produksi extends BaseController
                     if (!is_array($mat)) {
                         continue;
                     }
-                    
+
                     // Safely extract material fields with null defaults
                     $this->materialModel->insert([
                         'produksi_header_id' => $headerId,
@@ -618,10 +719,10 @@ class Produksi extends BaseController
                 for ($hour = 1; $hour <= $maxHourSave; $hour++) {
                     $galonKey = "jam_{$hour}_galon";
                     $flashKey = "jam_{$hour}_flash";
-                    
+
                     $galon = isset($penimbanganJam[$galonKey]) ? (float)$penimbanganJam[$galonKey] : 0;
                     $flash = isset($penimbanganJam[$flashKey]) ? (float)$penimbanganJam[$flashKey] : 0;
-                    
+
                     // Only save if at least one value is not zero
                     if ($galon != 0 || $flash != 0) {
                         $dbMaster->table('penimbangan_jam')->insert([
@@ -634,7 +735,7 @@ class Produksi extends BaseController
                         ]);
                     }
                 }
-                
+
                 $dbMaster->close();
             }
 
@@ -693,21 +794,20 @@ class Produksi extends BaseController
             }
 
             // 4b. Save Kode Cap (Powerjet only)
-            $kodeCapPost = $this->request->getPost('kode_cap');
-            if ($kodeCapPost) {
-                foreach ([2, 4, 6, 8] as $jam) {
-                    $jamData = $kodeCapPost[$jam] ?? [];
+            $kodeCapPost = $this->request->getPost('kode_cap_rows');
+            if ($kodeCapPost && is_array($kodeCapPost)) {
+                foreach ($kodeCapPost as $rowData) {
+                    $jam = (int)($rowData['jam_ke'] ?? 0);
+                    if ($jam < 1 || $jam > 12) continue;
                     $row = ['produksi_header_id' => $headerId, 'jam_ke' => $jam];
-                    // Use posted runner value (manual input, supports decimal)
-                    $runnerRaw = str_replace(',', '.', trim($jamData['runner'] ?? '0'));
+                    $runnerRaw = str_replace(',', '.', trim($rowData['runner'] ?? '0'));
                     $row['runner'] = is_numeric($runnerRaw) ? (float)$runnerRaw : 0;
                     $hasData = false;
                     for ($c = 1; $c <= 12; $c++) {
-                        $val = trim($jamData["kode_cap_{$c}"] ?? '');
+                        $val = trim($rowData["kode_cap_{$c}"] ?? '');
                         $row["kode_cap_{$c}"] = $val !== '' ? $val : null;
                         if ($val !== '') $hasData = true;
                     }
-                    // Save if any kode cap is filled OR runner has a value
                     if ($hasData || $row['runner'] > 0) {
                         $this->kodeCapModel->insert($row);
                     }
@@ -734,11 +834,11 @@ class Produksi extends BaseController
                 'ukuran_plastik_besar'  => $this->request->getPost('ukuran_plastik_besar')  ?: null,
                 'plastik_besar_awal'     => $this->request->getPost('plastik_besar_awal')    ?: null,
                 'plastik_besar_akhir'    => $this->request->getPost('plastik_besar_akhir')   ?: null,
-                'plastik_besar_pemakaian'=> $this->request->getPost('plastik_besar_pemakaian') ?: null,
+                'plastik_besar_pemakaian' => $this->request->getPost('plastik_besar_pemakaian') ?: null,
                 'ukuran_plastik_kecil'   => $this->request->getPost('ukuran_plastik_kecil')  ?: null,
                 'plastik_kecil_awal'     => $this->request->getPost('plastik_kecil_awal')    ?: null,
                 'plastik_kecil_akhir'    => $this->request->getPost('plastik_kecil_akhir')   ?: null,
-                'plastik_kecil_pemakaian'=> $this->request->getPost('plastik_kecil_pemakaian') ?: null,
+                'plastik_kecil_pemakaian' => $this->request->getPost('plastik_kecil_pemakaian') ?: null,
                 'ukuran_pe'              => $this->request->getPost('ukuran_pe')              ?: null,
                 'pe_awal'                => $this->request->getPost('pe_awal')                ?: null,
                 'pe_akhir'               => $this->request->getPost('pe_akhir')               ?: null,
@@ -819,13 +919,68 @@ class Produksi extends BaseController
         $db = $this->dbProduksi();
         $db->transStart();
 
+        // Auto-fetch SPK data from PPIC if nomor_spk is provided
+        $noSpk = $this->request->getPost('nomor_spk');
+        $ppicData = null;
+        if ($noSpk) {
+            try {
+                $candidates = array_values(array_unique(array_filter(
+                    [$noSpk, (string) (int) $noSpk],
+                    static fn($s) => $s !== '' && $s !== '0'
+                )));
+
+                $mesinModels = [
+                    'App\\Models\\MPpicMesinBecum'       => 'becum',
+                    'App\\Models\\MPpicMesinPowerjet1'   => 'powerjet1',
+                    'App\\Models\\MPpicMesinPowerjet2'   => 'powerjet2',
+                    'App\\Models\\MPpicMesinCcm1'        => 'ccm1',
+                    'App\\Models\\MPpicMesinCcm2'        => 'ccm2',
+                    'App\\Models\\MPpicMesinIps1'        => 'ips1',
+                    'App\\Models\\MPpicMesinIps2'        => 'ips2',
+                    'App\\Models\\MPpicMesinIps3'        => 'ips3',
+                    'App\\Models\\MPpicMesinIps4'        => 'ips4',
+                ];
+
+                foreach ($mesinModels as $modelClass => $moduleKey) {
+                    if (!class_exists($modelClass)) continue;
+                    try {
+                        $model = new $modelClass();
+                        $row = $model->whereIn('no_spk', $candidates)
+                            ->orderBy('tanggal', 'DESC')
+                            ->orderBy('id', 'DESC')
+                            ->first();
+
+                        if ($row) {
+                            $ppicData = [
+                                'target'    => $row['target'] ?? $row['target_shift1'] ?? 0,
+                                'total_spk' => $this->cleanNumericValue($row['total_spk'] ?? '0'),
+                            ];
+                            break;
+                        }
+                    } catch (\Throwable $e) {
+                        log_message('warning', "update: error querying {$modelClass}: " . $e->getMessage());
+                    }
+                }
+            } catch (\Throwable $e) {
+                log_message('warning', "update: error fetching PPIC data for {$noSpk}: " . $e->getMessage());
+            }
+        }
+
         // 1. Update Header
         $shiftValue = trim($this->request->getPost('shift') ?: $this->request->getPost('shift_hidden'));
         $tercapaiValue = (int)($this->request->getPost('tercapai') ?: '0');
         $gumpalanValue = $this->request->getPost('gumpalan') ?: '0';
 
+        // Use PPIC data if available, otherwise fall back to form values
+        $targetValue = $this->request->getPost('target') ?: ($ppicData['target'] ?? 0);
+        $totalSpkValue = $this->request->getPost('total_spk') ?: ($ppicData['total_spk'] ?? 0);
+
+        // Calculate sisa_po: total_spk from PPIC - grand_total_bagus from form
+        $grandTotalBagus = (int)($this->request->getPost('grand_total_bagus') ?: 0);
+        $sisaPoValue = max(0, (int)$totalSpkValue - $grandTotalBagus);
+
         $headerData = [
-            'nomor_spk'     => $this->request->getPost('nomor_spk'),
+            'no_spk'        => $this->request->getPost('nomor_spk'),
             'nama_mesin'    => $this->request->getPost('nama_mesin'),
             'nama_produk'   => $this->request->getPost('nama_produk'),
             'batch_number'  => $this->request->getPost('batch_number'),
@@ -838,20 +993,20 @@ class Produksi extends BaseController
             'nomor_mesin'   => $this->request->getPost('nomor_mesin'),
             'packing'       => $this->request->getPost('packing'),
             'cycle_time'    => $this->request->getPost('cycle_time'),
-            'target'        => $this->request->getPost('target'),
-            'total_spk'     => $this->request->getPost('total_spk') ?: 0,
+            'target'        => $targetValue,
+            'total_spk'     => $totalSpkValue,
             'isi'           => $this->request->getPost('isi'),
             'tanggal'       => $this->request->getPost('tanggal'),
             'operator'      => $this->request->getPost('operator'),
             'catatan'       => $this->request->getPost('catatan'),
-            'sisa_po'       => $this->request->getPost('sisa_po') ?: 0,
+            'sisa_po'       => $sisaPoValue,
             'hold'          => $this->request->getPost('hold') ?: 0,
             'gumpalan'      => $gumpalanValue,
             'plash_kotor'   => $this->request->getPost('plash_kotor') ?: null,
             'sapuan'        => $this->request->getPost('sapuan') ?: null,
             'counter_awal'  => $this->request->getPost('counter_awal') ?: null,
             'counter_akhir' => $this->request->getPost('counter_akhir') ?: null,
-            'total_counter' => (function() {
+            'total_counter' => (function () {
                 $awal  = (int) ($this->request->getPost('counter_awal')  ?: 0);
                 $akhir = (int) ($this->request->getPost('counter_akhir') ?: 0);
                 return ($awal > 0 || $akhir > 0) ? abs($akhir - $awal) : null;
@@ -929,7 +1084,7 @@ class Produksi extends BaseController
                 if (!is_array($mat)) {
                     continue;
                 }
-                
+
                 // Safely extract material fields with null defaults
                 $this->materialModel->insert([
                     'produksi_header_id' => $id,
@@ -957,12 +1112,14 @@ class Produksi extends BaseController
 
         // 4b. Refresh Penimbangan Jam (8-hour weighing) - for Becum, Powerjet1, Powerjet2
         // NOTE: This uses separate database connection (oromaster) outside main transaction
-        // Get oromaster database connection (separate from oroproduksi transaction)
-        $dbMaster = \Config\Database::connect('master');
-        $dbMaster->table('penimbangan_jam')->where('produksi_header_id', $id)->delete();
-        
         $penimbanganJam = $this->request->getPost('penimbangan_jam');
-        if ($penimbanganJam) {
+        $dbMaster = \Config\Database::connect('master');
+
+        // Hanya delete+reinsert jika POST penimbangan_jam benar-benar dikirim dari form.
+        // Jika null (mesin bukan Becum/Powerjet atau section tidak dirender), skip — jangan hapus data lama.
+        if ($penimbanganJam !== null) {
+            $dbMaster->table('penimbangan_jam')->where('produksi_header_id', $id)->delete();
+
             // Powerjet = 12 jam, Becum = 8 jam
             $namaMesinUpd   = $this->request->getPost('nama_mesin') ?? '';
             $isPowerjetUpd  = stripos($namaMesinUpd, 'powerjet') !== false;
@@ -975,17 +1132,23 @@ class Produksi extends BaseController
                 $totalGalon += isset($penimbanganJam["jam_{$hour}_galon"]) ? (float)$penimbanganJam["jam_{$hour}_galon"] : 0;
                 $totalFlash += isset($penimbanganJam["jam_{$hour}_flash"]) ? (float)$penimbanganJam["jam_{$hour}_flash"] : 0;
             }
-            $rataGalon = round($totalGalon / $maxHourUpd, 2);
-            $rataFlash = round($totalFlash / $maxHourUpd, 2);
+            $filledGalonUpd = 0;
+            $filledFlashUpd = 0;
+            for ($hour = 1; $hour <= $maxHourUpd; $hour++) {
+                if ((float)($penimbanganJam["jam_{$hour}_galon"] ?? 0) > 0) $filledGalonUpd++;
+                if ((float)($penimbanganJam["jam_{$hour}_flash"] ?? 0) > 0) $filledFlashUpd++;
+            }
+            $rataGalon = $filledGalonUpd > 0 ? round($totalGalon / $filledGalonUpd, 2) : 0;
+            $rataFlash = $filledFlashUpd > 0 ? round($totalFlash / $filledFlashUpd, 2) : 0;
 
             // Loop through all hours
             for ($hour = 1; $hour <= $maxHourUpd; $hour++) {
                 $galonKey = "jam_{$hour}_galon";
                 $flashKey = "jam_{$hour}_flash";
-                
+
                 $galon = isset($penimbanganJam[$galonKey]) ? (float)$penimbanganJam[$galonKey] : 0;
                 $flash = isset($penimbanganJam[$flashKey]) ? (float)$penimbanganJam[$flashKey] : 0;
-                
+
                 // Only save if at least one value is not zero
                 if ($galon != 0 || $flash != 0) {
                     $dbMaster->table('penimbangan_jam')->insert([
@@ -999,7 +1162,7 @@ class Produksi extends BaseController
                 }
             }
         }
-        
+
         $dbMaster->close();
 
         // 5. Refresh Colorants
@@ -1016,25 +1179,25 @@ class Produksi extends BaseController
                 $tbLainInDetails  = null;
 
                 if (isset($col['tb_in']) && is_array($col['tb_in'])) {
-                        $tbInFiltered = array_values(array_filter($col['tb_in'], fn($item) => !empty($item['nama'])));
-                        $tbInDetails = !empty($tbInFiltered) ? json_encode($tbInFiltered) : null;
-                        $tbIn = $col['tb_in_summary'] ?? null;
+                    $tbInFiltered = array_values(array_filter($col['tb_in'], fn($item) => !empty($item['nama'])));
+                    $tbInDetails = !empty($tbInFiltered) ? json_encode($tbInFiltered) : null;
+                    $tbIn = $col['tb_in_summary'] ?? null;
                 } else {
                     $tbIn = $col['tb_in'] ?? null;
                 }
 
                 if (isset($col['tb_out']) && is_array($col['tb_out'])) {
-                        $tbOutFiltered = array_values(array_filter($col['tb_out'], fn($item) => !empty($item['nama'])));
-                        $tbOutDetails = !empty($tbOutFiltered) ? json_encode($tbOutFiltered) : null;
-                        $tbOut = $col['tb_out_summary'] ?? null;
+                    $tbOutFiltered = array_values(array_filter($col['tb_out'], fn($item) => !empty($item['nama'])));
+                    $tbOutDetails = !empty($tbOutFiltered) ? json_encode($tbOutFiltered) : null;
+                    $tbOut = $col['tb_out_summary'] ?? null;
                 } else {
                     $tbOut = $col['tb_out'] ?? null;
                 }
 
                 if (isset($col['tb_lain_in']) && is_array($col['tb_lain_in'])) {
-                        $tbLainInFiltered = array_values(array_filter($col['tb_lain_in'], fn($item) => !empty($item['nama'])));
-                        $tbLainInDetails = !empty($tbLainInFiltered) ? json_encode($tbLainInFiltered) : null;
-                        $tbLainIn = $col['tb_lain_in_summary'] ?? null;
+                    $tbLainInFiltered = array_values(array_filter($col['tb_lain_in'], fn($item) => !empty($item['nama'])));
+                    $tbLainInDetails = !empty($tbLainInFiltered) ? json_encode($tbLainInFiltered) : null;
+                    $tbLainIn = $col['tb_lain_in_summary'] ?? null;
                 } else {
                     $tbLainIn = $col['tb_lain_in'] ?? null;
                 }
@@ -1058,21 +1221,20 @@ class Produksi extends BaseController
 
         // 5b. Refresh Kode Cap (Powerjet only)
         $this->kodeCapModel->where('produksi_header_id', $id)->delete();
-        $kodeCapPost = $this->request->getPost('kode_cap');
-        if ($kodeCapPost) {
-            foreach ([2, 4, 6, 8] as $jam) {
-                $jamData = $kodeCapPost[$jam] ?? [];
+        $kodeCapPost = $this->request->getPost('kode_cap_rows');
+        if ($kodeCapPost && is_array($kodeCapPost)) {
+            foreach ($kodeCapPost as $rowData) {
+                $jam = (int)($rowData['jam_ke'] ?? 0);
+                if ($jam < 1 || $jam > 12) continue;
                 $row = ['produksi_header_id' => $id, 'jam_ke' => $jam];
-                // Use posted runner value (manual input, supports decimal)
-                $runnerRaw = str_replace(',', '.', trim($jamData['runner'] ?? '0'));
+                $runnerRaw = str_replace(',', '.', trim($rowData['runner'] ?? '0'));
                 $row['runner'] = is_numeric($runnerRaw) ? (float)$runnerRaw : 0;
                 $hasData = false;
                 for ($c = 1; $c <= 12; $c++) {
-                    $val = trim($jamData["kode_cap_{$c}"] ?? '');
+                    $val = trim($rowData["kode_cap_{$c}"] ?? '');
                     $row["kode_cap_{$c}"] = $val !== '' ? $val : null;
                     if ($val !== '') $hasData = true;
                 }
-                // Save if any kode cap is filled OR runner has a value
                 if ($hasData || $row['runner'] > 0) {
                     $this->kodeCapModel->insert($row);
                 }
@@ -1100,11 +1262,11 @@ class Produksi extends BaseController
             'ukuran_plastik_besar'  => $this->request->getPost('ukuran_plastik_besar')  ?: null,
             'plastik_besar_awal'     => $this->request->getPost('plastik_besar_awal')    ?: null,
             'plastik_besar_akhir'    => $this->request->getPost('plastik_besar_akhir')   ?: null,
-            'plastik_besar_pemakaian'=> $this->request->getPost('plastik_besar_pemakaian') ?: null,
+            'plastik_besar_pemakaian' => $this->request->getPost('plastik_besar_pemakaian') ?: null,
             'ukuran_plastik_kecil'   => $this->request->getPost('ukuran_plastik_kecil')  ?: null,
             'plastik_kecil_awal'     => $this->request->getPost('plastik_kecil_awal')    ?: null,
             'plastik_kecil_akhir'    => $this->request->getPost('plastik_kecil_akhir')   ?: null,
-            'plastik_kecil_pemakaian'=> $this->request->getPost('plastik_kecil_pemakaian') ?: null,
+            'plastik_kecil_pemakaian' => $this->request->getPost('plastik_kecil_pemakaian') ?: null,
             'ukuran_pe'              => $this->request->getPost('ukuran_pe')              ?: null,
             'pe_awal'                => $this->request->getPost('pe_awal')                ?: null,
             'pe_akhir'               => $this->request->getPost('pe_akhir')               ?: null,
@@ -1120,21 +1282,81 @@ class Produksi extends BaseController
         ]);
 
         // 7. Refresh Downtimes
-        $this->downtimeModel->where('produksi_header_id', $id)->delete();
-        $totalDowntime = 0;
+        // Downtime aktif (waktu_selesai NULL) dipreserve agar status realtime tidak reset.
+        // Downtime yang punya ID dari form → UPDATE. Yang baru (tidak ada ID) → INSERT.
+        // Hapus dulu downtime yang sudah selesai dan TIDAK ada di form (dihapus user).
+        $postedIds = [];
         $downtimes = $this->request->getPost('downtimes');
         if ($downtimes) {
             foreach ($downtimes as $dt) {
-                $this->downtimeModel->insert([
-                    'produksi_header_id' => $id,
-                    'alasan_downtime'    => $dt['alasan'],
-                    'problem'            => $dt['problem'] ?? null,
-                    'action_plant'       => $dt['action_plant'] ?? null,
-                    'waktu_mulai'        => $dt['mulai'],
-                    'waktu_selesai'      => $dt['selesai'],
-                    'durasi_menit'       => $dt['durasi'],
-                ]);
-                $totalDowntime += (int)$dt['durasi'];
+                if (!empty($dt['id'])) {
+                    $postedIds[] = (int)$dt['id'];
+                }
+            }
+        }
+
+        // Hapus downtime yang sudah selesai dan tidak ada di form POST (user hapus dari UI)
+        $existingFinished = $this->downtimeModel
+            ->where('produksi_header_id', $id)
+            ->where('waktu_selesai IS NOT NULL')
+            ->where('deleted_at', null)
+            ->findAll();
+        foreach ($existingFinished as $ef) {
+            if (!in_array((int)$ef['id'], $postedIds)) {
+                $this->downtimeModel->delete($ef['id']);
+            }
+        }
+
+        $totalDowntime = 0;
+        if ($downtimes) {
+            foreach ($downtimes as $dt) {
+                $waktuSelesai = !empty($dt['selesai']) ? $dt['selesai'] : null;
+                $durasi       = (int)($dt['durasi'] ?? 0);
+                $existingId   = !empty($dt['id']) ? (int)$dt['id'] : null;
+
+                if ($existingId) {
+                    // Cek apakah record ini downtime aktif (waktu_selesai masih NULL di DB)
+                    $existingRecord = $this->downtimeModel->find($existingId);
+                    $isActiveRecord = ($existingRecord && empty($existingRecord['waktu_selesai']));
+
+                    // Jika downtime masih aktif DAN user belum isi waktu_selesai,
+                    // hanya update field konten (jangan sentuh timestamps)
+                    if ($isActiveRecord && $waktuSelesai === null) {
+                        $this->downtimeModel->update($existingId, [
+                            'alasan_downtime' => $dt['alasan'] ?? null,
+                            'problem'         => $dt['problem'] ?? null,
+                            'action_plant'    => $dt['action_plant'] ?? null,
+                        ]);
+                        // Tidak dihitung ke total karena belum selesai
+                        continue;
+                    }
+
+                    // Downtime sudah selesai: update semua field
+                    $this->downtimeModel->update($existingId, [
+                        'alasan_downtime' => $dt['alasan'] ?? null,
+                        'problem'         => $dt['problem'] ?? null,
+                        'action_plant'    => $dt['action_plant'] ?? null,
+                        'waktu_mulai'     => $dt['mulai'] ?? null,
+                        'waktu_selesai'   => $waktuSelesai,
+                        'durasi_menit'    => $durasi,
+                    ]);
+                } else {
+                    // INSERT record baru
+                    $this->downtimeModel->insert([
+                        'produksi_header_id' => $id,
+                        'alasan_downtime'    => $dt['alasan'] ?? null,
+                        'problem'            => $dt['problem'] ?? null,
+                        'action_plant'       => $dt['action_plant'] ?? null,
+                        'waktu_mulai'        => $dt['mulai'] ?? null,
+                        'waktu_selesai'      => $waktuSelesai,
+                        'durasi_menit'       => $durasi,
+                    ]);
+                }
+
+                // Hanya downtime yang sudah selesai yang dihitung ke total
+                if ($waktuSelesai !== null) {
+                    $totalDowntime += $durasi;
+                }
             }
         }
 
@@ -1189,6 +1411,36 @@ class Produksi extends BaseController
         return redirect()->to('/produksi')->with('success', 'Data berhasil dihapus permanen.');
     }
 
+    public function bulkDeletePermanent()
+    {
+        if (!in_array(session('role'), ['manager', 'produksi', 'manager_warehouse2'])) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak.'])->setStatusCode(403);
+        }
+
+        $ids = $this->request->getPost('ids');
+        if (empty($ids) || !is_array($ids)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Tidak ada data yang dipilih.']);
+        }
+
+        // Sanitize: pastikan semua nilai adalah integer positif
+        $ids = array_filter(array_map('intval', $ids), fn($v) => $v > 0);
+        if (empty($ids)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'ID tidak valid.']);
+        }
+
+        $deleted = 0;
+        foreach ($ids as $id) {
+            $this->headerModel->delete($id, true);
+            $deleted++;
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => "$deleted data berhasil dihapus permanen.",
+            'deleted' => $deleted,
+        ]);
+    }
+
     public function get_trash()
     {
         $trash = $this->headerModel->onlyDeleted()->orderBy('deleted_at', 'DESC')->findAll();
@@ -1218,7 +1470,7 @@ class Produksi extends BaseController
     public function get_last_data($spk)
     {
         // 1. Get latest header from previous production
-        $lastHeader = $this->headerModel->where('nomor_spk', $spk)
+        $lastHeader = $this->headerModel->where('no_spk', $spk)
             ->orderBy('created_at', 'DESC')
             ->first();
 
@@ -1258,6 +1510,66 @@ class Produksi extends BaseController
     {
         $spkList = [];
 
+        // Step 0: Include SPKs saved directly in the generic PPIC table.
+        // Some input flows save here (e.g. from the main PPIC entry page), and
+        // they were being ignored because production only looked at mesin_* tables.
+        try {
+            $ppicRows = $this->ppicModel
+                ->asArray()
+                ->withDeleted()
+                ->where('no_spk !=', null)
+                ->where('no_spk !=', '')
+                ->orderBy('tanggal', 'DESC')
+                ->orderBy('id', 'DESC')
+                ->findAll();
+
+            if (!empty($ppicRows)) {
+                foreach ($ppicRows as $ppicRow) {
+                    $key = trim((string) ($ppicRow['no_spk'] ?? ''));
+                    $mesinName = trim((string) ($ppicRow['nama_mesin'] ?? ''));
+                    $spkKey = $key !== '' ? ($key . '|' . strtolower($mesinName)) : '';
+                    if ($key === '' || $spkKey === '' || isset($spkList[$spkKey])) {
+                        continue;
+                    }
+
+                    $targetValue = trim((string) ($ppicRow['targett'] ?? ''));
+                    $totalProduction = 0;
+                    try {
+                        $productionData = $this->headerModel
+                            ->select('SUM(grand_total_bagus) as total_bagus')
+                            ->where('no_spk', $key)
+                            ->first();
+                        $totalProduction = (int)($productionData['total_bagus'] ?? 0);
+                    } catch (\Exception $e) {
+                        log_message('warning', "getSpkList: cannot sum production for generic PPIC SPK $key: " . $e->getMessage());
+                    }
+
+                    $spkList[$spkKey] = [
+                        'no_spk' => $key,
+                        'tanggal' => $ppicRow['tanggal'] ?? '',
+                        'nama_mesin' => $mesinName,
+                        'nama_produk' => $ppicRow['nama_produk'] ?? '',
+                        'brand' => $ppicRow['brand'] ?? '',
+                        'grade' => $ppicRow['grade'] ?? '',
+                        'warna' => $ppicRow['warna'] ?? '',
+                        'nomor_mesin' => $ppicRow['nomor_mesin'] ?? '',
+                        'shif' => $ppicRow['shif'] ?? '',
+                        'operator' => $ppicRow['operator'] ?? '',
+                        'targett' => $targetValue,
+                        'packing' => $ppicRow['packing'] ?? '',
+                        'total_spk' => $this->cleanNumericValue($ppicRow['targett'] ?? ''),
+                        'revisi' => $ppicRow['revisi'] ?? '',
+                        'target_int' => (int) $this->cleanNumericValue($targetValue),
+                        'total_production' => $totalProduction,
+                        'selesai_spk' => 0,
+                        'is_completed' => ($targetValue !== '' && $totalProduction >= (int) $this->cleanNumericValue($targetValue)),
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            log_message('warning', 'Error retrieving SPKs from generic PPIC table: ' . $e->getMessage());
+        }
+
         // Machine models in PPIC database with their display names
         $mesinModels = [
             'MPpicMesinBecum' => 'Becum',
@@ -1284,22 +1596,22 @@ class Produksi extends BaseController
                     // Query all SPKs without status filtering - include completed ones
                     $mesinSpks = $mesinModel
                         ->asArray()
-                        ->withDeleted()  // Include soft-deleted SPKs
+                        ->withDeleted()
                         ->where('no_spk !=', null)
                         ->where('no_spk !=', '')
-                        ->orderBy('tanggal', 'DESC')
                         ->orderBy('id', 'DESC')
-                        ->limit(100)  // Increased limit to get more SPKs
                         ->findAll();
 
                     if (!empty($mesinSpks)) {
                         foreach ($mesinSpks as $mesin) {
                             $key = $mesin['no_spk'] ?? '';
-                            if ($key && !isset($spkList[$key])) {
+                            $mesinName = !empty($mesin['nama_mesin']) ? $mesin['nama_mesin'] : $displayName;
+                            $spkKey = $key !== '' ? ($key . '|' . strtolower(trim((string) $mesinName))) : '';
+                            if ($key && $spkKey !== '' && !isset($spkList[$spkKey])) {
                                 // Get last packing value for this SPK from produksi_headers
                                 $lastPacking = $this->headerModel
                                     ->select('packing')
-                                    ->where('nomor_spk', $key)
+                                    ->where('no_spk', $key)
                                     ->orderBy('id', 'DESC')
                                     ->first();
 
@@ -1315,7 +1627,6 @@ class Produksi extends BaseController
                                     ?? $mesin['produk_preform']
                                     ?? '';
 
-                                $mesinName = !empty($mesin['nama_mesin']) ? $mesin['nama_mesin'] : $displayName;
                                 $target = !empty($mesin['target']) ? $mesin['target'] : ($mesin['target_shift1'] ?? '');
 
                                 // Ambil packing: prioritas dari produksi_headers (terakhir diinput)
@@ -1327,7 +1638,7 @@ class Produksi extends BaseController
                                 try {
                                     $productionData = $this->headerModel
                                         ->select('SUM(grand_total_bagus) as total_bagus')
-                                        ->where('nomor_spk', $key)
+                                        ->where('no_spk', $key)
                                         ->first();
                                     $totalProduction = (int)($productionData['total_bagus'] ?? 0);
                                 } catch (\Exception $e) {
@@ -1336,7 +1647,7 @@ class Produksi extends BaseController
                                     log_message('warning', "getSpkList: fallback to total_spk for SPK $key: " . $e->getMessage());
                                 }
 
-                                $spkList[$key] = [
+                                $spkList[$spkKey] = [
                                     'no_spk' => $key,
                                     'tanggal' => $mesin['tanggal'] ?? '',
                                     'nama_mesin' => $mesinName,
@@ -1375,25 +1686,26 @@ class Produksi extends BaseController
         try {
             $produksiSpks = $this->headerModel
                 ->asArray()
-                ->select('nomor_spk, nama_mesin, nama_produk, grade, warna, nomor_mesin, operator, packing, shift as shif, COALESCE(target, 0) as targett, total_spk, MAX(tanggal) as tanggal, MAX(selesai_spk) as selesai_spk')
-                ->where('nomor_spk !=', null)
-                ->where('nomor_spk !=', '')
-                ->groupBy('nomor_spk')
+                ->select('no_spk, nama_mesin, nama_produk, grade, warna, nomor_mesin, operator, packing, shift as shif, COALESCE(target, 0) as targett, total_spk, MAX(tanggal) as tanggal, MAX(selesai_spk) as selesai_spk')
+                ->where('no_spk !=', null)
+                ->where('no_spk !=', '')
+                ->groupBy('no_spk')
                 ->orderBy('tanggal', 'DESC')
                 ->orderBy('id', 'DESC')
-                ->limit(100)
                 ->findAll();
 
             if (!empty($produksiSpks)) {
                 foreach ($produksiSpks as $prod) {
-                    $key = $prod['nomor_spk'] ?? '';
-                    if ($key && !isset($spkList[$key])) {
+                    $key = $prod['no_spk'] ?? '';
+                    $mesinName = trim((string) ($prod['nama_mesin'] ?? ''));
+                    $spkKey = $key !== '' ? ($key . '|' . strtolower($mesinName)) : '';
+                    if ($key && $spkKey !== '' && !isset($spkList[$spkKey])) {
                         // Calculate total production for this SPK
                         $totalProduction = 0;
                         try {
                             $productionData = $this->headerModel
                                 ->select('SUM(grand_total_bagus) as total_bagus')
-                                ->where('nomor_spk', $key)
+                                ->where('no_spk', $key)
                                 ->first();
                             $totalProduction = (int)($productionData['total_bagus'] ?? 0);
                         } catch (\Exception $e) {
@@ -1401,10 +1713,10 @@ class Produksi extends BaseController
                         }
                         $targetValue = (int)($prod['targett'] ?? 0);
 
-                        $spkList[$key] = [
+                        $spkList[$spkKey] = [
                             'no_spk' => $key,
                             'tanggal' => $prod['tanggal'] ?? '',
-                            'nama_mesin' => $prod['nama_mesin'] ?? '',
+                            'nama_mesin' => $mesinName,
                             'nama_produk' => $prod['nama_produk'] ?? '',
                             'brand' => $prod['brand'] ?? '',
                             'grade' => $prod['grade'] ?? '',
@@ -1902,7 +2214,7 @@ class Produksi extends BaseController
 
         $row = $this->headerModel
             ->select('packing')
-            ->where('nomor_spk', $noSpk)
+            ->where('no_spk', $noSpk)
             ->orderBy('created_at', 'DESC')
             ->first();
 
@@ -2026,7 +2338,7 @@ class Produksi extends BaseController
         $lastHeader = null;
         try {
             $lastHeader = $this->headerModel
-                ->whereIn('nomor_spk', $candidates)
+                ->whereIn('no_spk', $candidates)
                 ->orderBy('created_at', 'DESC')
                 ->first();
 
@@ -2046,7 +2358,7 @@ class Produksi extends BaseController
         try {
             $sumQuery = $this->headerModel
                 ->selectSum('grand_total_bagus', 'total')
-                ->whereIn('nomor_spk', $candidates);
+                ->whereIn('no_spk', $candidates);
             if ($excludeId > 0) {
                 $sumQuery->where('id !=', $excludeId);
             }
@@ -2154,6 +2466,127 @@ class Produksi extends BaseController
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
             ])->setStatusCode(500);
+        }
+    }
+
+    /**
+     * Toggle Downtime Status ON/OFF for a Production Header
+     * 
+     * Route: POST /produksi/downtime/toggle/{header_id}
+     * 
+     * Logic:
+     * - If no active downtime exists → INSERT new downtime (ON)
+     * - If active downtime exists → UPDATE with waktu_selesai & durasi_menit (OFF)
+     * 
+     * Response: JSON with { success, active, message }
+     */
+    public function toggleDowntime($headerId)
+    {
+        // Guard: user must be logged in (checked by auth filter)
+        // Any authenticated user with access to /produksi can toggle downtime
+        $currentRole = session('role');
+        log_message('info', "[DOWNTIME] toggleDowntime called - role: {$currentRole}, header_id: {$headerId}");
+
+        try {
+            $headerId = (int)$headerId;
+
+            // Verify header exists
+            $header = $this->headerModel->find($headerId);
+            if (!$header) {
+                return $this->response
+                    ->setStatusCode(404)
+                    ->setContentType('application/json')
+                    ->setJSON([
+                        'success' => false,
+                        'message' => 'Produksi header tidak ditemukan.',
+                    ]);
+            }
+
+            // Check if active downtime exists (waktu_selesai IS NULL)
+            $activeDowntime = $this->downtimeModel
+                ->where('produksi_header_id', $headerId)
+                ->where('waktu_selesai', null)
+                ->where('deleted_at', null)
+                ->first();
+
+            if ($activeDowntime) {
+                // Toggle OFF: update waktu_selesai and calculate durasi_menit
+                $waktuMulai   = new \DateTime($activeDowntime['waktu_mulai']);
+                $waktuSelesai = new \DateTime();
+                $diff         = $waktuSelesai->diff($waktuMulai);
+                $durasi       = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
+
+                $updateResult = $this->downtimeModel->update($activeDowntime['id'], [
+                    'waktu_selesai' => $waktuSelesai->format('Y-m-d H:i:s'),
+                    'durasi_menit' => $durasi,
+                ]);
+
+                if ($updateResult) {
+                    log_message('info', "Downtime toggle OFF - header_id: {$headerId}, downtime_id: {$activeDowntime['id']}, durasi: {$durasi} menit");
+
+                    return $this->response
+                        ->setContentType('application/json')
+                        ->setJSON([
+                            'success' => true,
+                            'active' => false,
+                            'message' => 'Downtime berakhir.',
+                        ]);
+                } else {
+                    log_message('error', "Failed to update downtime - header_id: {$headerId}, downtime_id: {$activeDowntime['id']}");
+                    return $this->response
+                        ->setStatusCode(500)
+                        ->setContentType('application/json')
+                        ->setJSON([
+                            'success' => false,
+                            'message' => 'Gagal mengakhiri downtime.',
+                        ]);
+                }
+            } else {
+                // Toggle ON: insert new downtime record
+                $insertData = [
+                    'produksi_header_id' => $headerId,
+                    'alasan_downtime' => null,
+                    'problem' => null,
+                    'action_plant' => null,
+                    'waktu_mulai' => date('Y-m-d H:i:s'),
+                    'waktu_selesai' => null,
+                    'durasi_menit' => 0,
+                ];
+
+                $newDowntimeId = $this->downtimeModel->insert($insertData);
+
+                if ($newDowntimeId) {
+                    log_message('info', "Downtime toggle ON - header_id: {$headerId}, new_downtime_id: {$newDowntimeId}");
+
+                    return $this->response
+                        ->setContentType('application/json')
+                        ->setJSON([
+                            'success' => true,
+                            'active' => true,
+                            'message' => 'Downtime dimulai.',
+                        ]);
+                } else {
+                    log_message('error', "Failed to insert downtime - header_id: {$headerId}");
+                    return $this->response
+                        ->setStatusCode(500)
+                        ->setContentType('application/json')
+                        ->setJSON([
+                            'success' => false,
+                            'message' => 'Gagal memulai downtime.',
+                        ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('error', "Produksi::toggleDowntime - Exception: " . $e->getMessage());
+            log_message('error', "Trace: " . $e->getTraceAsString());
+
+            return $this->response
+                ->setStatusCode(500)
+                ->setContentType('application/json')
+                ->setJSON([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage(),
+                ]);
         }
     }
 }

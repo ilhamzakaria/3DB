@@ -65,7 +65,7 @@ class DataSeeder extends Seeder
         // Seed Plant Produksi
         for ($i = 0; $i < 100; $i++) {
             $data = [
-                'nomor_spk'     => 'SPK-' . rand(1000, 9999),
+                'no_spk'        => 'SPK-' . rand(1000, 9999),
                 'nama_mesin'    => $mesins[array_rand($mesins)],
                 'nama_produk' => $produks[array_rand($produks)],
                 'batch_number'  => 'BATCH-' . rand(100, 999),

@@ -46,6 +46,7 @@ class Filters extends BaseFilters
         'managerWarehouse2'         => \App\Filters\RoleManagerWarehouse2::class,
         'readOnlyProduksi'          => \App\Filters\RoleReadOnlyProduksi::class,
         'readOnlyWarehouse2'        => \App\Filters\RoleReadOnlyWarehouse2::class,
+        'realtime'                  => \App\Filters\RoleRealtime::class,
 
     ];
 
@@ -102,6 +103,7 @@ class Filters extends BaseFilters
                     'produksi/delete/*',
                     'produksi/restore/*',
                     'produksi/delete_permanent/*',
+                    'produksi/downtime/toggle/*',
 
                     // Operator
                     'operator/tambahData',

@@ -224,6 +224,10 @@
     .btn-edit:hover { background: var(--primary-modern); color: white; }
     .btn-detail { background: rgba(46, 196, 182, 0.1); color: var(--secondary-modern); }
     .btn-detail:hover { background: var(--secondary-modern); color: white; }
+    .btn-downtime { background: rgba(255, 159, 28, 0.1); color: #ff9f1c; }
+    .btn-downtime:hover { background: #ff9f1c; color: white; }
+    .btn-downtime[data-active="1"] { background: rgba(239, 71, 111, 0.1); color: var(--danger-modern); }
+    .btn-downtime[data-active="1"]:hover { background: var(--danger-modern); color: white; }
     .btn-delete { background: rgba(239, 71, 111, 0.1); color: var(--danger-modern); }
     .btn-delete:hover { background: var(--danger-modern); color: white; }
 

@@ -2008,6 +2008,10 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <input type="number" class="form-control" id="jumlahBarang1Produksi" step="1" placeholder="0">
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">lot barang 1</label>
+                            <input type="text" class="form-control" id="lotBarang1Produksi" placeholder="Lot...">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">nama barang 2</label>
                             <select class="form-select nb-select" id="namaBarang2Produksi">
                                 <option value="">-- Pilih --</option>
@@ -2017,6 +2021,10 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                         <div class="col-md-6">
                             <label class="form-label">jumlah barang 2</label>
                             <input type="number" class="form-control" id="jumlahBarang2Produksi" step="1" placeholder="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">lot barang 2</label>
+                            <input type="text" class="form-control" id="lotBarang2Produksi" placeholder="Lot...">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">nama barang 3</label>
@@ -2030,6 +2038,10 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                             <input type="number" class="form-control" id="jumlahBarang3Produksi" step="1" placeholder="0">
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">lot barang 3</label>
+                            <input type="text" class="form-control" id="lotBarang3Produksi" placeholder="Lot...">
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">nama barang 4</label>
                             <select class="form-select nb-select" id="namaBarang4Produksi">
                                 <option value="">-- Pilih --</option>
@@ -2039,6 +2051,10 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                         <div class="col-md-6">
                             <label class="form-label">jumlah barang 4</label>
                             <input type="number" class="form-control" id="jumlahBarang4Produksi" step="1" placeholder="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">lot barang 4</label>
+                            <input type="text" class="form-control" id="lotBarang4Produksi" placeholder="Lot...">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Satuan</label>
@@ -3017,12 +3033,16 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
             // kode_barang: document.getElementById('kodeBarangProduksi').value,
             nama_barang_1: getNamaBarangValue('namaBarangProduksi',  'namaBarangProduksiText'),
             jumlah_barang_1: document.getElementById('jumlahBarang1Produksi').value || null,
+            lot_barang_1: document.getElementById('lotBarang1Produksi').value || null,
             nama_barang_2: getNamaBarangValue('namaBarang2Produksi', 'namaBarang2ProduksiText'),
             jumlah_barang_2: document.getElementById('jumlahBarang2Produksi').value || null,
+            lot_barang_2: document.getElementById('lotBarang2Produksi').value || null,
             nama_barang_3: getNamaBarangValue('namaBarang3Produksi', 'namaBarang3ProduksiText'),
             jumlah_barang_3: document.getElementById('jumlahBarang3Produksi').value || null,
+            lot_barang_3: document.getElementById('lotBarang3Produksi').value || null,
             nama_barang_4: getNamaBarangValue('namaBarang4Produksi', 'namaBarang4ProduksiText'),
             jumlah_barang_4: document.getElementById('jumlahBarang4Produksi').value || null,
+            lot_barang_4: document.getElementById('lotBarang4Produksi').value || null,
             satuan: document.getElementById('satuanProduksi').value,
             jumlah_keluar: document.getElementById('jumlahKeluarProduksi').value,
             retur: document.getElementById('returProduksi').value || null,
@@ -3135,22 +3155,30 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
                     document.getElementById('colorantProduksi').value = item.colorant || '';
                     document.getElementById('statusProduksi').value = item.status || 'pending';
 
-                    // Populate jumlah fields
+                    // Populate jumlah and lot fields
                     document.getElementById('jumlahBarang1Produksi').value = item.jumlah_barang_1 || '';
+                    document.getElementById('lotBarang1Produksi').value = item.lot_barang_1 || '';
                     document.getElementById('jumlahBarang2Produksi').value = item.jumlah_barang_2 || '';
+                    document.getElementById('lotBarang2Produksi').value = item.lot_barang_2 || '';
                     document.getElementById('jumlahBarang3Produksi').value = item.jumlah_barang_3 || '';
+                    document.getElementById('lotBarang3Produksi').value = item.lot_barang_3 || '';
                     document.getElementById('jumlahBarang4Produksi').value = item.jumlah_barang_4 || '';
+                    document.getElementById('lotBarang4Produksi').value = item.lot_barang_4 || '';
 
                     // Populate nama barang dropdowns with saved values
                     updateNamaBarangDropdowns({
                         nama_barang_1: item.nama_barang_1 || '',
                         jumlah_barang_1: item.jumlah_barang_1 || '',
+                        lot_barang_1: item.lot_barang_1 || '',
                         nama_barang_2: item.nama_barang_2 || '',
                         jumlah_barang_2: item.jumlah_barang_2 || '',
+                        lot_barang_2: item.lot_barang_2 || '',
                         nama_barang_3: item.nama_barang_3 || '',
                         jumlah_barang_3: item.jumlah_barang_3 || '',
+                        lot_barang_3: item.lot_barang_3 || '',
                         nama_barang_4: item.nama_barang_4 || '',
                         jumlah_barang_4: item.jumlah_barang_4 || '',
+                        lot_barang_4: item.lot_barang_4 || '',
                         packaging:     item.packaging     || '',
                         masterbatch:   item.masterbatch   || '',
                         colorant:      item.colorant      || '',
@@ -5059,39 +5087,32 @@ $canEdit = in_array(session()->get('role'), ['gudang', 'admin', 'manager', 'mana
 
                     <!-- Nama Barang -->
                     <div class="detail-section">
-                        <div class="detail-section-title">📦 Nama Barang & Jumlah</div>
+                        <div class="detail-section-title">📦 Nama Barang & Jumlah & Lot</div>
                         <table class="detail-table">
+                            <tr style="background-color: #f8f9fa; font-weight: 600;">
+                                <td style="width: 40%;">Nama Barang</td>
+                                <td style="width: 30%;">Jumlah</td>
+                                <td style="width: 30%;">Lot</td>
+                            </tr>
                             <tr>
-                                <td>Barang 1</td>
                                 <td>${item.nama_barang_1 || '<span class="value-muted">-</span>'}</td>
-                            </tr>
-                            <tr>
-                                <td>Jumlah Barang 1</td>
                                 <td>${item.jumlah_barang_1 || '<span class="value-muted">-</span>'}</td>
+                                <td>${item.lot_barang_1 || '<span class="value-muted">-</span>'}</td>
                             </tr>
                             <tr>
-                                <td>Barang 2</td>
                                 <td>${item.nama_barang_2 || '<span class="value-muted">-</span>'}</td>
-                            </tr>
-                            <tr>
-                                <td>Jumlah Barang 2</td>
                                 <td>${item.jumlah_barang_2 || '<span class="value-muted">-</span>'}</td>
+                                <td>${item.lot_barang_2 || '<span class="value-muted">-</span>'}</td>
                             </tr>
                             <tr>
-                                <td>Barang 3</td>
                                 <td>${item.nama_barang_3 || '<span class="value-muted">-</span>'}</td>
-                            </tr>
-                            <tr>
-                                <td>Jumlah Barang 3</td>
                                 <td>${item.jumlah_barang_3 || '<span class="value-muted">-</span>'}</td>
+                                <td>${item.lot_barang_3 || '<span class="value-muted">-</span>'}</td>
                             </tr>
                             <tr>
-                                <td>Barang 4</td>
                                 <td>${item.nama_barang_4 || '<span class="value-muted">-</span>'}</td>
-                            </tr>
-                            <tr>
-                                <td>Jumlah Barang 4</td>
                                 <td>${item.jumlah_barang_4 || '<span class="value-muted">-</span>'}</td>
+                                <td>${item.lot_barang_4 || '<span class="value-muted">-</span>'}</td>
                             </tr>
                         </table>
                     </div>

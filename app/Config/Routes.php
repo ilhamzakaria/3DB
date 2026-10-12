@@ -9,6 +9,10 @@ use CodeIgniter\Router\RouteCollection;
 // === TEST ROUTES (Remove after debugging) ===
 $routes->get('test-db', 'TestDb::index');
 
+// realtime production monitor
+$routes->get('/realtime', 'Realtime::index', ['filter' => 'realtime']);
+$routes->get('/api/realtime/produksi-live', 'Api\RealtimeProduksiApi::live', ['filter' => 'realtime']);
+
 // home
 $routes->get('/home', 'Home::index');
 $routes->get('/laporan', 'Laporan::index', ['filter' => 'manager']);
@@ -359,6 +363,14 @@ $routes->get('/ppic/export/mesin_(:segment)', 'PpicExport::mesin/$1', ['filter' 
 // Export to Excel
 $routes->get('dashboard/export-excel', 'Dashboard::exportExcel');
 
+// Settings Mesin
+$routes->get('/settings-mesin', 'SettingMesin::index');
+$routes->get('/settings-mesin/create', 'SettingMesin::create');
+$routes->post('/settings-mesin/store', 'SettingMesin::store');
+$routes->get('/settings-mesin/edit/(:num)', 'SettingMesin::edit/$1');
+$routes->post('/settings-mesin/update/(:num)', 'SettingMesin::update/$1');
+$routes->post('/settings-mesin/delete/(:num)', 'SettingMesin::delete/$1');
+
 // Export berbagai data
 $routes->get('export/dashboard', 'Export::dashboard');
 $routes->get('export/home', 'Export::home');
@@ -398,6 +410,7 @@ $routes->get('/produksi/delete/(:num)', 'Produksi::delete/$1', ['filter' => 'man
 $routes->get('/produksi/trash', 'Produksi::trash', ['filter' => 'readOnlyProduksi']);
 $routes->get('/produksi/restore/(:num)', 'Produksi::restore/$1', ['filter' => 'managerProduksi']);
 $routes->get('/produksi/delete_permanent/(:num)', 'Produksi::deletePermanent/$1', ['filter' => 'managerProduksi']);
+$routes->post('/produksi/bulk_delete_permanent', 'Produksi::bulkDeletePermanent', ['filter' => 'managerProduksi']);
 $routes->get('/produksi/get_last_data/(:any)', 'Produksi::get_last_data/$1', ['filter' => 'readOnlyProduksi']);
 $routes->get('/produksi/get_ppic_spk/(:any)', 'Produksi::getPpicSpkDetail/$1', ['filter' => 'readOnlyProduksi']);
 $routes->get('/produksi/get_ppic_spk', 'Produksi::getPpicSpkDetail', ['filter' => 'readOnlyProduksi']);
@@ -414,6 +427,9 @@ $routes->get('/produksi/get-target-by-shift', 'Produksi::getTargetByShift', ['fi
 // POST routes: hanya manager, admin, operator
 $routes->post('/produksi/simpan', 'Produksi::simpan', ['filter' => 'managerProduksi']);
 $routes->post('/produksi/update/(:num)', 'Produksi::update/$1', ['filter' => 'managerProduksi']);
+
+// Downtime toggle (hanya role produksi)
+$routes->post('/produksi/downtime/toggle/(:num)', 'Produksi::toggleDowntime/$1', ['filter' => 'auth']);
 
 // reject types (produksi module)
 $routes->get('/reject-type/getAll', 'RejectType::getAll', ['filter' => 'auth']);

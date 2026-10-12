@@ -18,7 +18,10 @@ class MesinIps1 extends BaseController
     protected $MMesin;
     protected $MMesinPpic;
 
-    protected function mesinSlug(): string { return 'mesin_ips1'; }
+    protected function mesinSlug(): string
+    {
+        return 'mesin_ips1';
+    }
 
     public function __construct()
     {
@@ -42,13 +45,13 @@ class MesinIps1 extends BaseController
         }
         if (!empty($startDate)) $query = $query->where('tanggal >=', $startDate);
         if (!empty($endDate))   $query = $query->where('tanggal <=', $endDate);
-        $data_list = $query->orderBy('tanggal','DESC')->orderBy('created_at','DESC')->paginate(15, $this->mesinSlug());
-        
+        $data_list = $query->orderBy('tanggal', 'DESC')->orderBy('created_at', 'DESC')->paginate(15, $this->mesinSlug());
+
         // When in PPIC context, attach realisasi data from produksi_headers
         if ($this->isPpicContext() && !empty($data_list)) {
             $data_list = $this->attachProduksiRealisasi($data_list);
         }
-        
+
         return view(self::VIEW_PATH, array_merge([
             'title'              => 'Mesin IPS 1',
             'data_list'          => $data_list,
@@ -66,7 +69,9 @@ class MesinIps1 extends BaseController
         if (!$this->request->is('post')) return redirect()->to($this->indexRoute());
         if ($this->activeMesin()->insert($this->getIpsFields())) {
             session()->setFlashdata('success', 'Data Mesin IPS 1 berhasil ditambahkan');
-        } else { session()->setFlashdata('error', 'Gagal menambahkan data'); }
+        } else {
+            session()->setFlashdata('error', 'Gagal menambahkan data');
+        }
         return redirect()->to($this->indexRoute());
     }
 
@@ -76,7 +81,9 @@ class MesinIps1 extends BaseController
         $id = $id ?: $this->request->getPost('id');
         if ($this->activeMesin()->update($id, $this->getIpsFields())) {
             session()->setFlashdata('success', 'Data Mesin IPS 1 berhasil diupdate');
-        } else { session()->setFlashdata('error', 'Gagal mengupdate data'); }
+        } else {
+            session()->setFlashdata('error', 'Gagal mengupdate data');
+        }
         return redirect()->to($this->indexRoute());
     }
 
@@ -86,6 +93,8 @@ class MesinIps1 extends BaseController
         return [
             'tanggal'               => $p('tanggal') ?: date('Y-m-d'),
             'no_spk'                => $p('no_spk') !== '' ? (int) $p('no_spk') : null,
+            'nama_mesin'            => $p('nama_mesin') !== '' ? $p('nama_mesin') : 'IPS 1',
+            'nama_produk'           => $p('nama_produk') !== '' ? $p('nama_produk') : $p('produk_preform'),
             'nomor_mesin'           => $p('nomor_mesin'),
             'shif'                  => $p('shif'),
             'status'                => $p('status') ?: 'ganti bottom rata',
@@ -209,7 +218,7 @@ class MesinIps1 extends BaseController
                     : null;
 
                 $castClause = $castPlaceholders
-                    ? "OR CAST(nomor_spk AS UNSIGNED) IN ($castPlaceholders)"
+                    ? "OR CAST(no_spk AS UNSIGNED) IN ($castPlaceholders)"
                     : '';
 
                 // No tanggal filter here: SPK is unique per job, so matching by SPK
@@ -217,13 +226,13 @@ class MesinIps1 extends BaseController
                 // mesin_[MESIN] vs produksi_headers.
                 $sql = "
                     SELECT
-                        nomor_spk,
+                        no_spk,
                         shift,
                         SUM(grand_total_bagus) AS total_bagus
                     FROM produksi_headers
                     WHERE deleted_at IS NULL
-                      AND (nomor_spk IN ($inPlaceholders) $castClause)
-                    GROUP BY nomor_spk, shift
+                                            AND (no_spk IN ($inPlaceholders) $castClause)
+                                        GROUP BY no_spk, shift
                 ";
 
                 $bindings = array_merge(
@@ -234,7 +243,7 @@ class MesinIps1 extends BaseController
                 $rows1 = $db->query($sql, $bindings)->getResultArray();
 
                 foreach ($rows1 as $r) {
-                    $normKey = (string)(int)trim((string)$r['nomor_spk']);
+                    $normKey = (string)(int)trim((string)$r['no_spk']);
                     $key     = "$normKey|{$r['shift']}";
                     $bySpk[$key] = ($bySpk[$key] ?? 0) + (int)$r['total_bagus'];
                 }
@@ -295,18 +304,18 @@ class MesinIps1 extends BaseController
                     : null;
 
                 $castClause = $castPlaceholders
-                    ? "OR CAST(nomor_spk AS UNSIGNED) IN ($castPlaceholders)"
+                    ? "OR CAST(no_spk AS UNSIGNED) IN ($castPlaceholders)"
                     : '';
 
                 $sql3 = "
                     SELECT
-                        nomor_spk,
+                        no_spk,
                         extra_realisasi_shifts
                     FROM produksi_headers
                     WHERE deleted_at IS NULL
                       AND extra_realisasi_shifts IS NOT NULL
                       AND extra_realisasi_shifts != '[]'
-                      AND (nomor_spk IN ($inPlaceholders) $castClause)
+                      AND (no_spk IN ($inPlaceholders) $castClause)
                 ";
 
                 $bindings3 = array_merge(
@@ -317,8 +326,8 @@ class MesinIps1 extends BaseController
                 $rows3 = $db->query($sql3, $bindings3)->getResultArray();
 
                 foreach ($rows3 as $r) {
-                    $normKey = (string)(int)trim((string)$r['nomor_spk']);
-                    
+                    $normKey = (string)(int)trim((string)$r['no_spk']);
+
                     // Decode JSON array of extra shifts
                     try {
                         $extraShifts = json_decode($r['extra_realisasi_shifts'], true);
@@ -366,9 +375,11 @@ class MesinIps1 extends BaseController
                         // Find any byMesin key that contains this mesin string
                         foreach ($byMesin as $byMesinKey => $byMesinVal) {
                             [$storedMesin, $storedTanggal, $storedShift] = explode('|', $byMesinKey);
-                            if ($storedTanggal === $tanggal
+                            if (
+                                $storedTanggal === $tanggal
                                 && (int)$storedShift === (int)$shift
-                                && stripos($storedMesin, $mesin) !== false) {
+                                && stripos($storedMesin, $mesin) !== false
+                            ) {
                                 $row["produksi_realisasi_shift$shift"] = $byMesinVal;
                                 $found = true;
                                 break;  // Found match for this shift, stop searching
@@ -403,12 +414,10 @@ class MesinIps1 extends BaseController
                 }
             }
             unset($row);
-
         } catch (\Throwable $e) {
             // Produksi DB unavailable — rows already have null/false defaults
         }
 
         return $rows;
     }
-
 }

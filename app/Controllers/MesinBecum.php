@@ -20,7 +20,37 @@ class MesinBecum extends BaseController
 
     private const BECUM_PRODUCTS = ['Gallon'];
     private const BECUM_GRADES = [
-        'A+', 'A', 'A.1.V-3', 'A.1.V-4', 'Club', 'Club.', 'A.1.v-3', 'B', 'B.2.B-2', 'B.1.B-2', 'B.1.B-3 New', 'B.1.B-3', 'B-1', 'B.2.B-3', 'B.3.B-2', 'B.', 'B+', 'C.2.B-3', 'C', 'C.3.B-2', 'C.1.B-3', 'C.1.V-2', 'C.1.V-3', 'C+', 'D.0.V-2', 'D', 'D.0.B-2', 'D+', 'D New', 'D.0.V-2 New', 'AQUA',
+        'A+',
+        'A',
+        'A.1.V-3',
+        'A.1.V-4',
+        'Club',
+        'Club.',
+        'A.1.v-3',
+        'B',
+        'B.2.B-2',
+        'B.1.B-2',
+        'B.1.B-3 New',
+        'B.1.B-3',
+        'B-1',
+        'B.2.B-3',
+        'B.3.B-2',
+        'B.',
+        'B+',
+        'C.2.B-3',
+        'C',
+        'C.3.B-2',
+        'C.1.B-3',
+        'C.1.V-2',
+        'C.1.V-3',
+        'C+',
+        'D.0.V-2',
+        'D',
+        'D.0.B-2',
+        'D+',
+        'D New',
+        'D.0.V-2 New',
+        'AQUA',
     ];
     private const BECUM_BRANDS = [
         'A+' => ['8', 'AQ-8', 'Ajwa', 'Ambiero', 'AGS', 'AIRO', 'Al- Falah', 'Arthess', 'Armio', 'Amidis', 'Astar', 'Atarin', 'Aruma', 'Authentic Alkali Water', 'Benzano', 'Blank', 'Bright', 'Cirill', 'Cairoh', 'Cool Plus', 'Dufia', 'El- Haadi', 'Good Qua', 'Grand', 'Hills', 'Jam', 'Java', 'Keniro', 'Ki Water', 'MQS', 'Maleo', 'Meriba', 'Oksitra', 'Patraqua', 'Premier Water', 'PrimA', 'Pristine', 'Quelle', 'RNI', 'SMS', 'SPA', 'NARITA', 'OXYINDO', 'TRIPANCA', 'T Water', 'Watermed', 'Yora'],
@@ -108,7 +138,6 @@ class MesinBecum extends BaseController
                 'message' => 'Data penimbangan berhasil dimuat',
                 'html' => $html,
             ]);
-
         } catch (\Exception $e) {
             log_message('error', 'getPenimbanganSection error: ' . $e->getMessage());
             return $this->response->setJSON([
@@ -166,11 +195,11 @@ class MesinBecum extends BaseController
             'q'              => $q,
             'start_date'     => $startDate,
             'end_date'       => $endDate,
-            'current_machine'=> $this->mesinSlug(),
+            'current_machine' => $this->mesinSlug(),
             'becum_products' => self::BECUM_PRODUCTS,
             'becum_grades'   => self::BECUM_GRADES,
             'becum_brands'   => (new MMesinBrand())->getAllGroupedByGrade('becum'),
-            'becum_komposisi'=> (new MMesinKomposisi())->getAllByModule('becum'),
+            'becum_komposisi' => (new MMesinKomposisi())->getAllByModule('becum'),
             'status_options' => self::STATUS_OPTIONS,
         ], $this->mesinViewContext()));
     }
@@ -194,10 +223,10 @@ class MesinBecum extends BaseController
 
         if ($this->activeMesin()->insert($data)) {
             $insertId = $this->activeMesin()->getInsertID();
-            
+
             // Save penimbangan data if insert was successful
             $penimbanganResult = (new PenimbanganJamRepository())->savePenimbanganFromForm((int)$insertId, $this->request->getPost());
-            
+
             if ($penimbanganResult['success']) {
                 session()->setFlashdata('success', 'Data mesin becum dan penimbangan berhasil ditambahkan');
             } else {
@@ -231,7 +260,7 @@ class MesinBecum extends BaseController
         if ($this->activeMesin()->update($id, $data)) {
             // Save penimbangan data if update was successful
             $penimbanganResult = (new PenimbanganJamRepository())->savePenimbanganFromForm((int)$id, $this->request->getPost());
-            
+
             if ($penimbanganResult['success']) {
                 session()->setFlashdata('success', 'Data mesin becum dan penimbangan berhasil diupdate');
             } else {
@@ -329,6 +358,8 @@ class MesinBecum extends BaseController
             // identitas
             'tanggal'               => $p('tanggal') ?: date('Y-m-d'),
             'no_spk'                => $pnull('no_spk') !== null ? (int) $pnull('no_spk') : null,
+            'nama_mesin'            => $p('nama_mesin') !== '' ? $p('nama_mesin') : 'Becum',
+            'nama_produk'           => $p('nama_produk') !== '' ? $p('nama_produk') : $p('produk_galon'),
             'nomor_mesin'           => $p('nomor_mesin'),
             'shif'                  => $p('shif'),
             'status'                => $p('status') ?: 'ganti bottom rata',
@@ -449,7 +480,7 @@ class MesinBecum extends BaseController
                     : null;
 
                 $castClause = $castPlaceholders
-                    ? "OR CAST(nomor_spk AS UNSIGNED) IN ($castPlaceholders)"
+                    ? "OR CAST(no_spk AS UNSIGNED) IN ($castPlaceholders)"
                     : '';
 
                 // No tanggal filter here: SPK is unique per job, so matching by SPK
@@ -457,13 +488,13 @@ class MesinBecum extends BaseController
                 // mesin_becum vs produksi_headers.
                 $sql = "
                     SELECT
-                        nomor_spk,
+                        no_spk,
                         shift,
                         SUM(grand_total_bagus) AS total_bagus
                     FROM produksi_headers
                     WHERE deleted_at IS NULL
-                      AND (nomor_spk IN ($inPlaceholders) $castClause)
-                    GROUP BY nomor_spk, shift
+                                            AND (no_spk IN ($inPlaceholders) $castClause)
+                                        GROUP BY no_spk, shift
                 ";
 
                 $bindings = array_merge(
@@ -474,7 +505,7 @@ class MesinBecum extends BaseController
                 $rows1 = $db->query($sql, $bindings)->getResultArray();
 
                 foreach ($rows1 as $r) {
-                    $normKey = (string)(int)trim((string)$r['nomor_spk']);
+                    $normKey = (string)(int)trim((string)$r['no_spk']);
                     $key     = "$normKey|{$r['shift']}";
                     $bySpk[$key] = ($bySpk[$key] ?? 0) + (int)$r['total_bagus'];
                 }
@@ -535,18 +566,18 @@ class MesinBecum extends BaseController
                     : null;
 
                 $castClause = $castPlaceholders
-                    ? "OR CAST(nomor_spk AS UNSIGNED) IN ($castPlaceholders)"
+                    ? "OR CAST(no_spk AS UNSIGNED) IN ($castPlaceholders)"
                     : '';
 
                 $sql3 = "
                     SELECT
-                        nomor_spk,
+                        no_spk,
                         extra_realisasi_shifts
                     FROM produksi_headers
                     WHERE deleted_at IS NULL
                       AND extra_realisasi_shifts IS NOT NULL
                       AND extra_realisasi_shifts != '[]'
-                      AND (nomor_spk IN ($inPlaceholders) $castClause)
+                      AND (no_spk IN ($inPlaceholders) $castClause)
                 ";
 
                 $bindings3 = array_merge(
@@ -557,8 +588,8 @@ class MesinBecum extends BaseController
                 $rows3 = $db->query($sql3, $bindings3)->getResultArray();
 
                 foreach ($rows3 as $r) {
-                    $normKey = (string)(int)trim((string)$r['nomor_spk']);
-                    
+                    $normKey = (string)(int)trim((string)$r['no_spk']);
+
                     // Decode JSON array of extra shifts
                     try {
                         $extraShifts = json_decode($r['extra_realisasi_shifts'], true);
@@ -606,9 +637,11 @@ class MesinBecum extends BaseController
                         // Find any byMesin key that contains this mesin string
                         foreach ($byMesin as $byMesinKey => $byMesinVal) {
                             [$storedMesin, $storedTanggal, $storedShift] = explode('|', $byMesinKey);
-                            if ($storedTanggal === $tanggal
+                            if (
+                                $storedTanggal === $tanggal
                                 && (int)$storedShift === (int)$shift
-                                && stripos($storedMesin, $mesin) !== false) {
+                                && stripos($storedMesin, $mesin) !== false
+                            ) {
                                 $row["produksi_realisasi_shift$shift"] = $byMesinVal;
                                 $found = true;
                                 break;  // Found match for this shift, stop searching
@@ -643,7 +676,6 @@ class MesinBecum extends BaseController
                 }
             }
             unset($row);
-
         } catch (\Throwable $e) {
             // Produksi DB unavailable — rows already have null/false defaults
         }
